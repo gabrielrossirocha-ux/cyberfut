@@ -29,7 +29,13 @@
                         <option value="Pivô">Pivô</option>
                     </select>
                     
-                    <div id="habilidadesContainer"></div>
+                    <div class="caracteristicas-area">
+                        <label class="label-caracteristicas">💪 Características (selecione 2 ou 3):</label>
+                        <div id="habilidadesContainer" class="habilidades-grid">
+                            <!-- As checkboxes serão inseridas via JavaScript -->
+                        </div>
+                        <small id="contadorCaracteristicas" class="contador-caracteristicas">0 selecionadas (mínimo 2, máximo 3)</small>
+                    </div>
                     
                     <button type="submit" class="btn-vermelho">➕ Adicionar Jogador</button>
                 </form>
