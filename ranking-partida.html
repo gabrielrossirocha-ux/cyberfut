@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYSS Futebol - Ranking da Partida</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Logo como fundo transparente */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('image.png');
+            background-repeat: repeat;
+            background-size: 150px;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 30px;
+            border-radius: 60px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .logo {
+            max-width: 60px;
+            height: auto;
+            border-radius: 12px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 1.8em;
+        }
+
+        .subtitulo {
+            color: #ffcccc;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #8b0000;
+            border-bottom: 3px solid #8b0000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .ranking-item:hover {
+            background: #f9f9f9;
+        }
+
+        .ranking-posicao {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #8b0000;
+            width: 60px;
+        }
+
+        .ranking-nome {
+            flex: 2;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .ranking-estrelas {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .estrela {
+            color: #ffcc00;
+            font-size: 1.3em;
+            text-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+
+        .estrela-vazia {
+            color: #ccc;
+            font-size: 1.3em;
+        }
+
+        .ranking-total {
+            font-weight: 700;
+            color: #8b0000;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .ranking-media {
+            font-size: 0.85em;
+            color: #666;
+            min-width: 100px;
+            text-align: right;
+        }
+
+        .badge-mensalista {
+            background: #ffcc00;
+            color: #8b0000;
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+
+        .badge-convidado {
+            background: #555;
+            color: white;
+            font-size: 0.7em;
+           
