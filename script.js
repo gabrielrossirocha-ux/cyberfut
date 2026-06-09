@@ -3,9 +3,8 @@ const STORAGE_KEY = 'futsal_jogadores';
 
 // Lista de características disponíveis
 const HABILIDADES_DISPONIVEIS = [
-    'Veloz', 'Forte', 'Bom passe', 'Marcação forte', 
-    'Finalização', 'Visão de jogo', 'Drible', 'Cabeceio', 
-    'Liderança', 'Resistência'
+    'Veloz', 'Bom passe', 'Marcação', 
+    'Finalização', 'Visão de jogo', 'Drible', 'Resistência'
 ];
 
 // Estado global
@@ -25,6 +24,7 @@ const timeBLista = document.getElementById('timeBLista');
 const mensagemDiv = document.getElementById('mensagem');
 const btnResetar = document.getElementById('btnResetar');
 const btnSortear = document.getElementById('btnSortear');
+const contadorCaracteristicas = document.getElementById('contadorCaracteristicas');
 
 // Carregar dados do localStorage
 function carregarDados() {
@@ -53,12 +53,31 @@ function exibirMensagem(texto, tipo = 'sucesso') {
     }, 3000);
 }
 
+// Atualizar contador de características selecionadas
+function atualizarContadorCaracteristicas() {
+    const checkboxes = document.querySelectorAll('input[name="habilidade"]:checked');
+    const quantidade = checkboxes.length;
+    if (contadorCaracteristicas) {
+        contadorCaracteristicas.textContent = `${quantidade} selecionadas (mínimo 2, máximo 3)`;
+        if (quantidade < 2) {
+            contadorCaracteristicas.style.color = '#8b0000';
+        } else if (quantidade > 3) {
+            contadorCaracteristicas.style.color = '#8b0000';
+        } else {
+            contadorCaracteristicas.style.color = '#2c5f2d';
+        }
+    }
+}
+
 // Criar checkboxes de características
 function criarCheckboxesHabilidades() {
     const container = document.getElementById('habilidadesContainer');
-    if (!container) return;
+    if (!container) {
+        console.error('Container de habilidades não encontrado!');
+        return;
+    }
     
-    container.innerHTML = '<label class="label-habilidades">💪 Características (máx 3):</label>';
+    container.innerHTML = '';
     
     HABILIDADES_DISPONIVEIS.forEach(habilidade => {
         const label = document.createElement('label');
@@ -69,19 +88,35 @@ function criarCheckboxesHabilidades() {
         `;
         container.appendChild(label);
     });
+    
+    // Adicionar evento para contar características selecionadas
+    document.querySelectorAll('input[name="habilidade"]').forEach(checkbox => {
+        checkbox.addEventListener('change', atualizarContadorCaracteristicas);
+    });
+    
+    atualizarContadorCaracteristicas();
 }
 
 // Obter características selecionadas
 function getHabilidadesSelecionadas() {
     const checkboxes = document.querySelectorAll('input[name="habilidade"]:checked');
-    if (checkboxes.length === 0) {
+    const quantidade = checkboxes.length;
+    
+    if (quantidade === 0) {
         exibirMensagem('⚠️ Selecione pelo menos uma característica!', 'erro');
         return null;
     }
-    if (checkboxes.length > 3) {
-        exibirMensagem('⚠️ Selecione no máximo 3 características!', 'erro');
+    
+    if (quantidade < 2) {
+        exibirMensagem('⚠️ Selecione no MÍNIMO 2 características por jogador!', 'erro');
         return null;
     }
+    
+    if (quantidade > 3) {
+        exibirMensagem('⚠️ Selecione no MÁXIMO 3 características por jogador!', 'erro');
+        return null;
+    }
+    
     return Array.from(checkboxes).map(cb => cb.value);
 }
 
@@ -94,12 +129,17 @@ function adicionarJogador(nome, posicao, habilidades) {
     }
     
     if (!nome || !posicao || !habilidades || habilidades.length === 0) {
-        exibirMensagem('⚠️ Preencha todos os campos e selecione pelo menos uma característica!', 'erro');
+        exibirMensagem('⚠️ Preencha todos os campos e selecione as características!', 'erro');
+        return false;
+    }
+    
+    if (habilidades.length < 2) {
+        exibirMensagem('⚠️ Selecione no MÍNIMO 2 características por jogador!', 'erro');
         return false;
     }
     
     if (habilidades.length > 3) {
-        exibirMensagem('⚠️ Máximo de 3 características por jogador!', 'erro');
+        exibirMensagem('⚠️ Selecione no MÁXIMO 3 características por jogador!', 'erro');
         return false;
     }
     
@@ -125,6 +165,7 @@ function adicionarJogador(nome, posicao, habilidades) {
     nomeInput.value = '';
     posicaoSelect.value = '';
     document.querySelectorAll('input[name="habilidade"]:checked').forEach(cb => cb.checked = false);
+    atualizarContadorCaracteristicas();
     
     // Limpar times sorteados
     timeA = [];
@@ -329,6 +370,8 @@ if (formJogador) {
 if (btnResetar) btnResetar.addEventListener('click', resetarTudo);
 if (btnSortear) btnSortear.addEventListener('click', sortearTimes);
 
-// Inicializar
-criarCheckboxesHabilidades();
-carregarDados();
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    criarCheckboxesHabilidades();
+    carregarDados();
+});
