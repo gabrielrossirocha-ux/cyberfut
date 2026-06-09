@@ -138,6 +138,11 @@ button {
     border-left: 4px solid #8b0000;
 }
 
+.lista-times {
+    list-style: none;
+    padding: 0;
+}
+
 .lista-times li {
     background: #f9f9f9;
     margin: 10px 0;
@@ -147,6 +152,10 @@ button {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+}
+
+.lista-times li strong {
+    color: #8b0000;
 }
 
 .posicao, .habilidade {
@@ -183,6 +192,22 @@ button {
     font-weight: bold;
 }
 
+.btn-deletar {
+    background: #8b0000;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 5px;
+    width: auto;
+}
+
+.btn-deletar:hover {
+    background: #6b0000;
+}
+
 @media (max-width: 768px) {
     .grid-2colunas {
         grid-template-columns: 1fr;
@@ -194,5 +219,11 @@ button {
     
     h1 {
         font-size: 1.6em;
+    }
+    
+    .lista-times li {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
     }
 }
