@@ -548,9 +548,9 @@
             </div>
         </div>
         
-<div class="sorteio-area" style="display: flex; gap: 15px; justify-content: center;">
+<div class="sorteio-area" style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
     <button id="btnSortear" class="btn-sortear">🎲 SORTEAR TIMES</button>
-    <button id="btnAvaliacoes" class="btn-sortear" style="background: #ffcc00; color: #8b0000;">⭐ AVALIAÇÕES</button>
+    <button id="btnPartidas" class="btn-sortear" style="background: #ffcc00; color: #8b0000;">📅 PARTIDAS</button>
 </div>
 
         <div id="timesContainer" style="display: none;">
@@ -586,7 +586,13 @@
             'Finalização', 'Visão de jogo', 'Drible', 'Cabeceio', 
             'Liderança', 'Resistência'
         ];
-
+        // Botão para ir para página de partidas
+        const btnPartidas = document.getElementById('btnPartidas');
+            if (btnPartidas) {
+            btnPartidas.addEventListener('click', () => {
+            window.location.href = 'partidas.html';
+        });
+    }
         let jogadoresEscala = [];
         let timeA = [];
         let timeB = [];
