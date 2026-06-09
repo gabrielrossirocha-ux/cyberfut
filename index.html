@@ -935,6 +935,13 @@
         criarCheckboxesHabilidades();
         carregarDados();
         alternarTipoJogador();
+
+        const btnAvaliacoes = document.getElementById('btnAvaliacoes');
+if (btnAvaliacoes) {
+    btnAvaliacoes.addEventListener('click', () => {
+        window.location.href = 'avaliacoes.html';
+    });
+}
     </script>
 </body>
 </html>
