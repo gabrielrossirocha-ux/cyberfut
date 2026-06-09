@@ -142,6 +142,10 @@
 
         <div class="card">
             <button id="btnSortear" class="btn btn-sortear">🎲 SORTEAR TIMES E FINALIZAR PARTIDA</button>
+            <button id="btnSortear" class="btn btn-sortear">🎲 SORTEAR TIMES E FINALIZAR PARTIDA</button>
+<div id="avisoPartida" style="display: none; text-align: center; margin-top: 15px; padding: 10px; background: #ffe5e5; border-radius: 12px; color: #8b0000;">
+    ⚠️ Esta partida já foi finalizada! Times já estão salvos.
+</div>
         </div>
 
         <div id="timesContainer" style="display: none;">
@@ -237,47 +241,157 @@
         function distribuirAlternado(lista, a, b) { lista.forEach((j, i) => i % 2 === 0 ? a.push(j) : b.push(j)); }
         function embaralhar(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
 
-        document.getElementById('btnSortear').addEventListener('click', async () => {
-            if (jogadoresEscala.length < 4) { alert('Mínimo 4 jogadores!'); return; }
-            if (!partidaId) { alert('Erro: Partida não encontrada!'); return; }
+        document.getElementById('btnSorter').addEventListener('click', async () => {
+            // Variável de controle (coloque no início do script, antes de carregarPartida)
+let partidaFinalizada = false;
 
-            const goleiros = jogadoresEscala.filter(j => j.posicao === 'Goleiro');
-            const outros = jogadoresEscala.filter(j => j.posicao !== 'Goleiro');
-            timeA = []; timeB = [];
-            if (goleiros.length === 1) timeA.push(goleiros[0]);
-            else goleiros.forEach((g, i) => i % 2 === 0 ? timeA.push(g) : timeB.push(g));
-            distribuirAlternado(outros, timeA, timeB);
-            while (Math.abs(timeA.length - timeB.length) > 1) {
-                if (timeA.length > timeB.length) timeB.unshift(timeA.pop());
-                else timeA.unshift(timeB.pop());
-            }
-            timeA = embaralhar(timeA); timeB = embaralhar(timeB);
+// Verificar se a partida já foi finalizada
+async function verificarPartidaFinalizada() {
+    if (!partidaId) return;
+    
+    const { data } = await supabaseClient
+        .from('escala_partida')
+        .select('id')
+        .eq('partida_id', partidaId)
+        .limit(1);
+    
+    if (data && data.length > 0) {
+        partidaFinalizada = true;
+        const btnSortear = document.getElementById('btnSortear');
+        const avisoPartida = document.getElementById('avisoPartida');
+        
+        if (btnSortear) {
+            btnSortear.disabled = true;
+            btnSortear.style.opacity = '0.5';
+            btnSortear.style.cursor = 'not-allowed';
+        }
+        if (avisoPartida) avisoPartida.style.display = 'block';
+        
+        // Carregar times já salvos
+        carregarTimesSalvos();
+    }
+}
 
-            // Salvar escala no banco
-            const escala = [...timeA.map(j => ({ ...j, time: 'A' })), ...timeB.map(j => ({ ...j, time: 'B' }))];
-            for (const j of escala) {
-                await supabaseClient.from('escala_partida').insert({
-                    partida_id: partidaId,
-                    jogador_nome: j.nome,
-                    posicao: j.posicao,
-                    habilidades: [],
-                    tipo: j.tipo,
-                    time: j.time
-                });
-            }
+// Carregar times já salvos
+async function carregarTimesSalvos() {
+    const { data } = await supabaseClient
+        .from('escala_partida')
+        .select('*')
+        .eq('partida_id', partidaId)
+        .order('time');
+    
+    if (data && data.length > 0) {
+        const timeAData = data.filter(j => j.time === 'A');
+        const timeBData = data.filter(j => j.time === 'B');
+        
+        document.getElementById('timesContainer').style.display = 'block';
+        document.getElementById('timeALista').innerHTML = timeAData.map(j => `<li><strong>${j.jogador_nome}</strong><br><span class="posicao">${j.posicao}</span><div>${j.tipo === 'mensalista' ? 'Mensalista' : 'Convidado'}</div></li>`).join('');
+        document.getElementById('timeBLista').innerHTML = timeBData.map(j => `<li><strong>${j.jogador_nome}</strong><br><span class="posicao">${j.posicao}</span><div>${j.tipo === 'mensalista' ? 'Mensalista' : 'Convidado'}</div></li>`).join('');
+    }
+}
 
-            alert('✅ Partida finalizada e times salvos!');
-            document.getElementById('timesContainer').style.display = 'block';
-            document.getElementById('timeALista').innerHTML = timeA.map(j => `<li><strong>${j.nome}</strong><br><span class="posicao">${j.posicao}</span></li>`).join('');
-            document.getElementById('timeBLista').innerHTML = timeB.map(j => `<li><strong>${j.nome}</strong><br><span class="posicao">${j.posicao}</span></li>`).join('');
+// Evento do botão Sortear (CORRIGIDO)
+document.getElementById('btnSortear').addEventListener('click', async () => {
+    // Impedir se já foi finalizada
+    if (partidaFinalizada) {
+        alert('⚠️ Esta partida já foi finalizada! Os times já estão salvos.');
+        return;
+    }
+    
+    if (jogadoresEscala.length < 4) { 
+        alert('Mínimo 4 jogadores!'); 
+        return; 
+    }
+    
+    if (!partidaId) { 
+        alert('Erro: Partida não encontrada!'); 
+        return; 
+    }
+    
+    // Verificar se já existe escala salva (dupla verificação)
+    const { data: escalaExistente } = await supabaseClient
+        .from('escala_partida')
+        .select('id')
+        .eq('partida_id', partidaId)
+        .limit(1);
+    
+    if (escalaExistente && escalaExistente.length > 0) {
+        alert('⚠️ Esta partida já foi finalizada! Recarregue a página para ver os times.');
+        partidaFinalizada = true;
+        const btn = document.getElementById('btnSortear');
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+        }
+        carregarTimesSalvos();
+        return;
+    }
 
-            localStorage.setItem('partidaRanking', partidaId);
-            setTimeout(() => { window.location.href = 'partida.html'; }, 2000);
+    const goleiros = jogadoresEscala.filter(j => j.posicao === 'Goleiro');
+    const outros = jogadoresEscala.filter(j => j.posicao !== 'Goleiro');
+    timeA = []; 
+    timeB = [];
+
+    if (goleiros.length === 1) timeA.push(goleiros[0]);
+    else goleiros.forEach((g, i) => i % 2 === 0 ? timeA.push(g) : timeB.push(g));
+    
+    distribuirAlternado(outros, timeA, timeB);
+    
+    while (Math.abs(timeA.length - timeB.length) > 1) {
+        if (timeA.length > timeB.length) timeB.unshift(timeA.pop());
+        else timeA.unshift(timeB.pop());
+    }
+    
+    timeA = embaralhar(timeA); 
+    timeB = embaralhar(timeB);
+    
+    // Salvar escala no banco
+    const escala = [...timeA.map(j => ({ ...j, time: 'A' })), ...timeB.map(j => ({ ...j, time: 'B' }))];
+    
+    for (const j of escala) {
+        await supabaseClient.from('escala_partida').insert({
+            partida_id: partidaId,
+            jogador_nome: j.nome,
+            posicao: j.posicao,
+            habilidades: [],
+            tipo: j.tipo,
+            time: j.time
         });
+    }
+    
+    // Marcar como finalizada e desabilitar botão
+    partidaFinalizada = true;
+    const btn = document.getElementById('btnSortear');
+    if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+    }
+    
+    alert('✅ Partida finalizada e times salvos com sucesso!');
+    
+    document.getElementById('timesContainer').style.display = 'block';
+    document.getElementById('timeALista').innerHTML = timeA.map(j => `<li><strong>${j.nome}</strong><br><span class="posicao">${j.posicao}</span><div>${j.tipo === 'mensalista' ? 'Mensalista' : 'Convidado'}</div></li>`).join('');
+    document.getElementById('timeBLista').innerHTML = timeB.map(j => `<li><strong>${j.nome}</strong><br><span class="posicao">${j.posicao}</span><div>${j.tipo === 'mensalista' ? 'Mensalista' : 'Convidado'}</div></li>`).join('');
 
-        carregarPartida();
-        alternarTipo();
-        atualizarSelectMensalistas();
+    localStorage.setItem('partidaRanking', partidaId);
+    
+    setTimeout(() => {
+        window.location.href = 'partida.html';
+    }, 3000);
+});
+
+// Funções auxiliares (já devem existir, mas mantenha)
+function distribuirAlternado(lista, a, b) { 
+    lista.forEach((j, i) => i % 2 === 0 ? a.push(j) : b.push(j)); 
+}
+
+function embaralhar(arr) { 
+    for (let i = arr.length - 1; i > 0; i--) { 
+        const j = Math.floor(Math.random() * (i + 1)); 
+        [arr[i], arr[j]] = [arr[j], arr[i]]; 
+    } 
+    return arr; 
+}
     </script>
 </body>
 </html>
