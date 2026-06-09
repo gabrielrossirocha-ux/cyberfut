@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYSS Futebol - Avaliar Jogadores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 30px;
+            border-radius: 60px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        .logo { max-width: 60px; height: auto; border-radius: 12px; }
+        h1 { color: white; font-size: 1.8em; }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            color: #8b0000;
+            border-bottom: 3px solid #8b0000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .login-area { max-width: 400px; margin: 0 auto; }
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+        .btn {
+            background: #8b0000;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .estrelas { display: flex; gap: 8px; margin: 15px 0; justify-content: center; }
+        .estrela { font-size: 35px; cursor: pointer; color: #ccc; transition: all 0.2s; }
+        .estrela.selected { color: #ffcc00; }
+        .jogadores-grid { display: grid; gap: 20px; margin-top: 20px; }
+        .jogador-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border-left: 5px solid #8b0000;
+        }
+        .jogador-nome { font-size: 1.3em; font-weight: 700; color: #8b0000; margin-bottom: 10px; }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-family: inherit;
+            margin: 10px 0;
+        }
+        .ja-avaliado { background: #e8f5e9; border-left-color: #4caf50; }
+        .badge-avaliado { background: #4caf50; color: white; font-size: 0.7em; padding: 2px 8px; border-radius: 20px; margin-left: 10px; }
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area">
+                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
+                <h1>⭐ Avaliar Jogadores</h1>
+            </div>
+        </div>
+
+        <div id="loginScreen" class="card">
+            <div class="login-area">
+                <h2>🔐 Login do Mensalista</h2>
+                <select id="selectMensalista" class="login-input"><option value="">Selecione seu nome</option></select>
+                <input type="password" id="senha" class="login-input" placeholder="Sua senha">
+                <button id="btnLogin" class="btn">Entrar</button>
+            </div>
+        </div>
+
+        <div id="avaliacoesScreen" style="display: none;">
+            <div class="user-info" id="userInfo"></div>
+            <div class="card">
+                <h2>📝 Avaliar Jogadores da Partida</h2>
+                <div id="jogadoresContainer">Carregando...</div>
+                <button id="btnVoltar" class="btn" style="background:#1a1a1a; margin-top:20px;">← Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let mensalistaAtual = null;
+        let partidaId = null;
+        let jogadoresPartida = [];
+        let avaliacoesFeitas = {};
+
+        async function carregarMensalistas() {
+            const { data } = await supabaseClient.from('mensalistas').select('id, nome').order('nome');
+            const select = document.getElementById('selectMensalista');
+            select.innerHTML = '<option value="">Selecione seu nome</option>';
+            if (data) data.forEach(m => { const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.nome; select.appendChild(opt); });
+        }
+
+        async function fazerLogin() {
+            const id = document.getElementById('selectMensalista').value;
+            const senha = document.getElementById('senha').value;
+            if (!id || !senha) { alert('Preencha todos os campos'); return; }
+            const { data } = await supabaseClient.from('mensalistas').select('*').eq('id', id).single();
+            if (!data || senha !== data.senha_hash) { alert('Senha incorreta! Senha padrão: futebol123'); return; }
+            mensalistaAtual = { id: data.id, nome: data.nome };
+            partidaId = localStorage.getItem('partidaAtual');
+            if (!partidaId) { alert('Nenhuma partida selecionada!'); return; }
+            await carregarJogadoresPartida();
+            await carregarAvaliacoesFeitas();
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('avaliacoesScreen').style.display = 'block';
+            document.getElementById('userInfo').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Avalie os jogadores</span>`;
+            renderizarJogadores();
+        }
+
+        async function carregarJogadoresPartida() {
+            const { data } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
+            jogadoresPartida = data?.filter(j => j.jogador_nome !== mensalistaAtual.nome) || [];
+        }
+
+        async function carregarAvaliacoesFeitas() {
+            const { data } = await supabaseClient.from('avaliacoes_partida').select('*').eq('partida_id', partidaId).eq('avaliador_id', mensalistaAtual.id);
+            avaliacoesFeitas = {};
+            if (data) data.forEach(a => { avaliacoesFeitas[a.avaliado_nome] = { nota: a.nota, comentario: a.comentario }; });
+        }
+
+        function renderizarJogadores() {
+            if (jogadoresPartida.length === 0) { document.getElementById('jogadoresContainer').innerHTML = '<p>Nenhum jogador para avaliar</p>'; return; }
+            const container = document.getElementById('jogadoresContainer');
+            container.innerHTML = '<div class="jogadores-grid"></div>';
+            const grid = container.querySelector('.jogadores-grid');
+            jogadoresPartida.forEach(j => {
+                const jaAvaliado = avaliacoesFeitas[j.jogador_nome];
+                const card = document.createElement('div');
+                card.className = `jogador-card ${jaAvaliado ? 'ja-avaliado' : ''}`;
+                let notaTemp = jaAvaliado?.nota || 0;
+                let comentarioTemp = jaAvaliado?.comentario || '';
+                card.innerHTML = `
+                    <div class="jogador-nome">${j.jogador_nome} ${jaAvaliado ? '<span class="badge-avaliado">Já avaliado</span>' : ''}</div>
+                    <div class="estrelas">${[1,2,3,4,5].map(n => `<span class="estrela ${notaTemp >= n ? 'selected' : ''}" data-nota="${n}">★</span>`).join('')}</div>
+                    <textarea placeholder="Comentário (opcional)" maxlength="100">${comentarioTemp}</textarea>
+                    <button class="btn" ${jaAvaliado ? 'disabled' : ''}>${jaAvaliado ? '✓ Avaliado' : '⭐ Avaliar'}</button>
+                `;
+                const estrelasDiv = card.querySelector('.estrelas');
+                let notaSelecionada = notaTemp;
+                estrelasDiv.querySelectorAll('.estrela').forEach(estrela => {
+                    estrela.addEventListener('click', () => {
+                        notaSelecionada = parseInt(estrela.dataset.nota);
+                        estrelasDiv.querySelectorAll('.estrela').forEach((s, i) => i < notaSelecionada ? s.classList.add('selected') : s.classList.remove('selected'));
+                    });
+                });
+                if (!jaAvaliado) {
+                    card.querySelector('button').addEventListener('click', async () => {
+                        if (notaSelecionada === 0) { alert('Selecione uma nota!'); return; }
+                        const comentario = card.querySelector('textarea').value.substring(0, 100);
+                        await supabaseClient.from('avaliacoes_partida').insert({
+                            partida_id: partidaId,
+                            avaliador_id: mensalistaAtual.id,
+                            avaliado_nome: j.jogador_nome,
+                            nota: notaSelecionada,
+                            comentario: comentario
+                        });
+                        alert(`✅ ${j.jogador_nome} avaliado!`);
+                        await carregarAvaliacoesFeitas();
+                        renderizarJogadores();
+                    });
+                }
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById('btnLogin').addEventListener('click', fazerLogin);
+        document.getElementById('btnVoltar').addEventListener('click', () => { window.location.href = 'partida.html'; });
+        carregarMensalistas();
+    </script>
+</body>
+</html>
