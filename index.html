@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YSS Futebol - Sorteio de Times</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 30px;
+            border-radius: 60px;
+            display: inline-flex;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            max-width: 70px;
+            height: auto;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
+            border-radius: 12px;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        h1 {
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 2.2em;
+            letter-spacing: 2px;
+        }
+
+        .subtitulo {
+            color: #ffcccc;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.95em;
+        }
+
+        .badge-mensalista {
+            background: #ffcc00;
+            color: #8b0000;
+            font-size: 0.7em;
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .badge-convidado {
+            background: #555;
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+
+        .grid-2colunas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #8b0000;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #8b0000;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .contador-info {
+            font-size: 14px;
+            background: #ffe5e5;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #8b0000;
+        }
+
+        .caracteristicas-area {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 16px;
+        }
+
+        .label-caracteristicas {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #8b0000;
+        }
+
+        .habilidades-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-habilidade {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            background: white;
+            padding: 6px 14px;
+            border-radius: 25px;
+            border: 1px solid #ddd;
+            transition: all 0.25s ease;
+        }
+
+        .checkbox-habilidade:hover {
+            background: #ffe5e5;
+            border-color: #8b0000;
+        }
+
+        .checkbox-habilidade input {
+            width: auto;
+            margin-right: 6px;
+        }
+
+        .contador-caracteristicas {
+            display: block;
+            text-align: center;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-family: inherit;
+        }
+
+        .btn-vermelho {
+            background: #8b0000;
+            color: white;
+        }
+
+        .btn-vermelho:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-preto {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .btn-preto:hover {
+            background: #000;
+        }
+
+        .btn-sortear {
+            background: #8b0000;
+            color: white;
+            font-size: 1.4em;
+            padding: 18px;
+            width: auto;
+            min-width: 280px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .btn-sortear:hover {
+            background: #c0392b;
+            transform: scale(1.02);
+        }
+
+        .sorteio-area {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .contador {
+            margin: 20px 0 10px;
+            text-align: center;
+            font-weight: 700;
+            color: #8b0000;
+            background: #ffe5e5;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .lista-jogadores, .lista-times {
+            list-style: none;
+            padding: 0;
+        }
+
+        .lista-jogadores li {
+            background: #ffffff;
+            margin: 12px 0;
+            padding: 15px;
+            border-radius: 14px;
+            border-left: 5px solid #8b0000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .jogador-info {
+            flex: 1;
+        }
+
+        .posicao {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            margin-left: 10px;
+        }
+
+        .time-vermelho {
+            background: #fff5f5;
+            border: 2px solid #8b0000;
+        }
+
+        .time-branco {
+            background: #fafafa;
+            border: 2px solid #cccccc;
+        }
+
+        .lista-times li {
+            background: white;
+            margin: 12px 0;
+            padding: 15px;
+            border-radius: 14px;
+        }
+
+        .habilidades-lista {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .habilidade {
+            background: #8b0000;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+        }
+
+        .btn-deletar {
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: auto;
+            margin-top: 0;
+        }
+
+        .btn-deletar:hover {
+            background: #8b0000;
+        }
+
+        .mensagem {
+            background: #2c5f2d;
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .vazio {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8em;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .grid-2colunas {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 1.3em;
+            }
+            .logo {
+                max-width: 45px;
+            }
+            .btn-sortear {
+                font-size: 1.1em;
+                min-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area">
+                <img src="image.png" alt="YSS Futebol" class="logo" onerror="this.style.display='none'">
+                <h1>⚽ Sorteio de Times de Futsal</h1>
+            </div>
+            <p class="subtitulo">Mensalistas fixos + convidados | Defina as características de cada jogador por jogo</p>
+        </div>
+
+        <div id="mensagem" class="mensagem" style="display: none;"></div>
+
+        <div class="grid-2colunas">
+            <div class="card">
+                <h2>
+                    📝 Cadastrar Jogador
+                    <span class="contador-info" id="totalInfo">0/12</span>
+                </h2>
+                
+                <!-- Select para escolher entre mensalista ou novo convidado -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: 500; color: #555;">Selecionar jogador:</label>
+                    <select id="selectJogador" style="margin-top: 5px;">
+                        <option value="">+ Adicionar novo convidado</option>
+                    </select>
+                </div>
+
+                <form id="formJogador">
+                    <input type="text" id="nome" placeholder="Nome do jogador" required maxlength="30">
+                    
+                    <select id="posicao" required>
+                        <option value="">Selecione a posição</option>
+                        <option value="Goleiro">Goleiro</option>
+                        <option value="Fixo">Fixo</option>
+                        <option value="Ala Esquerda">Ala Esquerda</option>
+                        <option value="Ala Direita">Ala Direita</option>
+                        <option value="Pivô">Pivô</option>
+                    </select>
+                    
+                    <div class="caracteristicas-area">
+                        <label class="label-caracteristicas">💪 Características do jogador para este jogo (selecione 2 ou 3):</label>
+                        <div id="habilidadesContainer" class="habilidades-grid"></div>
+                        <small id="contadorCaracteristicas" class="contador-caracteristicas">0 selecionadas (mínimo 2, máximo 3)</small>
+                    </div>
+                    
+                    <button type="submit" class="btn-vermelho">➕ Adicionar ao time / Atualizar características</button>
+                </form>
+
+                <div class="contador">
+                    📊 Mensalistas fixos: <strong id="totalMensalistas">0</strong> | 
+                    Convidados: <strong id="totalConvidados">0</strong> | 
+                    Total: <strong id="totalJogadores">0</strong> / 12
+                </div>
+
+                <button id="btnResetarConvidados" class="btn-preto">🗑️ Remover todos os convidados</button>
+                <button id="btnResetarTudo" class="btn-preto" style="margin-top: 10px;">⚠️ Resetar tudo (inclui mensalistas)</button>
+            </div>
+
+            <div class="card">
+                <h2>👥 Jogadores na Escala (este jogo)</h2>
+                <div id="listaJogadores">
+                    <p class="vazio">Nenhum jogador na lista. Adicione acima.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="sorteio-area">
+            <button id="btnSortear" class="btn-sortear">🎲 SORTEAR TIMES</button>
+        </div>
+
+        <div id="timesContainer" style="display: none;">
+            <div class="grid-2colunas times">
+                <div class="card time-vermelho">
+                    <h2>🔴 TIME VERMELHO</h2>
+                    <ul id="timeALista" class="lista-times"></ul>
+                </div>
+                <div class="card time-branco">
+                    <h2>⚪ TIME BRANCO</h2>
+                    <ul id="timeBLista" class="lista-times"></ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>⚽ YSS FUTEBOL | Goleiros sempre em times diferentes | Mensalistas são fixos, convidados são adicionados por jogo</p>
+        </div>
+    </div>
+
+    <script>
+        // Chave para localStorage
+        const STORAGE_KEY = 'futsal_jogadores_escala';
+        
+        // LISTA DE MENSALISTAS FIXOS (9 jogadores)
+        const MENSALISTAS = [
+            "Luiz",
+            "Gabriel",
+            "Marcelo",
+            "Lucas Guil",
+            "Carlos",
+            "Cristoffer",
+            "Matheus",
+            "Lucas Coelho",
+            "Gustavo"
+        ];
+
+        const HABILIDADES_DISPONIVEIS = [
+            'Veloz', 'Forte', 'Bom passe', 'Marcação forte', 
+            'Finalização', 'Visão de jogo', 'Drible', 'Cabeceio', 
+            'Liderança', 'Resistência'
+        ];
+
+        const POSICOES = ['Goleiro', 'Fixo', 'Ala Esquerda', 'Ala Direita', 'Pivô'];
+
+        // Estrutura do jogador: { id, nome, posicao, habilidades, tipo }
+        let jogadoresEscala = []; // Apenas os que estão no jogo atual
+        let timeA = [];
+        let timeB = [];
+
+        // Elementos DOM
+        const formJogador = document.getElementById('formJogador');
+        const nomeInput = document.getElementById('nome');
+        const posicaoSelect = document.getElementById('posicao');
+        const selectJogador = document.getElementById('selectJogador');
+        const totalMensalistasSpan = document.getElementById('totalMensalistas');
+        const totalConvidadosSpan = document.getElementById('totalConvidados');
+        const totalJogadoresSpan = document.getElementById('totalJogadores');
+        const totalInfoSpan = document.getElementById('totalInfo');
+        const listaJogadoresDiv = document.getElementById('listaJogadores');
+        const timesContainer = document.getElementById('timesContainer');
+        const timeALista = document.getElementById('timeALista');
+        const timeBLista = document.getElementById('timeBLista');
+        const mensagemDiv = document.getElementById('mensagem');
+        const btnResetarConvidados = document.getElementById('btnResetarConvidados');
+        const btnResetarTudo = document.getElementById('btnResetarTudo');
+        const btnSortear = document.getElementById('btnSortear');
+        const contadorCaracteristicas = document.getElementById('contadorCaracteristicas');
+
+        function exibirMensagem(texto, tipo = 'sucesso') {
+            mensagemDiv.textContent = texto;
+            mensagemDiv.style.backgroundColor = tipo === 'erro' ? '#8b0000' : '#2c5f2d';
+            mensagemDiv.style.display = 'block';
+            setTimeout(() => {
+                mensagemDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function carregarDados() {
+            const dados = localStorage.getItem(STORAGE_KEY);
+            if (dados) {
+                jogadoresEscala = JSON.parse(dados);
+            } else {
+                // Inicializar com mensalistas (sem habilidades definidas ainda)
+                jogadoresEscala = [];
+            }
+            atualizarInterface();
+        }
+
+        function salvarDados() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(jogadoresEscala));
+        }
+
+        function atualizarSelectMensalistas() {
+            const jogadoresNaEscala = new Set(jogadoresEscala.map(j => j.nome));
+            const mensalistasDisponiveis = MENSALISTAS.filter(m => !jogadoresNaEscala.has(m) && jogadoresEscala.length < 12);
+            
+            selectJogador.innerHTML = '<option value="">+ Adicionar novo convidado</option>';
+            
+            if (mensalistasDisponiveis.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = '📌 Mensalistas disponíveis';
+                mensalistasDisponiveis.forEach(mensalista => {
+                    const option = document.createElement('option');
+                    option.value = mensalista;
+                    option.textContent = mensalista + ' (mensalista)';
+                    optgroup.appendChild(option);
+                });
+                selectJogador.appendChild(optgroup);
+            }
+        }
+
+        function preencherFormularioMensalista(nome) {
+            nomeInput.value = nome;
+            nomeInput.readOnly = true;
+            nomeInput.style.background = '#f0f0f0';
+        }
+
+        function limparFormulario() {
+            nomeInput.value = '';
+            nomeInput.readOnly = false;
+            nomeInput.style.background = 'white';
+            posicaoSelect.value = '';
+            document.querySelectorAll('input[name="habilidade"]:checked').forEach(cb => cb.checked = false);
+            atualizarContadorCaracteristicas();
+        }
+
+        selectJogador.addEventListener('change', (e) => {
+            if (e.target.value) {
+                preencherFormularioMensalista(e.target.value);
+            } else {
+                limparFormulario();
+            }
+        });
+
+        function atualizarContadorCaracteristicas() {
+            const checkboxes = document.querySelectorAll('input[name="habilidade"]:checked');
+            const quantidade = checkboxes.length;
+            if (contadorCaracteristicas) {
+                contadorCaracteristicas.textContent = `${quantidade} selecionadas (mínimo 2, máximo 3)`;
+                contadorCaracteristicas.style.color = (quantidade >= 2 && quantidade <= 3) ? '#2c5f2d' : '#8b0000';
+            }
+        }
+
+        function criarCheckboxesHabilidades() {
+            const container = document.getElementById('habilidadesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            HABILIDADES_DISPONIVEIS.forEach(habilidade => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-habilidade';
+                label.innerHTML = `<input type="checkbox" name="habilidade" value="${habilidade}"><span>${habilidade}</span>`;
+                container.appendChild(label);
+            });
+            document.querySelectorAll('input[name="habilidade"]').forEach(cb => {
+                cb.addEventListener('change', atualizarContadorCaracteristicas);
+            });
+            atualizarContadorCaracteristicas();
+        }
+
+        function getHabilidadesSelecionadas() {
+            const checkboxes = document.querySelectorAll('input[name="habilidade"]:checked');
+            const quantidade = checkboxes.length;
+            if (quantidade < 2) {
+                exibirMensagem('⚠️ Selecione no MÍNIMO 2 características para este jogador no jogo de hoje!', 'erro');
+                return null;
+            }
+            if (quantidade > 3) {
+                exibirMensagem('⚠️ Selecione no MÁXIMO 3 características por jogador!', 'erro');
+                return null;
+            }
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function adicionarJogador(nome, posicao, habilidades, tipo) {
+            if (jogadoresEscala.length >= 12) {
+                exibirMensagem('⚠️ Limite máximo de 12 jogadores na escala!', 'erro');
+                return false;
+            }
+            
+            if (!nome || !posicao || !habilidades || habilidades.length === 0) {
+                exibirMensagem('⚠️ Preencha todos os campos!', 'erro');
+                return false;
+            }
+            
+            const jogadorExistente = jogadoresEscala.find(j => j.nome.toLowerCase() === nome.toLowerCase());
+            if (jogadorExistente) {
+                // Atualizar características e posição do jogador existente
+                jogadorExistente.posicao = posicao;
+                jogadorExistente.habilidades = habilidades;
+                salvarDados();
+                atualizarInterface();
+                exibirMensagem(`✅ Jogador ${nome} atualizado para este jogo!`);
+                limparFormulario();
+                atualizarSelectMensalistas();
+                timeA = [];
+                timeB = [];
+                timesContainer.style.display = 'none';
+                return true;
+            }
+            
+            // Adicionar novo jogador
+            jogadoresEscala.push({
+                id: Date.now(),
+                nome: nome.trim(),
+                posicao: posicao,
+                habilidades: habilidades,
+                tipo: tipo
+            });
+            
+            salvarDados();
+            atualizarInterface();
+            exibirMensagem(`✅ ${nome} adicionado à escala!`);
+            
+            limparFormulario();
+            atualizarSelectMensalistas();
+            timeA = [];
+            timeB = [];
+            timesContainer.style.display = 'none';
+            return true;
+        }
+
+        window.removerJogador = function(id) {
+            const jogador = jogadoresEscala.find(j => j.id === id);
+            if (!jogador) return;
+            
+            if (jogador.tipo === 'mensalista') {
+                if (confirm(`⚠️ ${jogador.nome} é um mensalista fixo. Remover da escala de hoje?`)) {
+                    jogadoresEscala = jogadoresEscala.filter(j => j.id !== id);
+                    salvarDados();
+                    atualizarInterface();
+                    exibirMensagem(`🗑️ ${jogador.nome} removido da escala de hoje!`);
+                }
+            } else {
+                jogadoresEscala = jogadoresEscala.filter(j => j.id !== id);
+                salvarDados();
+                atualizarInterface();
+                exibirMensagem(`🗑️ Convidado ${jogador.nome} removido!`);
+            }
+            
+            timeA = [];
+            timeB = [];
+            timesContainer.style.display = 'none';
+            atualizarSelectMensalistas();
+        };
+
+        function resetarConvidados() {
+            if (confirm('⚠️ Remover TODOS os convidados da escala de hoje?')) {
+                jogadoresEscala = jogadoresEscala.filter(j => j.tipo === 'mensalista');
+                salvarDados();
+                atualizarInterface();
+                timesContainer.style.display = 'none';
+                exibirMensagem('🔄 Todos os convidados foram removidos!');
+                atualizarSelectMensalistas();
+            }
+        }
+
+        function resetarTudo() {
+            if (confirm('⚠️ ATENÇÃO! Isso vai resetar TODA a escala (incluindo mensalistas). Confirmar?')) {
+                jogadoresEscala = [];
+                salvarDados();
+                atualizarInterface();
+                timesContainer.style.display = 'none';
+                exibirMensagem('🔄 Tudo foi resetado!');
+                atualizarSelectMensalistas();
+            }
+        }
+
+        function distribuirAlternado(jogadoresLista, timeAArray, timeBArray) {
+            jogadoresLista.forEach((jogador, index) => {
+                if (index % 2 === 0) timeAArray.push(jogador);
+                else timeBArray.push(jogador);
+            });
+        }
+
+        function embaralharArray(array) {
+            const novoArray = [...array];
+            for (let i = novoArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [novoArray[i], novoArray[j]] = [novoArray[j], novoArray[i]];
+            }
+            return novoArray;
+        }
+
+        function balancearQuantidadeTimes() {
+            while (Math.abs(timeA.length - timeB.length) > 1) {
+                if (timeA.length > timeB.length) timeB.unshift(timeA.pop());
+                else if (timeB.length > timeA.length) timeA.unshift(timeB.pop());
+            }
+        }
+
+        function sortearTimes() {
+            if (jogadoresEscala.length < 4) {
+                exibirMensagem('⚠️ Adicione pelo menos 4 jogadores na escala para sortear!', 'erro');
+                return;
+            }
+            
+            const goleiros = jogadoresEscala.filter(j => j.posicao === 'Goleiro');
+            const fixos = jogadoresEscala.filter(j => j.posicao === 'Fixo');
+            const alasEsquerda = jogadoresEscala.filter(j => j.posicao === 'Ala Esquerda');
+            const alasDireita = jogadoresEscala.filter(j => j.posicao === 'Ala Direita');
+            const pivos = jogadoresEscala.filter(j => j.posicao === 'Pivô');
+            
+            timeA = [];
+            timeB = [];
+            
+            if (goleiros.length === 1) timeA.push(goleiros[0]);
+            else if (goleiros.length >= 2) {
+                goleiros.forEach((g, i) => i % 2 === 0 ? timeA.push(g) : timeB.push(g));
+            }
+            
+            distribuirAlternado(fixos, timeA, timeB);
+            distribuirAlternado(alasEsquerda, timeA, timeB);
+            distribuirAlternado(alasDireita, timeA, timeB);
+            distribuirAlternado(pivos, timeA, timeB);
+            
+            const jogadoresJaAlocados = [...timeA, ...timeB];
+            const jogadoresRestantes = jogadoresEscala.filter(j => !jogadoresJaAlocados.includes(j));
+            distribuirAlternado(jogadoresRestantes, timeA, timeB);
+            
+            balancearQuantidadeTimes();
+            timeA = embaralharArray(timeA);
+            timeB = embaralharArray(timeB);
+            
+            exibirTimes();
+            exibirMensagem('🎲 Times sorteados com sucesso!');
+        }
+
+        function exibirTimes() {
+            timeALista.innerHTML = '';
+            timeBLista.innerHTML = '';
+            
+            timeA.forEach(j => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${j.nome}</strong> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}<br><span class="posicao">${j.posicao}</span><div class="habilidades-lista">${j.habilidades.map(h => `<span class="habilidade">${h}</span>`).join('')}</div>`;
+                timeALista.appendChild(li);
+            });
+            
+            timeB.forEach(j => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${j.nome}</strong> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}<br><span class="posicao">${j.posicao}</span><div class="habilidades-lista">${j.habilidades.map(h => `<span class="habilidade">${h}</span>`).join('')}</div>`;
+                timeBLista.appendChild(li);
+            });
+            
+            timesContainer.style.display = 'block';
+            timesContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function atualizarInterface() {
+            const mensalistasNaEscala = jogadoresEscala.filter(j => MENSALISTAS.includes(j.nome));
+            const convidadosNaEscala = jogadoresEscala.filter(j => !MENSALISTAS.includes(j.nome));
+            
+            totalMensalistasSpan.textContent = mensalistasNaEscala.length;
+            totalConvidadosSpan.textContent = convidadosNaEscala.length;
+            totalJogadoresSpan.textContent = jogadoresEscala.length;
+            totalInfoSpan.textContent = `${jogadoresEscala.length}/12`;
+            
+            if (jogadoresEscala.length === 0) {
+                listaJogadoresDiv.innerHTML = '<p class="vazio">Nenhum jogador na escala. Adicione acima.</p>';
+                return;
+            }
+            
+            const ul = document.createElement('ul');
+            ul.className = 'lista-jogadores';
+            
+            jogadoresEscala.forEach(j => {
+                const li = document.createElement('li');
+                const badge = MENSALISTAS.includes(j.nome) ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>';
+                li.innerHTML = `
+                    <div class="jogador-info">
+                        <strong>${j.nome}</strong> ${badge}
+                        <span class="posicao">${j.posicao}</span>
+                        <div class="habilidades-lista">${j.habilidades.map(h => `<span class="habilidade">${h}</span>`).join('')}</div>
+                    </div>
+                    <button class="btn-deletar" onclick="removerJogador(${j.id})">❌ Remover</button>
+                `;
+                ul.appendChild(li);
+            });
+            
+            listaJogadoresDiv.innerHTML = '';
+            listaJogadoresDiv.appendChild(ul);
+            atualizarSelectMensalistas();
+        }
+
+        formJogador.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const habilidades = getHabilidadesSelecionadas();
+            if (!habilidades) return;
+            
+            let nome = nomeInput.value.trim();
+            if (!nome) {
+                exibirMensagem('⚠️ Digite o nome do jogador!', 'erro');
+                return;
+            }
+            
+            const posicao = posicaoSelect.value;
+            if (!posicao) {
+                exibirMensagem('⚠️ Selecione a posição!', 'erro');
+                return;
+            }
+            
+            const tipo = MENSALISTAS.includes(nome) ? 'mensalista' : 'convidado';
+            adicionarJogador(nome, posicao, habilidades, tipo);
+        });
+        
+        btnResetarConvidados.addEventListener('click', resetarConvidados);
+        btnResetarTudo.addEventListener('click', resetarTudo);
+        btnSortear.addEventListener('click', sortearTimes);
+        
+        criarCheckboxesHabilidades();
+        carregarDados();
+    </script>
+</body>
+</html>
