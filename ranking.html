@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYSS Futebol - Ranking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('image.png');
+            background-repeat: repeat;
+            background-size: 120px;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px 30px;
+            border-radius: 60px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        .logo { max-width: 60px; height: auto; border-radius: 12px; }
+        h1 { color: white; font-size: 1.8em; }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            color: #8b0000;
+            border-bottom: 3px solid #8b0000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .ranking-posicao { font-size: 1.5em; font-weight: 700; color: #8b0000; width: 60px; }
+        .ranking-nome { flex: 2; font-weight: 600; }
+        .ranking-estrelas { display: flex; gap: 5px; }
+        .estrela { color: #ffcc00; font-size: 1.3em; }
+        .ranking-total { font-weight: 700; color: #8b0000; min-width: 80px; text-align: right; }
+        .badge-mensalista { background: #ffcc00; color: #8b0000; font-size: 0.7em; padding: 2px 8px; border-radius: 20px; margin-left: 10px; }
+        .btn {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 20px;
+            width: 100%;
+        }
+        @media (max-width: 768px) { .ranking-item { flex-wrap: wrap; gap: 10px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area">
+                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
+                <h1>🏆 Ranking da Partida</h1>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="infoPartida" style="text-align: center; margin-bottom: 20px; padding: 10px; background: #ffe5e5; border-radius: 12px;">Carregando...</div>
+            <div id="rankingContainer">Carregando...</div>
+            <button id="btnVoltar" class="btn">← Voltar à Partida</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function carregarRanking() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let partidaId = urlParams.get('partida') || localStorage.getItem('partidaRanking');
+            if (!partidaId) { document.getElementById('rankingContainer').innerHTML = 'Partida não encontrada'; return; }
+
+            const { data: partida } = await supabaseClient.from('partidas').select('*').eq('id', partidaId).single();
+            if (partida) document.getElementById('infoPartida').innerHTML = `📅 ${new Date(partida.data).toLocaleDateString('pt-BR')}`;
+
+            const { data: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('*').eq('partida_id', partidaId);
+            const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
+
+            if (!escala || escala.length === 0) { document.getElementById('rankingContainer').innerHTML = 'Nenhum jogador encontrado'; return; }
+
+            const estrelas = {};
+            if (avaliacoes) avaliacoes.forEach(a => { estrelas[a.avaliado_nome] = (estrelas[a.avaliado_nome] || 0) + a.nota; });
+
+            const ranking = escala.map(j => ({ nome: j.jogador_nome, tipo: j.tipo, total: estrelas[j.jogador_nome] || 0 }));
+            ranking.sort((a, b) => b.total - a.total);
+
+            if (ranking.every(r => r.total === 0)) { document.getElementById('rankingContainer').innerHTML = 'Nenhuma avaliação ainda'; return; }
+
+            document.getElementById('rankingContainer').innerHTML = ranking.map((j, idx) => `
+                <div class="ranking-item">
+                    <div class="ranking-posicao">${idx + 1}º</div>
+                    <div class="ranking-nome">${j.nome} ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : ''}</div>
+                    <div class="ranking-estrelas">${'★'.repeat(Math.min(j.total, 5))}${'☆'.repeat(Math.max(0, 5 - j.total))}</div>
+                    <div class="ranking-total">${j.total} ⭐</div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('btnVoltar').addEventListener('click', () => { window.location.href = 'partida.html'; });
+        carregarRanking();
+    </script>
+</body>
+</html>
