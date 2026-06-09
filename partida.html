@@ -157,4 +157,29 @@
                 `).join('');
                 
                 document.getElementById('timeBLista').innerHTML = timeB.map(j => `
-                    <li
+                    <li>
+                        <strong>${j.jogador_nome}</strong>
+                        <div>📍 ${j.posicao}</div>
+                        ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}
+                    </li>
+                `).join('');
+            }
+        }
+
+        document.getElementById('btnAvaliar').addEventListener('click', () => {
+            localStorage.setItem('partidaAtual', partidaId);
+            window.location.href = 'avaliar.html';
+        });
+
+        document.getElementById('btnRanking').addEventListener('click', () => {
+            window.location.href = 'ranking.html?partida=' + partidaId;
+        });
+
+        document.getElementById('btnNovoJogo').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        carregarPartida();
+    </script>
+</body>
+</html>
