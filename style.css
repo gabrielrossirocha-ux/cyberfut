@@ -1,4 +1,61 @@
-/* Estilos para múltiplas características */
+/* Estilos para características */
+.caracteristicas-area {
+    margin: 15px 0;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.label-caracteristicas {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #8b0000;
+}
+
+.habilidades-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.checkbox-habilidade {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    background: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    transition: all 0.2s;
+}
+
+.checkbox-habilidade:hover {
+    background: #ffe5e5;
+    border-color: #8b0000;
+}
+
+.checkbox-habilidade input {
+    width: auto;
+    margin-right: 5px;
+    margin-top: 0;
+}
+
+.checkbox-habilidade span {
+    color: #333;
+}
+
+.contador-caracteristicas {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    margin-top: 5px;
+    color: #8b0000;
+}
+
 .habilidades-lista {
     display: flex;
     flex-wrap: wrap;
@@ -15,40 +72,6 @@
     display: inline-block;
 }
 
-.checkbox-habilidade {
-    display: inline-flex;
-    align-items: center;
-    margin-right: 15px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.checkbox-habilidade input {
-    width: auto;
-    margin-right: 5px;
-    margin-top: 0;
-}
-
-.checkbox-habilidade span {
-    color: #333;
-}
-
-.label-habilidades {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: #8b0000;
-}
-
-#habilidadesContainer {
-    background: #f9f9f9;
-    padding: 10px;
-    border-radius: 8px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-}
-
 .jogador-info {
     flex: 1;
 }
@@ -58,6 +81,11 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    background: #f9f9f9;
+    margin: 8px 0;
+    padding: 10px;
+    border-radius: 8px;
+    border-left: 4px solid #8b0000;
 }
 
 .btn-deletar {
@@ -68,7 +96,6 @@
     border-radius: 5px;
     cursor: pointer;
     font-size: 12px;
-    margin-top: 5px;
     width: auto;
 }
 
@@ -78,16 +105,16 @@
 
 @media (max-width: 768px) {
     .checkbox-habilidade {
-        margin-right: 8px;
         font-size: 12px;
-    }
-    
-    .habilidades-lista {
-        margin-top: 8px;
+        padding: 3px 8px;
     }
     
     .lista-jogadores li {
         flex-direction: column;
         text-align: center;
+    }
+    
+    .btn-deletar {
+        margin-top: 10px;
     }
 }
