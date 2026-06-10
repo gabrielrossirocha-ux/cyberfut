@@ -12,24 +12,27 @@
         }
 
         body {
-            overflow: hidden;
-            background: #000;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Poppins', Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            position: relative;
         }
 
-        /* INTRO */
+        /* ============================================ */
+        /* TELA DE ABERTURA (INTRO) */
+        /* ============================================ */
         #intro {
             position: fixed;
             inset: 0;
             background: #000;
-            z-index: 9999;
+            z-index: 10000;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
         }
 
-        /* Estádio */
         .stadium {
             position: absolute;
             inset: 0;
@@ -58,7 +61,6 @@
             to { opacity: 1; }
         }
 
-        /* Partículas */
         .particles {
             position: absolute;
             inset: 0;
@@ -85,7 +87,6 @@
             }
         }
 
-        /* Bola */
         .ball {
             position: absolute;
             width: 140px;
@@ -113,7 +114,6 @@
             }
         }
 
-        /* Explosão */
         .flash {
             position: absolute;
             inset: 0;
@@ -129,7 +129,6 @@
             100% { opacity: 0; }
         }
 
-        /* Logo */
         .logo-wrapper {
             position: absolute;
             text-align: center;
@@ -139,14 +138,14 @@
             z-index: 10;
         }
 
-        .logo {
+        .logo-anim {
             width: 280px;
             max-width: 70vw;
             filter: drop-shadow(0 0 15px red) drop-shadow(0 0 30px rgba(255,0,0,0.5));
             border-radius: 20px;
         }
 
-        .title {
+        .title-anim {
             color: #fff;
             font-size: 42px;
             font-weight: bold;
@@ -155,7 +154,7 @@
             text-shadow: 0 0 10px red;
         }
 
-        .subtitle {
+        .subtitle-anim {
             color: #ccc;
             margin-top: 8px;
             letter-spacing: 2px;
@@ -172,22 +171,130 @@
             }
         }
 
-        /* Fade final */
-        .fade-out {
-            animation: endIntro .8s forwards;
+        /* Esconder intro */
+        .intro-hidden {
+            opacity: 0 !important;
+            visibility: hidden !important;
         }
 
-        @keyframes endIntro {
-            to {
-                opacity: 0;
-                visibility: hidden;
-            }
+        /* ============================================ */
+        /* CONTEÚDO PRINCIPAL (MENU) */
+        /* ============================================ */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px 40px;
+            border-radius: 80px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .logo-menu {
+            max-width: 80px;
+            height: auto;
+            border-radius: 16px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitulo {
+            color: #ffcccc;
+            text-align: center;
+            font-size: 1em;
+        }
+
+        .menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .menu-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 35px 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .menu-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .menu-card h2 {
+            color: #8b0000;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .menu-card p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8em;
+        }
+
+        /* Esconder conteúdo principal até a intro acabar */
+        .main-content {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .main-content.visible {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .logo-area { padding: 12px 25px; }
+            .logo-menu { max-width: 50px; }
+            h1 { font-size: 1.5em; }
+            .menu-icon { font-size: 3em; }
+            .title-anim { font-size: 28px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE ABERTURA -->
+    <!-- TELA DE ABERTURA (INTRO) -->
     <div id="intro">
         <div class="stadium"></div>
         <div class="lights"></div>
@@ -195,14 +302,51 @@
         <div class="ball"></div>
         <div class="flash"></div>
         <div class="logo-wrapper">
-            <img class="logo" src="image.png" alt="CYSS Futebol">
-            <div class="title">CYSS FUTEBOL</div>
-            <div class="subtitle">Campeonato Interno</div>
+            <img class="logo-anim" src="image.png" alt="CYSS Futebol">
+            <div class="title-anim">CYSS FUTEBOL</div>
+            <div class="subtitle-anim">Campeonato Interno</div>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL (MENU) -->
+    <div class="main-content" id="mainContent">
+        <div class="container">
+            <div class="header">
+                <div class="logo-area">
+                    <img src="image.png" alt="CYSS Futebol" class="logo-menu" onerror="this.style.display='none'">
+                    <h1>⚽ CYSS FUTEBOL</h1>
+                </div>
+                <p class="subtitulo">Sistema de gestão de partidas e avaliações</p>
+            </div>
+
+            <div class="menu">
+                <div class="menu-card" id="btnNovaPartida">
+                    <div class="menu-icon">📅</div>
+                    <h2>Nova Partida</h2>
+                    <p>Criar uma nova partida, adicionar jogadores e sortear os times</p>
+                </div>
+
+                <div class="menu-card" id="btnAvaliar">
+                    <div class="menu-icon">⭐</div>
+                    <h2>Avaliar Partidas</h2>
+                    <p>Mensalistas: faça login e avalie os jogadores das partidas</p>
+                </div>
+
+                <div class="menu-card" id="btnRanking">
+                    <div class="menu-icon">🏆</div>
+                    <h2>Ranking Geral</h2>
+                    <p>Veja o acumulado de estrelas de todos os jogadores</p>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>CYSS FUTEBOL | Goleiros sempre em times diferentes | Avaliações por partida</p>
+            </div>
         </div>
     </div>
 
     <script>
-        // Criar partículas
+        // Criar partículas da animação
         const container = document.getElementById('particles');
         for (let i = 0; i < 120; i++) {
             const p = document.createElement('div');
@@ -213,15 +357,26 @@
             container.appendChild(p);
         }
 
-        // Encerrar intro e redirecionar para o site principal
+        // Após a animação, esconder intro e mostrar conteúdo principal
         setTimeout(() => {
-            document.getElementById('intro').classList.add('fade-out');
+            const intro = document.getElementById('intro');
+            intro.classList.add('intro-hidden');
             
-            // Após o fade, redirecionar para o site principal
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 800);
+            // Mostrar o conteúdo principal com fade
+            const mainContent = document.getElementById('mainContent');
+            mainContent.classList.add('visible');
         }, 5000);
+
+        // Eventos dos botões do menu
+        document.getElementById('btnNovaPartida').addEventListener('click', () => {
+            window.location.href = 'nova-partida.html';
+        });
+        document.getElementById('btnAvaliar').addEventListener('click', () => {
+            window.location.href = 'avaliar.html';
+        });
+        document.getElementById('btnRanking').addEventListener('click', () => {
+            window.location.href = 'ranking.html';
+        });
     </script>
 
 </body>
