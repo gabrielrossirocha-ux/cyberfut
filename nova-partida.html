@@ -262,6 +262,14 @@
         const ORDEM_POSICOES = { 'Goleiro': 1, 'Fixo': 2, 'Ala Esquerda': 3, 'Ala Direita': 4, 'Pivô': 5 };
         function ordenarPorPosicao(jogadores) { return [...jogadores].sort((a, b) => (ORDEM_POSICOES[a.posicao] || 99) - (ORDEM_POSICOES[b.posicao] || 99)); }
 
+        function embaralharArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
         async function carregarLocais() {
             const { data, error } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
             if (error) {
@@ -351,9 +359,6 @@
 
         window.removerJogador = (id) => { jogadoresEscala = jogadoresEscala.filter(j => j.id !== id); atualizarLista(); timeA = []; timeB = []; document.getElementById('timesContainer').style.display = 'none'; };
 
-        function distribuirAlternado(lista, a, b) { lista.forEach((j, i) => i % 2 === 0 ? a.push(j) : b.push(j)); }
-        function embaralhar(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
-
         document.getElementById('btnSortear').addEventListener('click', async () => {
             if (partidaFinalizada) { alert('⚠️ Esta partida já foi finalizada!'); return; }
             if (jogadoresEscala.length < 4) { alert('Mínimo 4 jogadores!'); return; }
@@ -367,7 +372,69 @@
             const localSelecionado = locaisLista.find(l => l.id == localId);
             const endereco = localSelecionado?.endereco || '';
 
-            // CORREÇÃO: garantir que a data está correta
+            // ============================================
+            // SORTEIO EQUILIBRADO POR POSIÇÃO
+            // ============================================
+            
+            // Separar jogadores por posição
+            const porPosicao = {
+                'Goleiro': [],
+                'Fixo': [],
+                'Ala Esquerda': [],
+                'Ala Direita': [],
+                'Pivô': []
+            };
+            
+            // Agrupar por posição
+            jogadoresEscala.forEach(j => {
+                if (porPosicao[j.posicao]) {
+                    porPosicao[j.posicao].push(j);
+                } else {
+                    if (!porPosicao.outros) porPosicao.outros = [];
+                    porPosicao.outros.push(j);
+                }
+            });
+            
+            // Embaralhar jogadores dentro de cada posição
+            for (let pos in porPosicao) {
+                porPosicao[pos] = embaralharArray([...porPosicao[pos]]);
+            }
+            
+            timeA = [];
+            timeB = [];
+            
+            // Ordem de prioridade das posições
+            const ordemPosicoes = ['Goleiro', 'Fixo', 'Ala Esquerda', 'Ala Direita', 'Pivô', 'outros'];
+            
+            // Distribuir cada posição alternadamente
+            ordemPosicoes.forEach(pos => {
+                const jogadoresPos = porPosicao[pos] || [];
+                jogadoresPos.forEach((jogador, index) => {
+                    if (index % 2 === 0) {
+                        timeA.push(jogador);
+                    } else {
+                        timeB.push(jogador);
+                    }
+                });
+            });
+            
+            // Balancear quantidade final
+            while (Math.abs(timeA.length - timeB.length) > 1) {
+                if (timeA.length > timeB.length) {
+                    timeB.unshift(timeA.pop());
+                } else if (timeB.length > timeA.length) {
+                    timeA.unshift(timeB.pop());
+                }
+            }
+            
+            // Embaralhar a ordem dentro de cada time
+            timeA = embaralharArray(timeA);
+            timeB = embaralharArray(timeB);
+            
+            // ============================================
+            // SALVAR NO BANCO
+            // ============================================
+            
             const partida = {
                 data: data,
                 horario: document.getElementById('horarioPartida').value,
@@ -376,35 +443,23 @@
                 observacoes: document.getElementById('observacoes').value
             };
 
-            console.log('Salvando partida:', partida);
-
             const { data: novaPartida, error } = await supabaseClient.from('partidas').insert(partida).select().single();
             if (error) { 
                 alert('Erro ao salvar partida: ' + error.message); 
-                console.error('Erro detalhado:', error);
                 return; 
             }
             
-            console.log('Partida salva com ID:', novaPartida.id, 'Data:', novaPartida.data);
             partidaId = novaPartida.id;
-
-            const goleiros = jogadoresEscala.filter(j => j.posicao === 'Goleiro');
-            const outros = jogadoresEscala.filter(j => j.posicao !== 'Goleiro');
-            timeA = []; timeB = [];
-            if (goleiros.length === 1) timeA.push(goleiros[0]);
-            else goleiros.forEach((g, i) => i % 2 === 0 ? timeA.push(g) : timeB.push(g));
-            distribuirAlternado(outros, timeA, timeB);
-            while (Math.abs(timeA.length - timeB.length) > 1) {
-                if (timeA.length > timeB.length) timeB.unshift(timeA.pop());
-                else timeA.unshift(timeB.pop());
-            }
-            timeA = embaralhar(timeA); timeB = embaralhar(timeB);
 
             const escala = [...timeA.map(j => ({ ...j, time: 'A' })), ...timeB.map(j => ({ ...j, time: 'B' }))];
             for (const j of escala) {
                 await supabaseClient.from('escala_partida').insert({
-                    partida_id: partidaId, jogador_nome: j.nome, posicao: j.posicao,
-                    habilidades: [], tipo: j.tipo, time: j.time
+                    partida_id: partidaId, 
+                    jogador_nome: j.nome, 
+                    posicao: j.posicao,
+                    habilidades: [], 
+                    tipo: j.tipo, 
+                    time: j.time
                 });
             }
 
