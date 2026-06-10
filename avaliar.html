@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>CYSS Futebol - Avaliar Jogadores</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -11,7 +11,7 @@
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 16px;
             position: relative;
         }
         body::before {
@@ -23,7 +23,7 @@
             height: 100%;
             background-image: url('image.png');
             background-repeat: repeat;
-            background-size: 150px;
+            background-size: 120px;
             opacity: 0.15;
             pointer-events: none;
             z-index: 0;
@@ -34,25 +34,27 @@
             position: relative;
             z-index: 1;
         }
-        .header { text-align: center; margin-bottom: 30px; }
+        .header { text-align: center; margin-bottom: 25px; }
         .logo-area {
             display: inline-flex;
             align-items: center;
-            gap: 20px;
+            gap: 12px;
             background: rgba(0, 0, 0, 0.4);
-            padding: 15px 30px;
+            padding: 10px 20px;
             border-radius: 60px;
             margin-bottom: 15px;
             border: 1px solid rgba(255, 215, 0, 0.3);
-            backdrop-filter: blur(5px);
+            cursor: pointer;
+            transition: transform 0.2s;
         }
-        .logo { max-width: 60px; height: auto; border-radius: 12px; }
-        h1 { color: white; font-size: 1.8em; }
+        .logo-area:active { transform: scale(0.98); }
+        .logo { max-width: 45px; height: auto; border-radius: 12px; }
+        h1 { color: white; font-size: 1.4em; }
         .card {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 24px;
-            padding: 25px;
-            margin-bottom: 25px;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
         .card h2 {
@@ -60,28 +62,32 @@
             border-bottom: 3px solid #8b0000;
             padding-bottom: 10px;
             margin-bottom: 20px;
+            font-size: 1.3em;
         }
         .login-area { max-width: 400px; margin: 0 auto; }
         .login-input {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             margin: 10px 0;
             border: 2px solid #ddd;
             border-radius: 12px;
             font-size: 16px;
+            font-family: inherit;
         }
         .btn {
             background: #8b0000;
             color: white;
-            padding: 12px;
+            padding: 14px;
             border: none;
             border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
             width: 100%;
             transition: all 0.3s;
+            font-size: 16px;
+            min-height: 48px;
         }
-        .btn:hover { transform: translateY(-2px); }
+        .btn:active { transform: scale(0.98); }
         .btn-salvar {
             background: #2c5f2d;
             font-size: 1.1em;
@@ -90,47 +96,60 @@
         .btn-salvar:disabled {
             background: #ccc;
             cursor: not-allowed;
+            transform: none;
         }
-        .estrelas { display: flex; gap: 8px; margin: 15px 0; justify-content: center; }
-        .estrela { font-size: 35px; cursor: pointer; color: #ccc; transition: all 0.2s; }
+        .estrelas { display: flex; gap: 12px; margin: 15px 0; justify-content: center; flex-wrap: wrap; }
+        .estrela { font-size: 40px; cursor: pointer; color: #ccc; transition: all 0.2s; }
         .estrela.selected { color: #ffcc00; }
-        .jogadores-grid { display: grid; gap: 20px; margin-top: 20px; }
+        .estrela:active { transform: scale(1.1); }
+        .jogadores-grid { display: flex; flex-direction: column; gap: 16px; margin-top: 20px; }
         .jogador-card {
             background: white;
             border-radius: 16px;
-            padding: 20px;
+            padding: 16px;
             border-left: 5px solid #8b0000;
         }
-        .jogador-card.avaliado { border-left-color: #2c5f2d; background: #f0fff0; }
-        .jogador-nome { font-size: 1.3em; font-weight: 700; color: #8b0000; margin-bottom: 10px; }
-        .jogador-nome small { font-size: 0.8em; font-weight: normal; }
+        .jogador-card.avaliado {
+            border-left-color: #2c5f2d;
+            background: #f0fff0;
+        }
+        .jogador-nome { font-size: 1.2em; font-weight: 700; color: #8b0000; margin-bottom: 8px; }
+        .jogador-nome small { font-size: 0.75em; font-weight: normal; color: #666; }
         textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #ddd;
             border-radius: 10px;
             font-family: inherit;
             margin: 10px 0;
             resize: vertical;
+            font-size: 14px;
         }
         .user-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
+            padding: 12px;
             background: #f5f5f5;
             border-radius: 12px;
             margin-bottom: 20px;
+            font-size: 0.9em;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .status-avaliacao {
             background: #ffe5e5;
-            padding: 10px;
+            padding: 12px;
             border-radius: 10px;
             margin-bottom: 15px;
             text-align: center;
             font-weight: 500;
+            font-size: 0.85em;
         }
-        .status-avaliacao.completo { background: #e8f5e9; color: #2c5f2d; }
+        .status-avaliacao.completo {
+            background: #e8f5e9;
+            color: #2c5f2d;
+        }
         .modal {
             position: fixed;
             top: 0;
@@ -145,14 +164,14 @@
         }
         .modal-content {
             background: white;
-            border-radius: 24px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 90%;
+            width: 400px;
             max-height: 80vh;
             overflow-y: auto;
         }
-        .modal-content h3 { color: #8b0000; margin-bottom: 20px; }
+        .modal-content h3 { color: #8b0000; margin-bottom: 15px; }
         .modal-resumo { margin: 15px 0; max-height: 300px; overflow-y: auto; }
         .resumo-item {
             padding: 8px;
@@ -164,56 +183,31 @@
         }
         .resumo-nota { color: #ffcc00; font-weight: bold; }
         .modal-botoes { display: flex; gap: 15px; margin-top: 20px; }
-        .modal-botoes button { flex: 1; }
-        .btn-cancelar { background: #666; }
-        .btn-confirmar { background: #2c5f2d; }
+        .modal-botoes button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; }
+        .btn-cancelar { background: #666; color: white; }
+        .btn-confirmar { background: #2c5f2d; color: white; }
         
-        /* Lista de partidas */
-        .partida-item {
-            background: white;
-            border-radius: 16px;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            border-left: 5px solid #8b0000;
-            cursor: pointer;
-            transition: all 0.2s;
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .logo-area { gap: 20px; padding: 15px 30px; }
+            .logo { max-width: 60px; }
+            h1 { font-size: 1.8em; }
+            .card { padding: 25px; }
+            .jogadores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+            .estrela { font-size: 35px; }
+            .estrela:hover { transform: scale(1.1); }
         }
-        .partida-item:hover {
-            transform: translateX(5px);
-            background: #f9f9f9;
-        }
-        .partida-data { font-weight: 700; color: #8b0000; }
-        .partida-local { color: #666; font-size: 0.9em; }
-        .btn-selecionar {
-            background: #8b0000;
-            color: white;
-            padding: 8px 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-        .sem-partidas {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        @media (max-width: 768px) { .estrela { font-size: 28px; } }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo-area">
+            <div class="logo-area" id="logoVoltar">
                 <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
                 <h1>⭐ Avaliar Jogadores</h1>
             </div>
         </div>
 
-        <!-- TELA DE LOGIN -->
         <div id="loginScreen" class="card">
             <div class="login-area">
                 <h2>🔐 Login do Mensalista</h2>
@@ -223,24 +217,22 @@
             </div>
         </div>
 
-        <!-- TELA DE SELEÇÃO DE PARTIDAS -->
         <div id="selecaoScreen" style="display: none;">
             <div class="user-info" id="userInfoSelecao"></div>
             <div class="card">
                 <h2>📋 Selecione uma partida para avaliar</h2>
                 <div id="listaPartidasContainer">
-                    <div class="sem-partidas">Carregando partidas...</div>
+                    <div class="status-avaliacao">Carregando partidas...</div>
                 </div>
                 <button id="btnVoltarSelecao" class="btn" style="background:#1a1a1a; margin-top:20px;">← Voltar</button>
             </div>
         </div>
 
-        <!-- TELA DE AVALIAÇÕES -->
         <div id="avaliacoesScreen" style="display: none;">
             <div class="user-info" id="userInfo"></div>
             <div class="card">
                 <h2>📝 Avaliar Jogadores da Partida</h2>
-                <div id="infoPartidaSelecionada" style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px;"></div>
+                <div id="infoPartidaSelecionada" style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; font-size:0.9em;"></div>
                 <div id="statusContainer" class="status-avaliacao"></div>
                 <div id="jogadoresContainer">Carregando...</div>
                 <button id="btnSalvarTodas" class="btn btn-salvar" disabled>💾 SALVAR TODAS AS AVALIAÇÕES</button>
@@ -260,12 +252,10 @@
         let jogadoresPartida = [];
         let avaliacoesPendentes = {};
 
-        // Elementos
         const loginScreen = document.getElementById('loginScreen');
         const selecaoScreen = document.getElementById('selecaoScreen');
         const avaliacoesScreen = document.getElementById('avaliacoesScreen');
 
-        // Carregar mensalistas no select
         async function carregarMensalistas() {
             const { data } = await supabaseClient.from('mensalistas').select('id, nome').order('nome');
             const select = document.getElementById('selectMensalista');
@@ -273,7 +263,6 @@
             if (data) data.forEach(m => { const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.nome; select.appendChild(opt); });
         }
 
-        // Login
         async function fazerLogin() {
             const id = document.getElementById('selectMensalista').value;
             const senha = document.getElementById('senha').value;
@@ -289,100 +278,59 @@
             await carregarPartidasNaoAvaliadas();
         }
 
-        // Buscar partidas que o mensalista ainda não avaliou
         async function carregarPartidasNaoAvaliadas() {
             const container = document.getElementById('listaPartidasContainer');
-            container.innerHTML = '<div class="sem-partidas">Carregando...</div>';
+            container.innerHTML = '<div class="status-avaliacao">Carregando...</div>';
             
-            // Buscar todas as partidas que têm escala
-            const { data: partidas } = await supabaseClient
-                .from('partidas')
-                .select('id, data, local, horario')
-                .order('data', { ascending: false });
-            
+            const { data: partidas } = await supabaseClient.from('partidas').select('id, data, local, horario').order('data', { ascending: false });
             if (!partidas || partidas.length === 0) {
-                container.innerHTML = '<div class="sem-partidas">Nenhuma partida encontrada</div>';
+                container.innerHTML = '<div class="status-avaliacao">Nenhuma partida encontrada</div>';
                 return;
             }
             
-            // Buscar partidas já avaliadas por este mensalista
-            const { data: avaliadas } = await supabaseClient
-                .from('avaliacoes_partida')
-                .select('partida_id')
-                .eq('avaliador_id', mensalistaAtual.id);
-            
+            const { data: avaliadas } = await supabaseClient.from('avaliacoes_partida').select('partida_id').eq('avaliador_id', mensalistaAtual.id);
             const idsAvaliados = new Set(avaliadas?.map(a => a.partida_id) || []);
-            
-            // Filtrar partidas não avaliadas
             const naoAvaliadas = partidas.filter(p => !idsAvaliados.has(p.id));
             
             if (naoAvaliadas.length === 0) {
-                container.innerHTML = '<div class="sem-partidas">✅ Você já avaliou todas as partidas! Obrigado!</div>';
+                container.innerHTML = '<div class="status-avaliacao">✅ Você já avaliou todas as partidas! Obrigado!</div>';
                 return;
             }
             
             container.innerHTML = naoAvaliadas.map(partida => `
-                <div class="partida-item" data-id="${partida.id}">
-                    <div>
-                        <div class="partida-data">📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
-                        <div class="partida-local">📍 ${partida.local || 'Local não informado'}</div>
-                    </div>
-                    <button class="btn-selecionar" data-id="${partida.id}">⭐ Avaliar</button>
+                <div class="jogador-card" style="cursor:pointer;" data-id="${partida.id}">
+                    <div class="jogador-nome">📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
+                    <div>📍 ${partida.local || 'Local não informado'}</div>
+                    <button class="btn" style="margin-top:12px;" data-id="${partida.id}">⭐ Avaliar esta partida</button>
                 </div>
             `).join('');
             
-            // Adicionar eventos aos botões
-            document.querySelectorAll('.btn-selecionar').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const partidaId = parseInt(btn.dataset.id);
-                    await selecionarPartida(partidaId);
+            document.querySelectorAll('[data-id]').forEach(el => {
+                el.addEventListener('click', async (e) => {
+                    const id = parseInt(el.dataset.id);
+                    if (!isNaN(id)) await selecionarPartida(id);
                 });
             });
         }
 
-        // Selecionar uma partida para avaliar
         async function selecionarPartida(partidaId) {
             partidaSelecionada = partidaId;
-            
-            // Buscar dados da partida
-            const { data: partida } = await supabaseClient
-                .from('partidas')
-                .select('*')
-                .eq('id', partidaId)
-                .single();
-            
-            // Buscar jogadores da partida (exceto o próprio mensalista)
-            const { data: escala } = await supabaseClient
-                .from('escala_partida')
-                .select('*')
-                .eq('partida_id', partidaId);
-            
+            const { data: partida } = await supabaseClient.from('partidas').select('*').eq('id', partidaId).single();
+            const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
             jogadoresPartida = escala?.filter(j => j.jogador_nome !== mensalistaAtual.nome) || [];
             
-            // Verificar se já existem avaliações (segurança)
-            const { data: avaliacoesExistentes } = await supabaseClient
-                .from('avaliacoes_partida')
-                .select('*')
-                .eq('partida_id', partidaId)
-                .eq('avaliador_id', mensalistaAtual.id);
-            
+            const { data: avaliacoesExistentes } = await supabaseClient.from('avaliacoes_partida').select('*').eq('partida_id', partidaId).eq('avaliador_id', mensalistaAtual.id);
             if (avaliacoesExistentes && avaliacoesExistentes.length > 0) {
                 alert('Você já avaliou esta partida! Voltando à lista...');
                 await carregarPartidasNaoAvaliadas();
                 return;
             }
             
-            // Limpar pendências
             avaliacoesPendentes = {};
-            
-            // Exibir tela de avaliação
             selecaoScreen.style.display = 'none';
             avaliacoesScreen.style.display = 'block';
-            
             document.getElementById('userInfo').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Avalie os jogadores</span>`;
             document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} | 📍 ${partida.local || 'Local não informado'}`;
-            
             renderizarJogadores();
             atualizarStatus();
         }
@@ -419,14 +367,9 @@
                 card.setAttribute('data-jogador', j.jogador_nome);
                 
                 card.innerHTML = `
-                    <div class="jogador-nome">
-                        ${j.jogador_nome} <small>📍 ${j.posicao}</small>
-                        ${pendente.nota > 0 ? ' ✓' : ''}
-                    </div>
+                    <div class="jogador-nome">${j.jogador_nome} <small>📍 ${j.posicao}</small> ${pendente.nota > 0 ? ' ✓' : ''}</div>
                     <div class="estrelas" data-jogador="${j.jogador_nome}">
-                        ${[1,2,3,4,5].map(n => `
-                            <span class="estrela ${pendente.nota >= n ? 'selected' : ''}" data-nota="${n}">★</span>
-                        `).join('')}
+                        ${[1,2,3,4,5].map(n => `<span class="estrela ${pendente.nota >= n ? 'selected' : ''}" data-nota="${n}">★</span>`).join('')}
                     </div>
                     <textarea class="comentario-input" placeholder="Comentário (opcional, até 100 caracteres)" maxlength="100">${pendente.comentario || ''}</textarea>
                 `;
@@ -438,21 +381,11 @@
                 estrelasDiv.querySelectorAll('.estrela').forEach(estrela => {
                     estrela.addEventListener('click', () => {
                         const nota = parseInt(estrela.dataset.nota);
-                        
-                        estrelasDiv.querySelectorAll('.estrela').forEach((s, i) => {
-                            if (i < nota) s.classList.add('selected');
-                            else s.classList.remove('selected');
-                        });
-                        
-                        if (!avaliacoesPendentes[jogadorNome]) {
-                            avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: '' };
-                        }
+                        estrelasDiv.querySelectorAll('.estrela').forEach((s, i) => i < nota ? s.classList.add('selected') : s.classList.remove('selected'));
+                        if (!avaliacoesPendentes[jogadorNome]) avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: '' };
                         avaliacoesPendentes[jogadorNome].nota = nota;
                         avaliacoesPendentes[jogadorNome].comentario = textarea.value;
-                        
-                        if (nota > 0) card.classList.add('avaliado');
-                        else card.classList.remove('avaliado');
-                        
+                        card.classList.toggle('avaliado', nota > 0);
                         atualizarStatus();
                     });
                 });
@@ -470,72 +403,33 @@
         }
 
         function exibirModalConfirmacao() {
-            const avaliacoes = [];
-            for (const [nome, dados] of Object.entries(avaliacoesPendentes)) {
-                if (dados.nota > 0) {
-                    avaliacoes.push({ nome, nota: dados.nota, comentario: dados.comentario || 'Sem comentário' });
-                }
-            }
-            
-            if (avaliacoes.length === 0) {
-                alert('Nenhuma avaliação foi feita! Selecione as notas primeiro.');
-                return;
-            }
+            const avaliacoes = Object.entries(avaliacoesPendentes).filter(([_, dados]) => dados.nota > 0).map(([nome, dados]) => ({ nome, nota: dados.nota, comentario: dados.comentario || 'Sem comentário' }));
+            if (avaliacoes.length === 0) { alert('Nenhuma avaliação foi feita!'); return; }
             
             const modal = document.createElement('div');
             modal.className = 'modal';
             modal.innerHTML = `
                 <div class="modal-content">
                     <h3>⚠️ Confirmar Avaliações</h3>
-                    <p>Você está prestes a avaliar <strong>${avaliacoes.length}</strong> jogador(es):</p>
-                    <div class="modal-resumo">
-                        ${avaliacoes.map(a => `
-                            <div class="resumo-item">
-                                <span><strong>${a.nome}</strong></span>
-                                <span class="resumo-nota">${'★'.repeat(a.nota)}${'☆'.repeat(5-a.nota)} (${a.nota})</span>
-                                <span style="width:100%; font-size:0.8em; color:#666;">💬 ${a.comentario.substring(0, 50)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <p style="color: #8b0000;"><strong>ATENÇÃO:</strong> Após confirmar, as avaliações NÃO poderão ser alteradas!</p>
-                    <div class="modal-botoes">
-                        <button class="btn-cancelar">❌ Cancelar</button>
-                        <button class="btn-confirmar">✅ Confirmar e Salvar</button>
-                    </div>
+                    <p>Você vai avaliar <strong>${avaliacoes.length}</strong> jogador(es):</p>
+                    <div class="modal-resumo">${avaliacoes.map(a => `<div class="resumo-item"><span><strong>${a.nome}</strong></span><span class="resumo-nota">${'★'.repeat(a.nota)}${'☆'.repeat(5-a.nota)}</span><span style="width:100%; font-size:0.8em;">💬 ${a.comentario.substring(0, 50)}</span></div>`).join('')}</div>
+                    <p style="color:#8b0000;"><strong>ATENÇÃO:</strong> Após confirmar, NÃO poderá alterar!</p>
+                    <div class="modal-botoes"><button class="btn-cancelar">❌ Cancelar</button><button class="btn-confirmar">✅ Confirmar</button></div>
                 </div>
             `;
-            
             document.body.appendChild(modal);
             modal.querySelector('.btn-cancelar').addEventListener('click', () => modal.remove());
-            modal.querySelector('.btn-confirmar').addEventListener('click', async () => {
-                modal.remove();
-                await salvarTodasAvaliacoes(avaliacoes);
-            });
+            modal.querySelector('.btn-confirmar').addEventListener('click', async () => { modal.remove(); await salvarTodasAvaliacoes(avaliacoes); });
         }
         
         async function salvarTodasAvaliacoes(avaliacoes) {
             let sucesso = 0;
-            let erros = 0;
-            
             for (const a of avaliacoes) {
-                const { error } = await supabaseClient.from('avaliacoes_partida').insert({
-                    partida_id: partidaSelecionada,
-                    avaliador_id: mensalistaAtual.id,
-                    avaliado_nome: a.nome,
-                    nota: a.nota,
-                    comentario: a.comentario
-                });
-                if (error) erros++;
-                else sucesso++;
+                const { error } = await supabaseClient.from('avaliacoes_partida').insert({ partida_id: partidaSelecionada, avaliador_id: mensalistaAtual.id, avaliado_nome: a.nome, nota: a.nota, comentario: a.comentario });
+                if (!error) sucesso++;
             }
-            
-            if (erros > 0) {
-                alert(`⚠️ ${sucesso} avaliações salvas, ${erros} erros.`);
-            } else {
-                alert(`✅ Todas as ${sucesso} avaliações foram salvas!`);
-                // Voltar para lista de partidas
-                await voltarParaSelecao();
-            }
+            alert(`✅ ${sucesso} avaliações salvas!`);
+            await voltarParaSelecao();
         }
         
         async function voltarParaSelecao() {
@@ -544,21 +438,13 @@
             await carregarPartidasNaoAvaliadas();
         }
 
-        // Eventos
         document.getElementById('btnLogin').addEventListener('click', fazerLogin);
-        document.getElementById('btnVoltarSelecao').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
+        document.getElementById('btnVoltarSelecao').addEventListener('click', () => { window.location.href = 'index.html'; });
         document.getElementById('btnVoltarAvaliacoes').addEventListener('click', voltarParaSelecao);
         document.getElementById('btnSalvarTodas').addEventListener('click', exibirModalConfirmacao);
+        document.getElementById('logoVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
         
         carregarMensalistas();
     </script>
-    <script>
-    // Função para voltar à home ao clicar no logo
-    document.querySelector('.logo-area').addEventListener('click', () => {
-        window.location.href = 'index.html';
-    });
-</script>
 </body>
 </html>
