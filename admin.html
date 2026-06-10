@@ -85,12 +85,9 @@
         .btn-pequeno { padding: 6px 12px; font-size: 12px; }
         .btn-verde { background: #2c5f2d; }
         .btn-azul { background: #1e4a76; }
-        .btn-cinza { background: #666; }
         .btn-vermelho { background: #8b0000; }
         .btn:active { transform: scale(0.98); }
-        .btn:hover { opacity: 0.9; }
         
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 8px;
@@ -112,36 +109,15 @@
         }
         .tab.active { background: #8b0000; color: white; }
         
-        /* Tabelas */
         .tabela-container { overflow-x: auto; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f5f5f5; color: #8b0000; font-weight: 600; }
         tr:hover { background: #f9f9f9; }
         
-        /* Formulários */
-        .form-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-        .form-row input, .form-row select {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 14px;
-        }
+        .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .form-row input, .form-row select { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-size: 14px; }
         
-        /* Estatísticas */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -154,36 +130,17 @@
             padding: 15px;
             text-align: center;
         }
-        .stat-number {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #8b0000;
-        }
+        .stat-number { font-size: 2.5em; font-weight: 700; color: #8b0000; }
         .stat-label { font-size: 0.8em; color: #666; }
         
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .login-area { max-width: 400px; margin: 0 auto; }
+        .login-input {
             width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            max-width: 500px;
-            width: 90%;
-        }
-        .modal-botoes {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
+            padding: 14px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
         }
         .loading { text-align: center; padding: 40px; color: #666; }
         
@@ -191,7 +148,6 @@
             body { padding: 12px; }
             .card { padding: 15px; }
             th, td { padding: 8px; font-size: 0.8em; }
-            .btn { padding: 8px 16px; font-size: 12px; }
         }
     </style>
 </head>
@@ -206,17 +162,18 @@
 
         <!-- TELA DE LOGIN -->
         <div id="loginScreen" class="card">
-            <div style="max-width: 400px; margin: 0 auto;">
-                <h2>🔐 Acesso Restrito</h2>
-                <input type="text" id="adminUser" class="login-input" placeholder="Usuário" style="width:100%; padding:12px; margin:10px 0; border:2px solid #ddd; border-radius:12px;">
-                <input type="password" id="adminPass" class="login-input" placeholder="Senha" style="width:100%; padding:12px; margin:10px 0; border:2px solid #ddd; border-radius:12px;">
-                <button id="btnLoginAdmin" class="btn" style="width:100%;">Entrar</button>
+            <div class="login-area">
+                <h2>🔐 Login Administrativo</h2>
+                <select id="selectAdmin" class="login-input">
+                    <option value="">Selecione seu nome</option>
+                </select>
+                <input type="password" id="senhaAdmin" class="login-input" placeholder="Sua senha">
+                <button id="btnLoginAdmin" class="btn">Entrar</button>
             </div>
         </div>
 
         <!-- CONTEÚDO ADMIN -->
         <div id="adminContent" style="display: none;">
-            <!-- Tabs -->
             <div class="card">
                 <div class="tabs">
                     <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
@@ -236,26 +193,90 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let abaAtual = 'dashboard';
-        let mensalistasLista = [];
-        let locaisLista = [];
 
-        // Login
-        document.getElementById('btnLoginAdmin').addEventListener('click', () => {
-            const user = document.getElementById('adminUser').value;
-            const pass = document.getElementById('adminPass').value;
-            if (user === 'admin' && pass === 'cyss2026') {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
-                carregarDashboard();
-                carregarMensalistas();
-                carregarLocais();
-                carregarPartidas();
-            } else {
-                alert('Usuário ou senha incorretos!');
+        // ============================================
+        // CARREGAR ADMINISTRADORES (quem tem is_admin = true)
+        // ============================================
+        async function carregarAdmins() {
+            const { data, error } = await supabaseClient
+                .from('mensalistas')
+                .select('id, nome')
+                .eq('is_admin', true)
+                .order('nome');
+            
+            if (error) {
+                console.error('Erro:', error);
+                return [];
             }
+            return data || [];
+        }
+
+        // ============================================
+        // POPULAR SELECT DE LOGIN (só quem é admin)
+        // ============================================
+        async function popularSelectAdmin() {
+            const admins = await carregarAdmins();
+            const select = document.getElementById('selectAdmin');
+            select.innerHTML = '<option value="">Selecione seu nome</option>';
+            
+            admins.forEach(admin => {
+                const option = document.createElement('option');
+                option.value = admin.id;
+                option.textContent = admin.nome;
+                select.appendChild(option);
+            });
+        }
+
+        // ============================================
+        // LOGIN
+        // ============================================
+        document.getElementById('btnLoginAdmin').addEventListener('click', async () => {
+            const adminId = document.getElementById('selectAdmin').value;
+            const senha = document.getElementById('senhaAdmin').value;
+            
+            if (!adminId) {
+                alert('Selecione seu nome!');
+                return;
+            }
+            if (!senha) {
+                alert('Digite sua senha!');
+                return;
+            }
+            
+            // Buscar o mensalista e verificar se é admin
+            const { data, error } = await supabaseClient
+                .from('mensalistas')
+                .select('id, nome, senha_hash, is_admin')
+                .eq('id', adminId)
+                .single();
+            
+            if (error || !data) {
+                alert('Usuário não encontrado!');
+                return;
+            }
+            
+            if (!data.is_admin) {
+                alert('Você não tem permissão de administrador!');
+                return;
+            }
+            
+            if (senha !== data.senha_hash) {
+                alert('Senha incorreta!');
+                return;
+            }
+            
+            // Login bem sucedido
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            carregarDashboard();
+            carregarMensalistas();
+            carregarLocais();
+            carregarPartidas();
         });
 
-        // Tabs
+        // ============================================
+        // TABS
+        // ============================================
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -269,7 +290,9 @@
             });
         });
 
-        // Dashboard
+        // ============================================
+        // DASHBOARD
+        // ============================================
         async function carregarDashboard() {
             const container = document.getElementById('tabContent');
             container.innerHTML = '<div class="loading">Carregando...</div>';
@@ -277,8 +300,7 @@
             const { count: partidas } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true });
             const { count: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('*', { count: 'exact', head: true });
             const { count: mensalistas } = await supabaseClient.from('mensalistas').select('*', { count: 'exact', head: true });
-            const { data: convidados } = await supabaseClient.from('escala_partida').select('jogador_nome').eq('tipo', 'convidado');
-            const convidadosUnicos = new Set(convidados?.map(c => c.jogador_nome) || []);
+            const { count: admins } = await supabaseClient.from('mensalistas').select('*', { count: 'exact', head: true }).eq('is_admin', true);
             const { count: locais } = await supabaseClient.from('locais').select('*', { count: 'exact', head: true });
             
             container.innerHTML = `
@@ -286,20 +308,17 @@
                     <div class="stat-card"><div class="stat-number">${partidas || 0}</div><div class="stat-label">Partidas</div></div>
                     <div class="stat-card"><div class="stat-number">${avaliacoes || 0}</div><div class="stat-label">Avaliações</div></div>
                     <div class="stat-card"><div class="stat-number">${mensalistas || 0}</div><div class="stat-label">Mensalistas</div></div>
-                    <div class="stat-card"><div class="stat-number">${convidadosUnicos.size}</div><div class="stat-label">Convidados Únicos</div></div>
+                    <div class="stat-card"><div class="stat-number">${admins || 0}</div><div class="stat-label">Administradores</div></div>
                     <div class="stat-card"><div class="stat-number">${locais || 0}</div><div class="stat-label">Locais</div></div>
-                </div>
-                <div style="margin-top:20px; padding:15px; background:#f0f0f0; border-radius:16px;">
-                    <strong>📊 Resumo do Sistema</strong><br>
-                    Média de avaliações por partida: ${partidas > 0 ? (avaliacoes / partidas).toFixed(1) : 0}
                 </div>
             `;
         }
 
-        // Mensalistas
+        // ============================================
+        // MENSALISTAS (com opção de tornar admin)
+        // ============================================
         async function carregarMensalistas() {
             const { data } = await supabaseClient.from('mensalistas').select('*').order('nome');
-            mensalistasLista = data || [];
             const container = document.getElementById('tabContent');
             container.innerHTML = `
                 <div class="form-row">
@@ -309,19 +328,23 @@
                 </div>
                 <div class="tabela-container">
                     <table>
-                        <thead><tr><th>ID</th><th>Nome</th><th>Senha</th><th>Ações</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Nome</th><th>Admin</th><th>Ações</th></tr></thead>
                         <tbody id="mensalistasTable"></tbody>
                     </table>
                 </div>
             `;
             const tbody = document.getElementById('mensalistasTable');
-            tbody.innerHTML = mensalistasLista.map(m => `
+            tbody.innerHTML = (data || []).map(m => `
                 <tr>
                     <td>${m.id}</td>
                     <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;"></td>
-                    <td><input type="text" id="senha_${m.id}" value="${m.senha_hash}" style="width:100%;"></td>
-                    <td><button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
-                    <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button></td>
+                    <td style="text-align:center;">
+                        <input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''}>
+                    </td>
+                    <td>
+                        <button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
+                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button>
+                    </td>
                 </tr>
             `).join('');
             
@@ -332,7 +355,7 @@
             const nome = document.getElementById('novoMensalista').value.trim();
             const senha = document.getElementById('novaSenha').value;
             if (!nome) { alert('Digite o nome!'); return; }
-            const { error } = await supabaseClient.from('mensalistas').insert({ nome, senha_hash: senha });
+            const { error } = await supabaseClient.from('mensalistas').insert({ nome, senha_hash: senha, is_admin: false });
             if (error) { alert('Erro: ' + error.message); return; }
             carregarMensalistas();
             carregarDashboard();
@@ -340,11 +363,13 @@
 
         window.editarMensalista = async (id) => {
             const nome = document.getElementById(`nome_${id}`).value;
-            const senha = document.getElementById(`senha_${id}`).value;
-            const { error } = await supabaseClient.from('mensalistas').update({ nome, senha_hash: senha }).eq('id', id);
+            const is_admin = document.getElementById(`admin_${id}`).checked;
+            const { error } = await supabaseClient.from('mensalistas').update({ nome, is_admin }).eq('id', id);
             if (error) { alert('Erro: ' + error.message); return; }
             alert('Mensalista atualizado!');
             carregarMensalistas();
+            carregarDashboard();
+            popularSelectAdmin(); // atualiza select de login
         };
 
         window.deletarMensalista = async (id) => {
@@ -353,12 +378,14 @@
             if (error) { alert('Erro: ' + error.message); return; }
             carregarMensalistas();
             carregarDashboard();
+            popularSelectAdmin();
         };
 
-        // Locais
+        // ============================================
+        // LOCAIS
+        // ============================================
         async function carregarLocais() {
             const { data } = await supabaseClient.from('locais').select('*').order('nome');
-            locaisLista = data || [];
             const container = document.getElementById('tabContent');
             container.innerHTML = `
                 <div class="form-row">
@@ -374,13 +401,15 @@
                 </div>
             `;
             const tbody = document.getElementById('locaisTable');
-            tbody.innerHTML = locaisLista.map(l => `
+            tbody.innerHTML = (data || []).map(l => `
                 <tr>
                     <td>${l.id}</td>
                     <td><input type="text" id="local_nome_${l.id}" value="${l.nome}" style="width:100%;"></td>
                     <td><input type="text" id="local_endereco_${l.id}" value="${l.endereco || ''}" style="width:100%;"></td>
-                    <td><button class="btn btn-azul btn-pequeno" onclick="editarLocal(${l.id})">💾 Salvar</button>
-                    <button class="btn btn-vermelho btn-pequeno" onclick="deletarLocal(${l.id})">🗑️ Excluir</button></td>
+                    <td>
+                        <button class="btn btn-azul btn-pequeno" onclick="editarLocal(${l.id})">💾 Salvar</button>
+                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarLocal(${l.id})">🗑️ Excluir</button>
+                    </td>
                 </tr>
             `).join('');
             
@@ -407,7 +436,6 @@
         };
 
         window.deletarLocal = async (id) => {
-            // Verificar se há partidas usando este local
             const { count } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true }).eq('local_id', id);
             if (count > 0) {
                 alert(`Não é possível excluir! Este local está sendo usado em ${count} partida(s).`);
@@ -420,14 +448,16 @@
             carregarDashboard();
         };
 
-        // Partidas
+        // ============================================
+        // PARTIDAS
+        // ============================================
         async function carregarPartidas() {
             const { data } = await supabaseClient.from('partidas').select('*').order('data', { ascending: false });
             const container = document.getElementById('tabContent');
             container.innerHTML = `
                 <div class="tabela-container">
                     <table>
-                        <thead><tr><th>ID</th><th>Data</th><th>Horário</th><th>Local</th><th>Ações</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Data</th><th>Horário</th><th>Local ID</th><th>Ações</th></tr></thead>
                         <tbody id="partidasTable"></tbody>
                     </table>
                 </div>
@@ -438,7 +468,7 @@
                     <td>${p.id}</td>
                     <td>${new Date(p.data).toLocaleDateString('pt-BR')}</td>
                     <td>${p.horario || '-'}</td>
-                    <td>${p.local_nome || 'ID: ' + p.local_id}</td>
+                    <td>${p.local_id || '-'}</td>
                     <td><button class="btn btn-vermelho btn-pequeno" onclick="deletarPartida(${p.id})">🗑️ Excluir</button></td>
                 </tr>
             `).join('');
@@ -446,20 +476,24 @@
 
         window.deletarPartida = async (id) => {
             if (!confirm('Tem certeza? Isso removerá também a escala e avaliações desta partida.')) return;
+            await supabaseClient.from('avaliacoes_partida').delete().eq('partida_id', id);
+            await supabaseClient.from('escala_partida').delete().eq('partida_id', id);
             const { error } = await supabaseClient.from('partidas').delete().eq('id', id);
             if (error) { alert('Erro: ' + error.message); return; }
             carregarPartidas();
             carregarDashboard();
         };
 
-        // Ferramentas
+        // ============================================
+        // FERRAMENTAS
+        // ============================================
         function carregarFerramentas() {
             const container = document.getElementById('tabContent');
             container.innerHTML = `
                 <div style="display: flex; flex-direction: column; gap: 20px;">
                     <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
                         <h3 style="color: #8b0000;">🗑️ Limpeza de Dados</h3>
-                        <p>Remove todas as avaliações, mas mantém mensalistas, locais e estrutura.</p>
+                        <p>Remove todas as avaliações, mas mantém partidas e escalas.</p>
                         <button class="btn" id="btnLimparAvaliacoes" style="background:#ff9800; margin-top:10px;">Limpar Avaliações</button>
                     </div>
                     <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
@@ -487,10 +521,17 @@
             };
         }
 
-        // Logo voltar
+        // ============================================
+        // LOGO VOLTAR
+        // ============================================
         document.getElementById('logoVoltar').addEventListener('click', () => {
             window.location.href = 'index.html';
         });
+
+        // ============================================
+        // INICIALIZAR
+        // ============================================
+        popularSelectAdmin();
     </script>
 </body>
 </html>
