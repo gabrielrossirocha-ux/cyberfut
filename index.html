@@ -1,148 +1,228 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYSS Futebol - Início</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>CYSS Futebol</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
-            min-height: 100vh;
-            padding: 20px;
-            position: relative;
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, Helvetica, sans-serif;
         }
-        body::before {
-            content: '';
+
+        /* INTRO */
+        #intro {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('image.png');
-            background-repeat: repeat;
-            background-size: 150px;
-            opacity: 0.1;
-            pointer-events: none;
-            z-index: 0;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-        .header { text-align: center; margin-bottom: 50px; }
-        .logo-area {
-            display: inline-flex;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex;
             align-items: center;
-            gap: 20px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 20px 40px;
-            border-radius: 80px;
-            margin-bottom: 20px;
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            backdrop-filter: blur(5px);
+            justify-content: center;
+            overflow: hidden;
         }
-        .logo { max-width: 80px; height: auto; border-radius: 16px; }
-        h1 { color: white; font-size: 2.2em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
-        .subtitulo { color: #ffcccc; text-align: center; font-size: 1em; }
-        
-        .menu {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin-top: 30px;
+
+        /* Estádio */
+        .stadium {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center,
+                rgba(30,30,30,.8) 0%,
+                rgba(0,0,0,1) 70%);
         }
-        .menu-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 24px;
-            padding: 35px 25px;
+
+        .lights {
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 200px;
+            background: radial-gradient(circle,
+                rgba(255,255,255,.9) 0%,
+                rgba(255,255,255,.1) 10%,
+                transparent 20%);
+            background-size: 100px 100px;
+            animation: lightsOn 1s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes lightsOn {
+            to { opacity: 1; }
+        }
+
+        /* Partículas */
+        .particles {
+            position: absolute;
+            inset: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff0000;
+            border-radius: 50%;
+            animation: float 3s linear infinite;
+        }
+
+        @keyframes float {
+            from {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+            20% { opacity: 1; }
+            to {
+                transform: translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        /* Bola */
+        .ball {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            background: url("https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg") center/contain no-repeat;
+            animation: shoot 3s forwards;
+            z-index: 5;
+        }
+
+        @keyframes shoot {
+            0% {
+                transform: scale(.3);
+                opacity: 0;
+            }
+            20% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            60% {
+                transform: scale(1.4) rotate(360deg);
+            }
+            100% {
+                transform: scale(12) rotate(1080deg);
+                opacity: 0;
+            }
+        }
+
+        /* Explosão */
+        .flash {
+            position: absolute;
+            inset: 0;
+            background: red;
+            opacity: 0;
+            animation: explode 1s ease forwards;
+            animation-delay: 2.8s;
+        }
+
+        @keyframes explode {
+            0% { opacity: 0; }
+            20% { opacity: .9; }
+            100% { opacity: 0; }
+        }
+
+        /* Logo */
+        .logo-wrapper {
+            position: absolute;
             text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            animation: showLogo 1s ease forwards;
+            animation-delay: 3.2s;
+            z-index: 10;
         }
-        .menu-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+
+        .logo {
+            width: 280px;
+            max-width: 70vw;
+            filter: drop-shadow(0 0 15px red) drop-shadow(0 0 30px rgba(255,0,0,0.5));
+            border-radius: 20px;
         }
-        .menu-icon {
-            font-size: 4em;
-            margin-bottom: 20px;
+
+        .title {
+            color: #fff;
+            font-size: 42px;
+            font-weight: bold;
+            margin-top: 20px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px red;
         }
-        .menu-card h2 {
-            color: #8b0000;
-            margin-bottom: 15px;
-            font-size: 1.5em;
+
+        .subtitle {
+            color: #ccc;
+            margin-top: 8px;
+            letter-spacing: 2px;
         }
-        .menu-card p {
-            color: #666;
-            font-size: 0.9em;
+
+        @keyframes showLogo {
+            from {
+                transform: scale(.5);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
-        .footer {
-            text-align: center;
-            margin-top: 50px;
-            padding: 20px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.8em;
+
+        /* Fade final */
+        .fade-out {
+            animation: endIntro .8s forwards;
         }
-        @media (max-width: 768px) {
-            .logo-area { padding: 12px 25px; }
-            .logo { max-width: 50px; }
-            h1 { font-size: 1.5em; }
-            .menu-icon { font-size: 3em; }
+
+        @keyframes endIntro {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo-area">
-                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
-                <h1>⚽ CYSS FUTEBOL</h1>
-            </div>
-            <p class="subtitulo">Sistema de gestão de partidas e avaliações</p>
-        </div>
 
-        <div class="menu">
-            <div class="menu-card" id="btnNovaPartida">
-                <div class="menu-icon">📅</div>
-                <h2>Nova Partida</h2>
-                <p>Criar uma nova partida, adicionar jogadores e sortear os times</p>
-            </div>
-
-            <div class="menu-card" id="btnAvaliar">
-                <div class="menu-icon">⭐</div>
-                <h2>Avaliar Partidas</h2>
-                <p>Mensalistas: faça login e avalie os jogadores das partidas</p>
-            </div>
-
-            <div class="menu-card" id="btnRanking">
-                <div class="menu-icon">🏆</div>
-                <h2>Ranking Geral</h2>
-                <p>Veja o acumulado de estrelas de todos os jogadores</p>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>CYSS FUTEBOL | Goleiros sempre em times diferentes | Avaliações por partida</p>
+    <!-- TELA DE ABERTURA -->
+    <div id="intro">
+        <div class="stadium"></div>
+        <div class="lights"></div>
+        <div class="particles" id="particles"></div>
+        <div class="ball"></div>
+        <div class="flash"></div>
+        <div class="logo-wrapper">
+            <img class="logo" src="image.png" alt="CYSS Futebol">
+            <div class="title">CYSS FUTEBOL</div>
+            <div class="subtitle">Campeonato Interno</div>
         </div>
     </div>
 
     <script>
-        document.getElementById('btnNovaPartida').addEventListener('click', () => {
-            window.location.href = 'nova-partida.html';
-        });
-        document.getElementById('btnAvaliar').addEventListener('click', () => {
-            window.location.href = 'avaliar.html';
-        });
-        document.getElementById('btnRanking').addEventListener('click', () => {
-            window.location.href = 'ranking.html';
-        });
+        // Criar partículas
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 120; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDelay = (Math.random() * 3) + 's';
+            p.style.animationDuration = (2 + Math.random() * 3) + 's';
+            container.appendChild(p);
+        }
+
+        // Encerrar intro e redirecionar para o site principal
+        setTimeout(() => {
+            document.getElementById('intro').classList.add('fade-out');
+            
+            // Após o fade, redirecionar para o site principal
+            setTimeout(() => {
+                window.location.href = 'home.html';
+            }, 800);
+        }, 5000);
     </script>
+
 </body>
 </html>
