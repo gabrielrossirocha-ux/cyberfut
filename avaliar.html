@@ -313,7 +313,7 @@
             
             container.innerHTML = naoAvaliadas.map(partida => `
                 <div class="jogador-card" style="cursor:pointer;" data-id="${partida.id}">
-                    <div class="jogador-nome">📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
+                    document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} | ⏰ ${partida.horario || 'Horário não informado'} | 📍 ${partida.local_nome || 'Local não informado'}`;
                     <div style="word-break:break-word;">📍 ${partida.local || 'Local não informado'}</div>
                     <button class="btn" style="margin-top:12px;" data-id="${partida.id}">⭐ Avaliar esta partida</button>
                 </div>
