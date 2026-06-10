@@ -16,9 +16,7 @@
             overflow-x: hidden;
         }
         
-        /* ============================================ */
-        /* ANIMAÇÃO DE ABERTURA (INTRO) */
-        /* ============================================ */
+        /* ANIMAÇÃO DE ABERTURA */
         #intro {
             position: fixed;
             inset: 0;
@@ -135,9 +133,7 @@
             visibility: hidden !important;
         }
         
-        /* ============================================ */
-        /* CONTEÚDO PRINCIPAL (MENU) */
-        /* ============================================ */
+        /* CONTEÚDO PRINCIPAL */
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -192,7 +188,6 @@
             font-size: 0.7em;
         }
         
-        /* Conteúdo principal começa invisível */
         .main-content {
             opacity: 0;
             transition: opacity 0.5s ease;
@@ -201,7 +196,22 @@
             opacity: 1;
         }
         
-        @media (min-width: 768px) {
+        /* MODO RETRATO (VERTICAL) - CORREÇÕES */
+        @media (orientation: portrait) {
+            body { padding: 12px; }
+            .logo-area { padding: 10px 16px; gap: 8px; }
+            .logo { max-width: 40px; }
+            h1 { font-size: 1.2em; }
+            .menu-card { padding: 20px 16px; }
+            .menu-icon { font-size: 2.8em; }
+            .menu-card h2 { font-size: 1.1em; }
+            .menu-card p { font-size: 0.75em; }
+            .footer { font-size: 0.6em; margin-top: 30px; }
+            .title-anim { font-size: 28px; }
+            .logo-anim { width: 200px; }
+        }
+        
+        @media (min-width: 768px) and (orientation: landscape) {
             body { padding: 20px; }
             .logo-area { gap: 20px; padding: 15px 30px; }
             .logo { max-width: 60px; }
@@ -216,7 +226,6 @@
     </style>
 </head>
 <body>
-    <!-- TELA DE ABERTURA (INTRO) -->
     <div id="intro">
         <div class="stadium"></div>
         <div class="lights"></div>
@@ -230,7 +239,6 @@
         </div>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL (MENU) -->
     <div class="main-content" id="mainContent">
         <div class="container">
             <div class="header">
@@ -268,7 +276,6 @@
     </div>
 
     <script>
-        // Criar partículas da animação
         const container = document.getElementById('particles');
         for (let i = 0; i < 120; i++) {
             const p = document.createElement('div');
@@ -279,7 +286,6 @@
             container.appendChild(p);
         }
 
-        // Controle de primeiro acesso usando localStorage
         const jaVisitou = localStorage.getItem('cyss_visitou');
         const intro = document.getElementById('intro');
         const mainContent = document.getElementById('mainContent');
@@ -294,20 +300,13 @@
         }
 
         if (jaVisitou) {
-            // Já visitou antes - esconde intro imediatamente
             intro.style.display = 'none';
             mostrarConteudo();
         } else {
-            // Primeira visita - mostra animação
             localStorage.setItem('cyss_visitou', 'true');
-            
-            // Após a animação, esconder intro e mostrar conteúdo
-            setTimeout(() => {
-                esconderIntro();
-            }, 5000);
+            setTimeout(() => { esconderIntro(); }, 5000);
         }
 
-        // Eventos dos botões do menu
         document.getElementById('btnNovaPartida').addEventListener('click', () => {
             window.location.href = 'nova-partida.html';
         });
