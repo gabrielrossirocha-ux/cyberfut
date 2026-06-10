@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYSS Futebol - Ranking Geral</title>
+    <title>CYSS Futebol - Ranking</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -28,7 +28,12 @@
             pointer-events: none;
             z-index: 0;
         }
-        .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
         .header { text-align: center; margin-bottom: 30px; }
         .logo-area {
             display: inline-flex;
@@ -54,21 +59,125 @@
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
+        
+        /* Filtros */
+        .filtros {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        .filtro-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f5f5f5;
+            padding: 8px 15px;
+            border-radius: 40px;
+        }
+        .filtro-group label {
+            font-weight: 600;
+            color: #8b0000;
+        }
+        select, .btn-filtro {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            background: white;
+        }
+        .btn-filtro {
+            background: #8b0000;
+            color: white;
+            border: none;
+            transition: all 0.3s;
+        }
+        .btn-filtro:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+        .btn-geral {
+            background: #1a1a1a;
+        }
+        .btn-geral:hover {
+            background: #333;
+        }
+        .info-ranking {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #ffe5e5;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        /* Ranking */
         .ranking-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px;
             border-bottom: 1px solid #eee;
+            transition: background 0.2s;
         }
-        .ranking-posicao { font-size: 1.5em; font-weight: 700; color: #8b0000; width: 60px; }
-        .ranking-nome { flex: 2; font-weight: 600; }
-        .ranking-estrelas { display: flex; gap: 5px; }
-        .estrela { color: #ffcc00; font-size: 1.3em; }
-        .ranking-total { font-weight: 700; color: #8b0000; min-width: 100px; text-align: right; }
-        .ranking-partidas { font-size: 0.8em; color: #666; min-width: 100px; text-align: right; }
-        .badge-mensalista { background: #ffcc00; color: #8b0000; font-size: 0.7em; padding: 2px 8px; border-radius: 20px; margin-left: 10px; }
-        .btn {
+        .ranking-item:hover {
+            background: #f9f9f9;
+        }
+        .ranking-posicao {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #8b0000;
+            width: 60px;
+        }
+        .ranking-nome {
+            flex: 2;
+            font-weight: 600;
+            font-size: 1.05em;
+        }
+        .ranking-estrelas {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .estrela {
+            color: #ffcc00;
+            font-size: 1.2em;
+            text-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+        .ranking-total {
+            font-weight: 700;
+            color: #8b0000;
+            min-width: 80px;
+            text-align: right;
+        }
+        .ranking-detalhe {
+            font-size: 0.75em;
+            color: #666;
+            min-width: 100px;
+            text-align: right;
+        }
+        .badge-mensalista {
+            background: #ffcc00;
+            color: #8b0000;
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+        .badge-convidado {
+            background: #555;
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+        .btn-voltar {
             background: #1a1a1a;
             color: white;
             padding: 12px;
@@ -78,18 +187,35 @@
             font-weight: 600;
             margin-top: 20px;
             width: 100%;
+            transition: all 0.3s;
         }
-        .info-ranking {
+        .btn-voltar:hover {
+            background: #333;
+            transform: translateY(-2px);
+        }
+        .loading {
             text-align: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            background: #ffe5e5;
-            border-radius: 12px;
-            font-size: 0.9em;
+            padding: 40px;
+            color: #666;
         }
-        @media (max-width: 768px) { 
+        .maior-pontuacao {
+            background: linear-gradient(135deg, #fff5f5, #ffe5e5);
+            border: 1px solid #8b0000;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .maior-pontuacao span {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #8b0000;
+        }
+        @media (max-width: 768px) {
             .ranking-item { flex-wrap: wrap; gap: 10px; }
             .ranking-estrelas { order: 3; width: 100%; justify-content: center; }
+            .filtros { flex-direction: column; align-items: stretch; }
+            .filtro-group { justify-content: space-between; }
         }
     </style>
 </head>
@@ -98,15 +224,34 @@
         <div class="header">
             <div class="logo-area">
                 <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
-                <h1>🏆 Ranking Geral</h1>
+                <h1>🏆 Ranking</h1>
             </div>
         </div>
 
         <div class="card">
-            <h2>⭐ Acumulado de Estrelas (Todas as Partidas)</h2>
-            <div class="info-ranking" id="infoRanking">Carregando...</div>
+            <h2>⭐ Estrelas dos Jogadores</h2>
+            
+            <!-- Filtros -->
+            <div class="filtros">
+                <div class="filtro-group">
+                    <label>📅 Partida:</label>
+                    <select id="selectPartida">
+                        <option value="geral">🏆 RANKING GERAL (todas)</option>
+                    </select>
+                </div>
+                <button id="btnCarregar" class="btn-filtro">🔍 Carregar</button>
+                <button id="btnRankingGeral" class="btn-filtro btn-geral">🏆 Ranking Geral</button>
+            </div>
+
+            <div id="infoRanking" class="info-ranking">Carregando...</div>
+            
+            <!-- Maior pontuação em uma partida (apenas no ranking geral) -->
+            <div id="maiorPontuacaoContainer" class="maior-pontuacao" style="display: none;"></div>
+            
+            <!-- Lista do ranking -->
             <div id="rankingContainer">Carregando...</div>
-            <button id="btnVoltar" class="btn">← Voltar à Página Inicial</button>
+            
+            <button id="btnVoltar" class="btn-voltar">← Voltar ao Início</button>
         </div>
     </div>
 
@@ -116,89 +261,206 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function carregarRankingGeral() {
-            // Buscar TODAS as avaliações de todas as partidas
-            const { data: todasAvaliacoes, error } = await supabaseClient
-                .from('avaliacoes_partida')
-                .select('avaliado_nome, nota');
+        let partidasLista = [];
+
+        // Carregar lista de partidas para o select
+        async function carregarPartidasSelect() {
+            const { data, error } = await supabaseClient
+                .from('partidas')
+                .select('id, data, local')
+                .order('data', { ascending: false });
             
             if (error) {
-                document.getElementById('rankingContainer').innerHTML = 'Erro ao carregar ranking';
+                console.error('Erro ao carregar partidas:', error);
                 return;
             }
             
-            if (!todasAvaliacoes || todasAvaliacoes.length === 0) {
-                document.getElementById('rankingContainer').innerHTML = 'Nenhuma avaliação registrada ainda.';
-                document.getElementById('infoRanking').innerHTML = '📊 Nenhuma partida avaliada até o momento';
-                return;
-            }
+            partidasLista = data || [];
+            const select = document.getElementById('selectPartida');
             
-            // Somar estrelas por jogador
-            const somaEstrelas = {};
-            const contagemPartidas = {};
+            // Manter a opção "geral"
+            select.innerHTML = '<option value="geral">🏆 RANKING GERAL (todas)</option>';
             
-            todasAvaliacoes.forEach(a => {
-                const nome = a.avaliado_nome;
-                if (!somaEstrelas[nome]) {
-                    somaEstrelas[nome] = 0;
-                    contagemPartidas[nome] = new Set();
+            // Adicionar as partidas
+            partidasLista.forEach(partida => {
+                const option = document.createElement('option');
+                option.value = partida.id;
+                const dataFormatada = new Date(partida.data).toLocaleDateString('pt-BR');
+                option.textContent = `📅 ${dataFormatada} - ${partida.local || 'Sem local'}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Carregar ranking (geral ou por partida)
+        async function carregarRanking(partidaId = null) {
+            const container = document.getElementById('rankingContainer');
+            const infoDiv = document.getElementById('infoRanking');
+            const maiorContainer = document.getElementById('maiorPontuacaoContainer');
+            
+            container.innerHTML = '<div class="loading">Carregando ranking...</div>';
+            
+            let avaliacoes = [];
+            let escala = [];
+            let titulo = '';
+            let totalPartidas = 0;
+            
+            if (partidaId === 'geral' || partidaId === null) {
+                // RANKING GERAL - soma todas as avaliações
+                titulo = '🏆 RANKING GERAL - Todas as Partidas';
+                maiorContainer.style.display = 'block';
+                
+                // Buscar todas as avaliações
+                const { data: todasAvaliacoes } = await supabaseClient
+                    .from('avaliacoes_partida')
+                    .select('avaliado_nome, nota, partida_id');
+                
+                avaliacoes = todasAvaliacoes || [];
+                
+                // Buscar todas as escalas para saber os tipos dos jogadores
+                const { data: todasEscalas } = await supabaseClient
+                    .from('escala_partida')
+                    .select('jogador_nome, tipo');
+                
+                escala = todasEscalas || [];
+                
+                // Calcular total de partidas únicas
+                const partidasUnicas = new Set(avaliacoes.map(a => a.partida_id));
+                totalPartidas = partidasUnicas.size;
+                
+                // Calcular maior pontuação em uma única partida
+                const pontuacaoPorPartida = {};
+                avaliacoes.forEach(a => {
+                    const key = `${a.partida_id}_${a.avaliado_nome}`;
+                    if (!pontuacaoPorPartida[key]) {
+                        pontuacaoPorPartida[key] = 0;
+                    }
+                    pontuacaoPorPartida[key] += a.nota;
+                });
+                
+                let maiorPontuacao = { nome: '', total: 0, partida: '' };
+                for (const [key, total] of Object.entries(pontuacaoPorPartida)) {
+                    if (total > maiorPontuacao.total) {
+                        const [partidaId, nome] = key.split('_');
+                        const partida = partidasLista.find(p => p.id == partidaId);
+                        const dataPartida = partida ? new Date(partida.data).toLocaleDateString('pt-BR') : 'data desconhecida';
+                        maiorPontuacao = { nome, total, partida: dataPartida };
+                    }
                 }
-                somaEstrelas[nome] += a.nota;
-                // Para contar quantas partidas diferentes o jogador foi avaliado
-                // Precisamos buscar as partidas distintas, mas como não temos partida_id aqui,
-                // vamos apenas contar o total de avaliações como aproximação
+                
+                if (maiorPontuacao.total > 0) {
+                    maiorContainer.innerHTML = `
+                        🏅 <strong>MAIOR PONTUAÇÃO EM UMA ÚNICA PARTIDA</strong> 🏅<br>
+                        <span>${maiorPontuacao.nome}</span> recebeu <strong>${maiorPontuacao.total} estrelas</strong> na partida de <strong>${maiorPontuacao.partida}</strong>!
+                    `;
+                } else {
+                    maiorContainer.innerHTML = '🏅 Aguardando primeiras avaliações para definir a maior pontuação!';
+                }
+                
+            } else {
+                // RANKING POR PARTIDA ESPECÍFICA
+                const partida = partidasLista.find(p => p.id == partidaId);
+                const dataFormatada = partida ? new Date(partida.data).toLocaleDateString('pt-BR') : 'Data desconhecida';
+                titulo = `📅 Ranking da Partida - ${dataFormatada} - ${partida?.local || ''}`;
+                maiorContainer.style.display = 'none';
+                
+                // Buscar avaliações apenas da partida selecionada
+                const { data: avaliacoesPartida } = await supabaseClient
+                    .from('avaliacoes_partida')
+                    .select('avaliado_nome, nota')
+                    .eq('partida_id', partidaId);
+                
+                avaliacoes = avaliacoesPartida || [];
+                
+                // Buscar escala da partida
+                const { data: escalaPartida } = await supabaseClient
+                    .from('escala_partida')
+                    .select('jogador_nome, tipo')
+                    .eq('partida_id', partidaId);
+                
+                escala = escalaPartida || [];
+                
+                totalPartidas = 1;
+            }
+            
+            // Calcular soma de estrelas por jogador
+            const somaEstrelas = {};
+            avaliacoes.forEach(a => {
+                if (!somaEstrelas[a.avaliado_nome]) {
+                    somaEstrelas[a.avaliado_nome] = 0;
+                }
+                somaEstrelas[a.avaliado_nome] += a.nota;
             });
             
-            // Buscar também quantas partidas cada jogador participou
-            const { data: todasEscalas } = await supabaseClient
-                .from('escala_partida')
-                .select('jogador_nome, partida_id');
-            
-            const partidasPorJogador = {};
-            if (todasEscalas) {
-                todasEscalas.forEach(e => {
-                    if (!partidasPorJogador[e.jogador_nome]) {
-                        partidasPorJogador[e.jogador_nome] = new Set();
-                    }
-                    partidasPorJogador[e.jogador_nome].add(e.partida_id);
-                });
-            }
+            // Obter tipo do jogador (mensalista ou convidado)
+            const tipoJogador = {};
+            escala.forEach(e => {
+                if (!tipoJogador[e.jogador_nome]) {
+                    tipoJogador[e.jogador_nome] = e.tipo;
+                }
+            });
             
             // Montar ranking
             const ranking = Object.keys(somaEstrelas).map(nome => ({
                 nome: nome,
                 totalEstrelas: somaEstrelas[nome],
-                totalPartidas: partidasPorJogador[nome]?.size || 1,
-                media: (somaEstrelas[nome] / (partidasPorJogador[nome]?.size || 1)).toFixed(1)
+                tipo: tipoJogador[nome] || 'convidado'
             }));
             
             ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
             
-            // Contar total de partidas únicas
-            const totalPartidas = new Set(todasAvaliacoes.map(a => a.partida_id)).size;
+            if (ranking.length === 0) {
+                container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada para esta partida</div>';
+                infoDiv.innerHTML = titulo + ' | 📊 0 avaliações';
+                return;
+            }
             
-            document.getElementById('infoRanking').innerHTML = `📊 Total de ${todasAvaliacoes.length} avaliações em ${totalPartidas} partidas`;
+            const totalAvaliacoes = avaliacoes.length;
+            infoDiv.innerHTML = `${titulo} | 📊 ${totalAvaliacoes} avaliações | 👥 ${ranking.length} jogadores`;
             
-            document.getElementById('rankingContainer').innerHTML = ranking.map((j, idx) => `
-                <div class="ranking-item">
-                    <div class="ranking-posicao">${idx + 1}º</div>
-                    <div class="ranking-nome">
-                        ${j.nome}
+            container.innerHTML = ranking.map((j, idx) => {
+                const estrelasCheias = Math.min(j.totalEstrelas, 10);
+                const estrelasString = '★'.repeat(estrelasCheias) + (j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : '');
+                const badge = j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : (j.nome === 'G1' || j.nome === 'G2' ? '<span class="badge-convidado">Goleiro</span>' : '<span class="badge-convidado">Convidado</span>');
+                
+                return `
+                    <div class="ranking-item">
+                        <div class="ranking-posicao">${idx + 1}º</div>
+                        <div class="ranking-nome">
+                            ${j.nome}
+                            ${badge}
+                        </div>
+                        <div class="ranking-estrelas">
+                            ${estrelasString}
+                        </div>
+                        <div class="ranking-total">${j.totalEstrelas} ⭐</div>
+                        <div class="ranking-detalhe">${partidaId === 'geral' ? 'total' : 'nesta partida'}</div>
                     </div>
-                    <div class="ranking-estrelas">
-                        ${'★'.repeat(Math.min(j.totalEstrelas, 10))}${j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : ''}
-                    </div>
-                    <div class="ranking-total">${j.totalEstrelas} ⭐</div>
-                    <div class="ranking-partidas">📊 ${j.totalPartidas} jogos | média ${j.media}</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
-
+        
+        // Eventos
+        document.getElementById('btnCarregar').addEventListener('click', () => {
+            const partidaSelecionada = document.getElementById('selectPartida').value;
+            carregarRanking(partidaSelecionada);
+        });
+        
+        document.getElementById('btnRankingGeral').addEventListener('click', () => {
+            document.getElementById('selectPartida').value = 'geral';
+            carregarRanking('geral');
+        });
+        
         document.getElementById('btnVoltar').addEventListener('click', () => {
             window.location.href = 'index.html';
         });
         
-        carregarRankingGeral();
+        // Inicializar
+        async function init() {
+            await carregarPartidasSelect();
+            await carregarRanking('geral');
+        }
+        
+        init();
     </script>
 </body>
 </html>
