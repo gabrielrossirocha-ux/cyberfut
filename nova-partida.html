@@ -126,8 +126,17 @@
         .campo { margin-bottom: 20px; }
         .campo label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; }
         .grid-2 { display: flex; flex-direction: column; gap: 15px; }
+        .endereco-destacado {
+            background: #e8f5e9;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            color: #2e7d32;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            word-break: break-word;
+        }
         
-        /* MODO RETRATO (VERTICAL) */
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
@@ -177,375 +186,16 @@
                     <input type="time" id="horarioPartida">
                 </div>
             </div>
-            <div class="campo">
-    <label>📍 Local</label>
-    <select id="localPartida" required>
-        <option value="">Selecione um local</option>
-    </select>
-</div>
-<div class="campo" id="enderecoContainer" style="display: none;">
-    <label>🏟️ Endereço</label>
-    <input type="text" id="enderecoPartida" readonly style="background:#f5f5f5;">
-</div>
-            <div class="campo">
-                <label>🏟️ Endereço</label>
-                <input type="text" id="enderecoPartida" placeholder="Rua, número, bairro">
-            </div>
-            <div class="campo">
-                <label>📝 Observações</label>
-                <input type="text" id="observacoes" placeholder="Informações adicionais">
-            </div>
-        </div>
-
-        <div class="grid-2colunas">
-            <div class="card">
-                <h2>➕ Adicionar Jogador</h2>
-                
-                <div class="tipo-jogador">
-                    <label class="tipo-opcao" id="tipoMensalista"><input type="radio" name="tipo" value="mensalista" checked> <span>📌 Mensalista</span></label>
-                    <label class="tipo-opcao" id="tipoConvidado"><input type="radio" name="tipo" value="convidado"> <span>🎟️ Convidado</span></label>
-                </div>
-
-                <div id="mensalistaContainer"><select id="selectMensalista"><option value="">-- Selecione --</option></select></div>
-                <div id="convidadoContainer" style="display: none;"><input type="text" id="nomeConvidado" placeholder="Nome do convidado"></div>
-
-                <select id="posicao">
-                    <option value="">Selecione a posição</option>
-                    <option value="Goleiro">🧤 Goleiro</option>
-                    <option value="Fixo">🛡️ Fixo</option>
-                    <option value="Ala Esquerda">⚡ Ala Esquerda</option>
-                    <option value="Ala Direita">⚡ Ala Direita</option>
-                    <option value="Pivô">🎯 Pivô</option>
-                </select>
-
-                <button id="btnAdicionar" class="btn">➕ Adicionar à Escala</button>
-                <div class="contador">Jogadores: <span id="totalJogadores">0</span> / 12</div>
-            </div>
-
-            <div class="card">
-                <h2>📋 Escala</h2>
-                <div id="listaJogadores"><p class="vazio">Nenhum jogador adicionado</p></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <button id="btnSortear" class="btn btn-sortear">🎲 SORTEAR TIMES E FINALIZAR PARTIDA</button>
-            <div id="avisoPartida" class="aviso" style="display: none;">⚠️ Esta partida já foi finalizada! Times já estão salvos.</div>
-        </div>
-
-        <div id="timesContainer" style="display: none;">
-            <div class="grid-2colunas times">
-                <div class="card time-vermelho"><h2>🔴 TIME VERMELHO</h2><ul id="timeALista" class="lista-times"></ul></div>
-                <div class="card time-branco"><h2>⚪ TIME BRANCO</h2><ul id="timeBLista" class="lista-times"></ul></div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        const MENSALISTAS = ["Luiz","Gabriel","Marcelo","Lucas Guil","Carlos","Cristoffer","Matheus","Lucas Coelho","Gustavo"];
-        let partidaId = null;
-        let jogadoresEscala = [];
-        let timeA = [], timeB = [];
-        let partidaFinalizada = false;
-
-        const ORDEM_POSICOES = { 'Goleiro': 1, 'Fixo': 2, 'Ala Esquerda': 3, 'Ala Direita': 4, 'Pivô': 5 };
-        function ordenarPorPosicao(jogadores) { return [...jogadores].sort((a, b) => (ORDEM_POSICOES[a.posicao] || 99) - (ORDEM_POSICOES[b.posicao] || 99)); }
-
-        function atualizarSelectMensalistas() {
-            const nomesNaEscala = new Set(jogadoresEscala.map(j => j.nome));
-            const disponiveis = MENSALISTAS.filter(m => !nomesNaEscala.has(m));
-            const select = document.getElementById('selectMensalista');
-            select.innerHTML = '<option value="">-- Selecione --</option>';
-            disponiveis.forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; select.appendChild(opt); });
-        }
-
-        function limparFormulario() {
-            document.getElementById('selectMensalista').value = '';
-            document.getElementById('nomeConvidado').value = '';
-            document.getElementById('posicao').value = '';
-        }
-
-        function alternarTipo() {
-            const isMensalista = document.querySelector('input[name="tipo"]:checked').value === 'mensalista';
-            document.getElementById('mensalistaContainer').style.display = isMensalista ? 'block' : 'none';
-            document.getElementById('convidadoContainer').style.display = isMensalista ? 'none' : 'block';
-        }
-
-        document.querySelectorAll('input[name="tipo"]').forEach(r => r.addEventListener('change', alternarTipo));
-
-        document.getElementById('btnAdicionar').addEventListener('click', () => {
-            if (partidaFinalizada) { alert('Esta partida já foi finalizada!'); return; }
-            if (jogadoresEscala.length >= 12) { alert('Limite de 12 jogadores!'); return; }
-            const posicao = document.getElementById('posicao').value;
-            if (!posicao) { alert('Selecione a posição!'); return; }
-            const isMensalista = document.querySelector('input[name="tipo"]:checked').value === 'mensalista';
-            let nome = '';
-            if (isMensalista) {
-                nome = document.getElementById('selectMensalista').value;
-                if (!nome) { alert('Selecione um mensalista!'); return; }
-            } else {
-                nome = document.getElementById('nomeConvidado').value.trim();
-                if (!nome) { alert('Digite o nome do convidado!'); return; }
-            }
-            if (jogadoresEscala.some(j => j.nome === nome)) { alert('Jogador já está na escala!'); return; }
-            jogadoresEscala.push({ id: Date.now(), nome, posicao, tipo: isMensalista ? 'mensalista' : 'convidado' });
-            atualizarLista();
-            limparFormulario();
-            alternarTipo();
-        });
-
-        function atualizarLista() {
-            document.getElementById('totalJogadores').textContent = jogadoresEscala.length;
-            const container = document.getElementById('listaJogadores');
-            if (jogadoresEscala.length === 0) { container.innerHTML = '<p class="vazio">Nenhum jogador adicionado</p>'; return; }
-            container.innerHTML = '<ul class="lista-jogadores">' + jogadoresEscala.map(j => `
-                <li><div><strong>${j.nome}</strong> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}<br><small>📍 ${j.posicao}</small></div><button class="btn-deletar" onclick="removerJogador(${j.id})">❌</button></li>
-            `).join('') + '</ul>';
-            atualizarSelectMensalistas();
-        }
-
-        window.removerJogador = (id) => { jogadoresEscala = jogadoresEscala.filter(j => j.id !== id); atualizarLista(); timeA = []; timeB = []; document.getElementById('timesContainer').style.display = 'none'; };
-
-        function distribuirAlternado(lista, a, b) { lista.forEach((j, i) => i % 2 === 0 ? a.push(j) : b.push(j)); }
-        function embaralhar(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
-
-        document.getElementById('btnSortear').addEventListener('click', async () => {
-            if (partidaFinalizada) { alert('⚠️ Esta partida já foi finalizada!'); return; }
-            if (jogadoresEscala.length < 4) { alert('Mínimo 4 jogadores!'); return; }
             
-            const data = document.getElementById('dataPartida').value;
-            if (!data) { alert('Selecione a data da partida!'); return; }
-
-            const partida = {
-                data: data,
-                horario: document.getElementById('horarioPartida').value,
-                local: document.getElementById('localPartida').value,
-                endereco: document.getElementById('enderecoPartida').value,
-                observacoes: document.getElementById('observacoes').value
-            };
-
-            const { data: novaPartida, error } = await supabaseClient.from('partidas').insert(partida).select().single();
-            if (error) { alert('Erro ao salvar partida!'); return; }
-            partidaId = novaPartida.id;
-
-            const goleiros = jogadoresEscala.filter(j => j.posicao === 'Goleiro');
-            const outros = jogadoresEscala.filter(j => j.posicao !== 'Goleiro');
-            timeA = []; timeB = [];
-            if (goleiros.length === 1) timeA.push(goleiros[0]);
-            else goleiros.forEach((g, i) => i % 2 === 0 ? timeA.push(g) : timeB.push(g));
-            distribuirAlternado(outros, timeA, timeB);
-            while (Math.abs(timeA.length - timeB.length) > 1) {
-                if (timeA.length > timeB.length) timeB.unshift(timeA.pop());
-                else timeA.unshift(timeB.pop());
-            }
-            timeA = embaralhar(timeA); timeB = embaralhar(timeB);
-
-            const escala = [...timeA.map(j => ({ ...j, time: 'A' })), ...timeB.map(j => ({ ...j, time: 'B' }))];
-            for (const j of escala) {
-                await supabaseClient.from('escala_partida').insert({
-                    partida_id: partidaId, jogador_nome: j.nome, posicao: j.posicao,
-                    habilidades: [], tipo: j.tipo, time: j.time
-                });
-            }
-
-            partidaFinalizada = true;
-            document.getElementById('btnSortear').disabled = true;
-            document.getElementById('btnSortear').style.opacity = '0.5';
-            document.getElementById('avisoPartida').style.display = 'block';
-            alert('✅ Partida finalizada e times salvos!');
-
-            const timeAOrdenado = ordenarPorPosicao(timeA);
-            const timeBOrdenado = ordenarPorPosicao(timeB);
-
-            document.getElementById('timesContainer').style.display = 'block';
-            document.getElementById('timeALista').innerHTML = timeAOrdenado.map(j => `<li><strong>${j.nome}</strong> <span class="posicao">${j.posicao}</span> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div></li>`).join('');
-            document.getElementById('timeBLista').innerHTML = timeBOrdenado.map(j => `<li><strong>${j.nome}</strong> <span class="posicao">${j.posicao}</span> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div></li>`).join('');
-
-            localStorage.setItem('partidaRanking', partidaId);
-        });
-
-        document.getElementById('logoVoltar').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-
-        alternarTipo();
-        atualizarSelectMensalistas();
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>CYSS Futebol - Nova Partida</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
-            min-height: 100vh;
-            padding: 16px;
-        }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .logo-area {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 10px 20px;
-            border-radius: 60px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .logo-area:active { transform: scale(0.98); }
-        .logo { max-width: 45px; height: auto; border-radius: 12px; }
-        h1 { color: white; font-size: 1.4em; }
-        .subtitulo { color: #ffcccc; font-size: 0.8em; }
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-        .card h2 {
-            color: #8b0000;
-            border-bottom: 3px solid #8b0000;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-size: 1.3em;
-        }
-        .grid-2colunas { display: flex; flex-direction: column; gap: 20px; }
-        .tipo-jogador { display: flex; gap: 15px; margin: 15px 0; padding: 10px; background: #f5f5f5; border-radius: 16px; }
-        .tipo-opcao { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 16px; border-radius: 40px; background: white; border: 1px solid #ddd; flex: 1; justify-content: center; }
-        .tipo-opcao.selected { background: #8b0000; color: white; }
-        input, select {
-            width: 100%;
-            padding: 14px;
-            margin: 10px 0;
-            border: 2px solid #ddd;
-            border-radius: 12px;
-            font-size: 16px;
-            font-family: inherit;
-        }
-        .btn {
-            background: #8b0000;
-            color: white;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s;
-            font-size: 16px;
-            min-height: 48px;
-        }
-        .btn-sortear { background: #ffcc00; color: #8b0000; font-size: 1.2em; margin-top: 20px; }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .lista-jogadores { list-style: none; padding: 0; }
-        .lista-jogadores li {
-            background: white;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 14px;
-            border-left: 5px solid #8b0000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .badge-mensalista { background: #ffcc00; color: #8b0000; font-size: 0.7em; padding: 3px 10px; border-radius: 20px; }
-        .badge-convidado { background: #555; color: white; font-size: 0.7em; padding: 3px 10px; border-radius: 20px; }
-        .btn-deletar { background: #1a1a1a; color: white; border: none; padding: 8px 16px; border-radius: 10px; cursor: pointer; min-height: 40px; }
-        .contador { text-align: center; margin: 15px 0; padding: 10px; background: #ffe5e5; border-radius: 12px; font-weight: 600; color: #8b0000; }
-        .times { margin-top: 20px; }
-        .time-vermelho { background: #fff5f5; border: 2px solid #8b0000; }
-        .time-branco { background: #fafafa; border: 2px solid #ccc; }
-        .lista-times li {
-            background: white;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .posicao { font-size: 0.85em; color: #666; }
-        .info-partida {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        .aviso {
-            text-align: center;
-            margin-top: 15px;
-            padding: 10px;
-            background: #ffe5e5;
-            border-radius: 12px;
-            color: #8b0000;
-        }
-        .campo { margin-bottom: 20px; }
-        .campo label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; }
-        .grid-2 { display: flex; flex-direction: column; gap: 15px; }
-        
-        @media (min-width: 768px) {
-            body { padding: 20px; }
-            .logo-area { gap: 20px; padding: 15px 30px; }
-            .logo { max-width: 60px; }
-            h1 { font-size: 1.6em; }
-            .card { padding: 25px; }
-            .grid-2colunas { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-            .tipo-opcao { padding: 8px 20px; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo-area" id="logoVoltar">
-                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
-                <h1>📝 Nova Partida</h1>
-            </div>
-            <p class="subtitulo">Preencha os dados, adicione os jogadores e sorteie os times</p>
-        </div>
-
-        <div class="card">
-            <h2>📋 Dados da Partida</h2>
-            <div class="grid-2">
-                <div class="campo">
-                    <label>📅 Data</label>
-                    <input type="date" id="dataPartida" required>
-                </div>
-                <div class="campo">
-                    <label>⏰ Horário</label>
-                    <input type="time" id="horarioPartida">
-                </div>
-            </div>
             <div class="campo">
                 <label>📍 Local</label>
-                <input type="text" id="localPartida" placeholder="Ex: Quadra do Centro">
+                <select id="localPartida" required>
+                    <option value="">Carregando locais...</option>
+                </select>
             </div>
-            <div class="campo">
-                <label>🏟️ Endereço</label>
-                <input type="text" id="enderecoPartida" placeholder="Rua, número, bairro">
-            </div>
+            
+            <div id="enderecoDisplay" class="endereco-destacado" style="display: none;"></div>
+            
             <div class="campo">
                 <label>📝 Observações</label>
                 <input type="text" id="observacoes" placeholder="Informações adicionais">
@@ -607,9 +257,57 @@
         let jogadoresEscala = [];
         let timeA = [], timeB = [];
         let partidaFinalizada = false;
+        let locaisLista = [];
 
         const ORDEM_POSICOES = { 'Goleiro': 1, 'Fixo': 2, 'Ala Esquerda': 3, 'Ala Direita': 4, 'Pivô': 5 };
         function ordenarPorPosicao(jogadores) { return [...jogadores].sort((a, b) => (ORDEM_POSICOES[a.posicao] || 99) - (ORDEM_POSICOES[b.posicao] || 99)); }
+
+        // ============================================
+        // CARREGAR LOCAIS DO BANCO
+        // ============================================
+        async function carregarLocais() {
+            const { data, error } = await supabaseClient
+                .from('locais')
+                .select('id, nome, endereco')
+                .order('nome');
+            
+            if (error) {
+                console.error('Erro ao carregar locais:', error);
+                const select = document.getElementById('localPartida');
+                select.innerHTML = '<option value="">Erro ao carregar locais</option>';
+                return;
+            }
+            
+            locaisLista = data || [];
+            const select = document.getElementById('localPartida');
+            select.innerHTML = '<option value="">Selecione um local</option>';
+            
+            locaisLista.forEach(local => {
+                const option = document.createElement('option');
+                option.value = local.id;
+                option.textContent = local.nome;
+                option.dataset.endereco = local.endereco || '';
+                select.appendChild(option);
+            });
+        }
+
+        // ============================================
+        // EXIBIR ENDEREÇO QUANDO SELECIONAR LOCAL
+        // ============================================
+        document.getElementById('localPartida').addEventListener('change', (e) => {
+            const select = e.target;
+            const selectedOption = select.options[select.selectedIndex];
+            const endereco = selectedOption.dataset?.endereco || '';
+            const enderecoDisplay = document.getElementById('enderecoDisplay');
+            
+            if (selectedOption.value && endereco) {
+                enderecoDisplay.style.display = 'block';
+                enderecoDisplay.innerHTML = `🏟️ <strong>Endereço:</strong> ${endereco}`;
+            } else {
+                enderecoDisplay.style.display = 'none';
+                enderecoDisplay.innerHTML = '';
+            }
+        });
 
         function atualizarSelectMensalistas() {
             const nomesNaEscala = new Set(jogadoresEscala.map(j => j.nome));
@@ -675,17 +373,23 @@
             
             const data = document.getElementById('dataPartida').value;
             if (!data) { alert('Selecione a data da partida!'); return; }
+            
+            const localId = document.getElementById('localPartida').value;
+            if (!localId) { alert('Selecione o local da partida!'); return; }
+            
+            const localSelecionado = locaisLista.find(l => l.id == localId);
+            const endereco = localSelecionado?.endereco || '';
 
             const partida = {
                 data: data,
                 horario: document.getElementById('horarioPartida').value,
-                local: document.getElementById('localPartida').value,
-                endereco: document.getElementById('enderecoPartida').value,
+                local_id: parseInt(localId),
+                endereco: endereco,
                 observacoes: document.getElementById('observacoes').value
             };
 
             const { data: novaPartida, error } = await supabaseClient.from('partidas').insert(partida).select().single();
-            if (error) { alert('Erro ao salvar partida!'); return; }
+            if (error) { alert('Erro ao salvar partida: ' + error.message); return; }
             partidaId = novaPartida.id;
 
             const goleiros = jogadoresEscala.filter(j => j.posicao === 'Goleiro');
@@ -730,57 +434,7 @@
 
         alternarTipo();
         atualizarSelectMensalistas();
-        // Carregar locais do banco
-async function carregarLocais() {
-    const { data, error } = await supabaseClient
-        .from('locais')
-        .select('id, nome, endereco')
-        .order('nome');
-    
-    if (error) {
-        console.error('Erro ao carregar locais:', error);
-        return;
-    }
-    
-    const select = document.getElementById('localPartida');
-    select.innerHTML = '<option value="">Selecione um local</option>';
-    
-    data.forEach(local => {
-        const option = document.createElement('option');
-        option.value = local.id;
-        option.textContent = local.nome;
-        option.dataset.endereco = local.endereco;
-        select.appendChild(option);
-    });
-}
-
-// Quando selecionar um local, mostrar o endereço
-document.getElementById('localPartida').addEventListener('change', (e) => {
-    const select = e.target;
-    const selectedOption = select.options[select.selectedIndex];
-    const endereco = selectedOption.dataset.endereco || '';
-    
-    const enderecoContainer = document.getElementById('enderecoContainer');
-    const enderecoInput = document.getElementById('enderecoPartida');
-    
-    if (selectedOption.value) {
-        enderecoContainer.style.display = 'block';
-        enderecoInput.value = endereco;
-    } else {
-        enderecoContainer.style.display = 'none';
-        enderecoInput.value = '';
-    }
-});
-
-// Modificar a função de salvar partida para usar local_id
-// Na parte de criar partida, substitua por:
-const partida = {
-    data: data,
-    horario: document.getElementById('horarioPartida').value,
-    local_id: parseInt(document.getElementById('localPartida').value),
-    endereco: document.getElementById('enderecoPartida').value,
-    observacoes: document.getElementById('observacoes').value
-};
+        carregarLocais();
     </script>
 </body>
 </html>
