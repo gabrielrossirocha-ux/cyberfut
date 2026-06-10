@@ -269,6 +269,12 @@
         const selecaoScreen = document.getElementById('selecaoScreen');
         const avaliacoesScreen = document.getElementById('avaliacoesScreen');
 
+        // Função para formatar data sem problema de fuso horário
+        function formatarData(dataString) {
+            const [ano, mes, dia] = dataString.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
         async function carregarMensalistas() {
             const { data } = await supabaseClient.from('mensalistas').select('id, nome').order('nome');
             const select = document.getElementById('selectMensalista');
@@ -301,7 +307,6 @@
                 return;
             }
             
-            // Buscar locais para exibir o nome
             const { data: locais } = await supabaseClient.from('locais').select('id, nome');
             const locaisMap = {};
             locais?.forEach(l => { locaisMap[l.id] = l.nome; });
@@ -319,7 +324,7 @@
                 const localNome = locaisMap[partida.local_id] || 'Local não informado';
                 return `
                     <div class="jogador-card" style="cursor:pointer;" data-id="${partida.id}">
-                        <div class="jogador-nome">📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
+                        <div class="jogador-nome">📅 ${formatarData(partida.data)} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
                         <div style="word-break:break-word;">📍 ${localNome}</div>
                         <button class="btn" style="margin-top:12px;" data-id="${partida.id}">⭐ Avaliar esta partida</button>
                     </div>
@@ -353,7 +358,7 @@
             document.getElementById('userInfo').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Avalie os jogadores</span>`;
             
             const localNome = partida?.locais?.nome || 'Local não informado';
-            document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} | ⏰ ${partida.horario || 'Horário não informado'} | 📍 ${localNome}`;
+            document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${formatarData(partida.data)} | ⏰ ${partida.horario || 'Horário não informado'} | 📍 ${localNome}`;
             
             renderizarJogadores();
             atualizarStatus();
