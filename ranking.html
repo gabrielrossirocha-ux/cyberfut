@@ -124,9 +124,6 @@
         .btn-geral {
             background: #1a1a1a;
         }
-        .btn-geral:hover {
-            background: #333;
-        }
         .info-ranking {
             text-align: center;
             margin-bottom: 20px;
@@ -162,9 +159,9 @@
             min-width: 40px;
         }
         .variacao {
-            font-size: 0.8em;
+            font-size: 0.75em;
             font-weight: 600;
-            padding: 2px 6px;
+            padding: 3px 8px;
             border-radius: 20px;
             display: inline-flex;
             align-items: center;
@@ -195,7 +192,6 @@
         .estrela {
             color: #ffcc00;
             font-size: 1.2em;
-            text-shadow: 0 0 2px rgba(0,0,0,0.3);
         }
         .ranking-total {
             font-weight: 700;
@@ -246,18 +242,11 @@
             padding: 40px;
             color: #666;
         }
-        .maior-pontuacao {
-            background: linear-gradient(135deg, #fff5f5, #ffe5e5);
-            border: 1px solid #8b0000;
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 20px;
+        .info-comparacao {
             text-align: center;
-        }
-        .maior-pontuacao span {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #8b0000;
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
         }
         @media (max-width: 768px) {
             .ranking-item { flex-wrap: wrap; gap: 10px; }
@@ -295,12 +284,10 @@
                     </select>
                 </div>
                 <button id="btnCarregar" class="btn-filtro">🔍 Carregar</button>
-                <button id="btnRankingGeral" class="btn-filtro btn-geral">🏆 Ranking Geral</button>
             </div>
 
             <div id="infoRanking" class="info-ranking">Carregando...</div>
-            
-            <div id="maiorPontuacaoContainer" class="maior-pontuacao" style="display: none;"></div>
+            <div id="infoComparacao" class="info-comparacao"></div>
             
             <div id="rankingContainer">Carregando...</div>
             
@@ -316,23 +303,18 @@
 
         let partidasLista = [];
         let abaAtual = 'mensalistas';
-        let rankingAnterior = {}; // Guarda posições anteriores
 
-        // Carregar lista de partidas para o select
+        // Carregar lista de partidas
         async function carregarPartidasSelect() {
             const { data, error } = await supabaseClient
                 .from('partidas')
                 .select('id, data, local')
                 .order('data', { ascending: false });
             
-            if (error) {
-                console.error('Erro ao carregar partidas:', error);
-                return;
-            }
+            if (error) return;
             
             partidasLista = data || [];
             const select = document.getElementById('selectPartida');
-            
             select.innerHTML = '<option value="geral">🏆 RANKING GERAL (todas)</option>';
             
             partidasLista.forEach(partida => {
@@ -344,248 +326,193 @@
             });
         }
 
-        // Calcular ranking anterior (antes da última partida)
-        async function calcularRankingAnterior(tipo) {
-            if (partidasLista.length < 2) return {};
-            
-            // Pega as partidas exceto a mais recente
-            const partidasAnteriores = [...partidasLista].slice(1);
-            if (partidasAnteriores.length === 0) return {};
-            
-            const idsAnteriores = partidasAnteriores.map(p => p.id);
-            
-            // Buscar avaliações das partidas anteriores
+        // Buscar ranking de uma partida específica
+        async function getRankingPartida(partidaId, tipo) {
             const { data: avaliacoes } = await supabaseClient
                 .from('avaliacoes_partida')
-                .select('avaliado_nome, nota, partida_id')
-                .in('partida_id', idsAnteriores);
+                .select('avaliado_nome, nota')
+                .eq('partida_id', partidaId);
             
-            // Buscar escalas para saber os tipos
-            const { data: escalas } = await supabaseClient
+            const { data: escala } = await supabaseClient
                 .from('escala_partida')
-                .select('jogador_nome, tipo');
+                .select('jogador_nome, tipo')
+                .eq('partida_id', partidaId);
             
-            if (!avaliacoes) return {};
+            if (!avaliacoes) return [];
             
-            // Filtrar por tipo
-            const convidadosNomes = ['G1', 'G2', 'C1'];
-            const nomesFiltrados = new Set();
-            escalas?.forEach(e => {
-                if (tipo === 'mensalistas' && e.tipo === 'mensalista') {
-                    nomesFiltrados.add(e.jogador_nome);
-                } else if (tipo === 'convidados' && (e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome))) {
-                    nomesFiltrados.add(e.jogador_nome);
-                }
-            });
-            
-            // Calcular soma de estrelas
-            const somaEstrelas = {};
-            avaliacoes.forEach(a => {
-                if (nomesFiltrados.has(a.avaliado_nome)) {
-                    if (!somaEstrelas[a.avaliado_nome]) somaEstrelas[a.avaliado_nome] = 0;
-                    somaEstrelas[a.avaliado_nome] += a.nota;
-                }
-            });
-            
-            // Criar ranking ordenado
-            const ranking = Object.entries(somaEstrelas)
-                .map(([nome, total]) => ({ nome, total }))
-                .sort((a, b) => b.total - a.total);
-            
-            // Mapear posição anterior
-            const posicoes = {};
-            ranking.forEach((item, idx) => {
-                posicoes[item.nome] = idx + 1;
-            });
-            
-            return posicoes;
-        }
-
-        // Carregar ranking
-        async function carregarRanking(partidaId = null) {
-            const container = document.getElementById('rankingContainer');
-            const infoDiv = document.getElementById('infoRanking');
-            const maiorContainer = document.getElementById('maiorPontuacaoContainer');
-            
-            container.innerHTML = '<div class="loading">Carregando ranking...</div>';
-            
-            let avaliacoes = [];
-            let escala = [];
-            let titulo = '';
-            let totalPartidas = 0;
-            
-            // Buscar ranking anterior para variação
-            const rankingPosicoesAnteriores = await calcularRankingAnterior(abaAtual);
-            
-            // Buscar dados
-            if (partidaId === 'geral' || partidaId === null) {
-                titulo = `🏆 RANKING GERAL - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
-                maiorContainer.style.display = 'block';
-                
-                const { data: todasAvaliacoes } = await supabaseClient
-                    .from('avaliacoes_partida')
-                    .select('avaliado_nome, nota, partida_id');
-                
-                const { data: todasEscalas } = await supabaseClient
-                    .from('escala_partida')
-                    .select('jogador_nome, tipo');
-                
-                avaliacoes = todasAvaliacoes || [];
-                escala = todasEscalas || [];
-                
-                const partidasUnicas = new Set(avaliacoes.map(a => a.partida_id));
-                totalPartidas = partidasUnicas.size;
-                
-                // Calcular maior pontuação em uma única partida
-                if (abaAtual === 'mensalistas') {
-                    const pontuacaoPorPartida = {};
-                    avaliacoes.forEach(a => {
-                        const jogador = escala.find(e => e.jogador_nome === a.avaliado_nome);
-                        if (jogador && jogador.tipo === 'mensalista') {
-                            const key = `${a.partida_id}_${a.avaliado_nome}`;
-                            if (!pontuacaoPorPartida[key]) pontuacaoPorPartida[key] = 0;
-                            pontuacaoPorPartida[key] += a.nota;
-                        }
-                    });
-                    
-                    let maiorPontuacao = { nome: '', total: 0, partida: '' };
-                    for (const [key, total] of Object.entries(pontuacaoPorPartida)) {
-                        if (total > maiorPontuacao.total) {
-                            const [partidaIdPart, nome] = key.split('_');
-                            const partida = partidasLista.find(p => p.id == partidaIdPart);
-                            const dataPartida = partida ? new Date(partida.data).toLocaleDateString('pt-BR') : 'data desconhecida';
-                            maiorPontuacao = { nome, total, partida: dataPartida };
-                        }
-                    }
-                    
-                    if (maiorPontuacao.total > 0) {
-                        maiorContainer.innerHTML = `
-                            🏅 <strong>MAIOR PONTUAÇÃO EM UMA ÚNICA PARTIDA</strong> 🏅<br>
-                            <span>${maiorPontuacao.nome}</span> recebeu <strong>${maiorPontuacao.total} estrelas</strong> na partida de <strong>${maiorPontuacao.partida}</strong>!
-                        `;
-                    } else {
-                        maiorContainer.innerHTML = '🏅 Aguardando primeiras avaliações para definir a maior pontuação!';
-                    }
-                } else {
-                    maiorContainer.style.display = 'none';
-                }
-                
-            } else {
-                const partida = partidasLista.find(p => p.id == partidaId);
-                const dataFormatada = partida ? new Date(partida.data).toLocaleDateString('pt-BR') : 'Data desconhecida';
-                titulo = `📅 Ranking da Partida - ${dataFormatada} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
-                maiorContainer.style.display = 'none';
-                
-                const { data: avaliacoesPartida } = await supabaseClient
-                    .from('avaliacoes_partida')
-                    .select('avaliado_nome, nota')
-                    .eq('partida_id', partidaId);
-                
-                const { data: escalaPartida } = await supabaseClient
-                    .from('escala_partida')
-                    .select('jogador_nome, tipo')
-                    .eq('partida_id', partidaId);
-                
-                avaliacoes = avaliacoesPartida || [];
-                escala = escalaPartida || [];
-                totalPartidas = 1;
-            }
-            
-            // Filtrar por tipo
             const convidadosNomes = ['G1', 'G2', 'C1'];
             const jogadoresFiltrados = escala.filter(e => {
-                if (abaAtual === 'mensalistas') {
-                    return e.tipo === 'mensalista';
-                } else {
-                    return e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome);
-                }
+                if (tipo === 'mensalistas') return e.tipo === 'mensalista';
+                return e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome);
             });
             
             const nomesFiltrados = new Set(jogadoresFiltrados.map(j => j.jogador_nome));
-            
-            // Filtrar avaliações
             const avaliacoesFiltradas = avaliacoes.filter(a => nomesFiltrados.has(a.avaliado_nome));
             
-            // Calcular soma de estrelas
             const somaEstrelas = {};
             avaliacoesFiltradas.forEach(a => {
-                if (!somaEstrelas[a.avaliado_nome]) {
-                    somaEstrelas[a.avaliado_nome] = 0;
-                }
+                if (!somaEstrelas[a.avaliado_nome]) somaEstrelas[a.avaliado_nome] = 0;
                 somaEstrelas[a.avaliado_nome] += a.nota;
             });
             
-            // Obter tipo do jogador
             const tipoJogador = {};
-            jogadoresFiltrados.forEach(j => {
-                tipoJogador[j.jogador_nome] = j.tipo;
-            });
+            jogadoresFiltrados.forEach(j => { tipoJogador[j.jogador_nome] = j.tipo; });
             
-            // Montar ranking atual
-            const rankingAtual = Object.keys(somaEstrelas).map(nome => ({
+            const ranking = Object.keys(somaEstrelas).map(nome => ({
                 nome: nome,
                 totalEstrelas: somaEstrelas[nome],
                 tipo: tipoJogador[nome] || (convidadosNomes.includes(nome) ? 'convidado' : 'mensalista')
             }));
             
-            rankingAtual.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
+            ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
+            return ranking;
+        }
+
+        // Encontrar partida anterior (data mais próxima anterior)
+        function getPartidaAnterior(partidaAtualId) {
+            const partidaAtual = partidasLista.find(p => p.id == partidaAtualId);
+            if (!partidaAtual) return null;
             
-            if (rankingAtual.length === 0) {
-                container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada</div>';
-                infoDiv.innerHTML = titulo + ' | 📊 0 avaliações';
+            const dataAtual = new Date(partidaAtual.data);
+            const anteriores = partidasLista.filter(p => new Date(p.data) < dataAtual);
+            if (anteriores.length === 0) return null;
+            
+            anteriores.sort((a, b) => new Date(b.data) - new Date(a.data));
+            return anteriores[0];
+        }
+
+        // Gerar texto de variação
+        function getVariacao(posAtual, posAnterior) {
+            if (!posAnterior) return { texto: 'Novo', classe: 'subiu' };
+            const diferenca = posAnterior - posAtual;
+            if (diferenca > 0) return { texto: `↑ ${diferenca}`, classe: 'subiu' };
+            if (diferenca < 0) return { texto: `↓ ${Math.abs(diferenca)}`, classe: 'desceu' };
+            return { texto: '=', classe: 'manteve' };
+        }
+
+        // Carregar ranking
+        async function carregarRanking(valorSelecionado) {
+            const container = document.getElementById('rankingContainer');
+            const infoDiv = document.getElementById('infoRanking');
+            const infoCompDiv = document.getElementById('infoComparacao');
+            
+            container.innerHTML = '<div class="loading">Carregando...</div>';
+            infoCompDiv.innerHTML = '';
+            
+            if (valorSelecionado === 'geral') {
+                // RANKING GERAL - sem setas
+                infoDiv.innerHTML = `🏆 RANKING GERAL - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
+                infoCompDiv.innerHTML = '📊 Ranking acumulado de todas as partidas';
+                
+                const { data: todasAvaliacoes } = await supabaseClient
+                    .from('avaliacoes_partida')
+                    .select('avaliado_nome, nota');
+                
+                const { data: todasEscalas } = await supabaseClient
+                    .from('escala_partida')
+                    .select('jogador_nome, tipo');
+                
+                const convidadosNomes = ['G1', 'G2', 'C1'];
+                const jogadoresFiltrados = todasEscalas?.filter(e => {
+                    if (abaAtual === 'mensalistas') return e.tipo === 'mensalista';
+                    return e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome);
+                }) || [];
+                
+                const nomesFiltrados = new Set(jogadoresFiltrados.map(j => j.jogador_nome));
+                const avaliacoesFiltradas = todasAvaliacoes?.filter(a => nomesFiltrados.has(a.avaliado_nome)) || [];
+                
+                const somaEstrelas = {};
+                avaliacoesFiltradas.forEach(a => {
+                    if (!somaEstrelas[a.avaliado_nome]) somaEstrelas[a.avaliado_nome] = 0;
+                    somaEstrelas[a.avaliado_nome] += a.nota;
+                });
+                
+                const tipoJogador = {};
+                jogadoresFiltrados.forEach(j => { tipoJogador[j.jogador_nome] = j.tipo; });
+                
+                const ranking = Object.keys(somaEstrelas).map(nome => ({
+                    nome, totalEstrelas: somaEstrelas[nome], tipo: tipoJogador[nome] || 'convidado'
+                }));
+                ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
+                
+                if (ranking.length === 0) {
+                    container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada</div>';
+                    return;
+                }
+                
+                container.innerHTML = ranking.map((j, idx) => {
+                    const estrelasCheias = Math.min(j.totalEstrelas, 10);
+                    const estrelasString = '★'.repeat(estrelasCheias) + (j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : '');
+                    return `
+                        <div class="ranking-item">
+                            <div class="ranking-posicao">
+                                <span class="posicao-numero">${idx + 1}º</span>
+                            </div>
+                            <div class="ranking-nome">
+                                ${j.nome}
+                                ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}
+                            </div>
+                            <div class="ranking-estrelas">${estrelasString}</div>
+                            <div class="ranking-total">${j.totalEstrelas} ⭐</div>
+                            <div class="ranking-detalhe">total acumulado</div>
+                        </div>
+                    `;
+                }).join('');
                 return;
             }
             
-            // Calcular variação de posição
-            const rankingComVariacao = rankingAtual.map((jogador, idx) => {
-                const posicaoAtual = idx + 1;
-                const posicaoAnterior = rankingPosicoesAnteriores[jogador.nome];
-                let variacao = 0;
-                let textoVariacao = '';
-                let classeVariacao = '';
-                
-                if (posicaoAnterior) {
-                    variacao = posicaoAnterior - posicaoAtual;
-                    if (variacao > 0) {
-                        textoVariacao = `↑ ${variacao}`;
-                        classeVariacao = 'subiu';
-                    } else if (variacao < 0) {
-                        textoVariacao = `↓ ${Math.abs(variacao)}`;
-                        classeVariacao = 'desceu';
-                    } else {
-                        textoVariacao = '=';
-                        classeVariacao = 'manteve';
-                    }
-                } else {
-                    textoVariacao = 'Novo';
-                    classeVariacao = 'subiu';
-                }
-                
-                return { ...jogador, posicaoAtual, variacao: textoVariacao, classeVariacao };
-            });
+            // RANKING DE PARTIDA ESPECÍFICA (com setas)
+            const partidaId = parseInt(valorSelecionado);
+            const partidaAtual = partidasLista.find(p => p.id === partidaId);
+            if (!partidaAtual) return;
             
-            const totalAvaliacoes = avaliacoesFiltradas.length;
-            infoDiv.innerHTML = `${titulo} | 📊 ${totalAvaliacoes} avaliações | 👥 ${rankingComVariacao.length} jogadores`;
+            const partidaAnterior = getPartidaAnterior(partidaId);
             
-            container.innerHTML = rankingComVariacao.map((j, idx) => {
+            const rankingAtual = await getRankingPartida(partidaId, abaAtual);
+            let rankingAnterior = [];
+            let comparando = false;
+            
+            if (partidaAnterior) {
+                rankingAnterior = await getRankingPartida(partidaAnterior.id, abaAtual);
+                comparando = true;
+                const dataAnterior = new Date(partidaAnterior.data).toLocaleDateString('pt-BR');
+                infoCompDiv.innerHTML = `📊 Comparado com a partida anterior (${dataAnterior}) | ↑ subiu &nbsp; ↓ desceu &nbsp; = manteve`;
+            } else {
+                infoCompDiv.innerHTML = `📊 Primeira partida registrada - sem comparação anterior`;
+            }
+            
+            // Mapa de posições anteriores
+            const posicoesAnteriores = {};
+            rankingAnterior.forEach((j, idx) => { posicoesAnteriores[j.nome] = idx + 1; });
+            
+            const dataFormatada = new Date(partidaAtual.data).toLocaleDateString('pt-BR');
+            infoDiv.innerHTML = `📅 Ranking da Partida - ${dataFormatada} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
+            
+            if (rankingAtual.length === 0) {
+                container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada</div>';
+                return;
+            }
+            
+            container.innerHTML = rankingAtual.map((j, idx) => {
+                const posAtual = idx + 1;
+                const posAnterior = posicoesAnteriores[j.nome];
+                const variacao = getVariacao(posAtual, posAnterior);
                 const estrelasCheias = Math.min(j.totalEstrelas, 10);
                 const estrelasString = '★'.repeat(estrelasCheias) + (j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : '');
                 
                 return `
                     <div class="ranking-item">
                         <div class="ranking-posicao">
-                            <span class="posicao-numero">${j.posicaoAtual}º</span>
-                            <span class="variacao ${j.classeVariacao}">${j.variacao}</span>
+                            <span class="posicao-numero">${posAtual}º</span>
+                            ${comparando ? `<span class="variacao ${variacao.classe}">${variacao.texto}</span>` : ''}
                         </div>
                         <div class="ranking-nome">
                             ${j.nome}
                             ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}
                         </div>
-                        <div class="ranking-estrelas">
-                            ${estrelasString}
-                        </div>
+                        <div class="ranking-estrelas">${estrelasString}</div>
                         <div class="ranking-total">${j.totalEstrelas} ⭐</div>
-                        <div class="ranking-detalhe">${partidaId === 'geral' ? 'total' : 'nesta partida'}</div>
+                        <div class="ranking-detalhe">nesta partida</div>
                     </div>
                 `;
             }).join('');
@@ -593,13 +520,8 @@
         
         // Eventos
         document.getElementById('btnCarregar').addEventListener('click', () => {
-            const partidaSelecionada = document.getElementById('selectPartida').value;
-            carregarRanking(partidaSelecionada);
-        });
-        
-        document.getElementById('btnRankingGeral').addEventListener('click', () => {
-            document.getElementById('selectPartida').value = 'geral';
-            carregarRanking('geral');
+            const valor = document.getElementById('selectPartida').value;
+            carregarRanking(valor);
         });
         
         document.getElementById('btnVoltar').addEventListener('click', () => {
@@ -612,8 +534,8 @@
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 abaAtual = tab.dataset.tab;
-                const partidaSelecionada = document.getElementById('selectPartida').value;
-                carregarRanking(partidaSelecionada);
+                const valor = document.getElementById('selectPartida').value;
+                carregarRanking(valor);
             });
         });
         
