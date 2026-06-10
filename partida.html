@@ -61,6 +61,7 @@
             align-items: center;
             flex-wrap: wrap;
         }
+        .posicao { font-size: 0.85em; color: #666; }
         .badge-mensalista { background: #ffcc00; color: #8b0000; font-size: 0.7em; padding: 2px 8px; border-radius: 20px; }
         .badge-convidado { background: #555; color: white; font-size: 0.7em; padding: 2px 8px; border-radius: 20px; }
         .btn {
@@ -84,6 +85,7 @@
             margin-top: 20px;
         }
         .btn { min-width: 200px; }
+        .btn:hover { transform: translateY(-2px); }
         @media (max-width: 768px) { .grid-2colunas { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -125,6 +127,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        const ORDEM_POSICOES = { 'Goleiro': 1, 'Fixo': 2, 'Ala Esquerda': 3, 'Ala Direita': 4, 'Pivô': 5 };
         let partidaId = null;
 
         async function carregarPartida() {
@@ -144,25 +147,14 @@
             }
 
             const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
-            if (escala) {
-                const timeA = escala.filter(j => j.time === 'A');
-                const timeB = escala.filter(j => j.time === 'B');
+            if (escala && escala.length > 0) {
+                let timeA = escala.filter(j => j.time === 'A');
+                let timeB = escala.filter(j => j.time === 'B');
+                timeA.sort((a, b) => (ORDEM_POSICOES[a.posicao] || 99) - (ORDEM_POSICOES[b.posicao] || 99));
+                timeB.sort((a, b) => (ORDEM_POSICOES[a.posicao] || 99) - (ORDEM_POSICOES[b.posicao] || 99));
                 
-                document.getElementById('timeALista').innerHTML = timeA.map(j => `
-                    <li>
-                        <strong>${j.jogador_nome}</strong>
-                        <div>📍 ${j.posicao}</div>
-                        ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}
-                    </li>
-                `).join('');
-                
-                document.getElementById('timeBLista').innerHTML = timeB.map(j => `
-                    <li>
-                        <strong>${j.jogador_nome}</strong>
-                        <div>📍 ${j.posicao}</div>
-                        ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}
-                    </li>
-                `).join('');
+                document.getElementById('timeALista').innerHTML = timeA.map(j => `<li><strong>${j.jogador_nome}</strong> <span class="posicao">${j.posicao}</span> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</li>`).join('');
+                document.getElementById('timeBLista').innerHTML = timeB.map(j => `<li><strong>${j.jogador_nome}</strong> <span class="posicao">${j.posicao}</span> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</li>`).join('');
             }
         }
 
@@ -170,14 +162,8 @@
             localStorage.setItem('partidaAtual', partidaId);
             window.location.href = 'avaliar.html';
         });
-
-        document.getElementById('btnRanking').addEventListener('click', () => {
-            window.location.href = 'ranking.html?partida=' + partidaId;
-        });
-
-        document.getElementById('btnNovoJogo').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
+        document.getElementById('btnRanking').addEventListener('click', () => { window.location.href = 'ranking.html?partida=' + partidaId; });
+        document.getElementById('btnNovoJogo').addEventListener('click', () => { window.location.href = 'index.html'; });
 
         carregarPartida();
     </script>
