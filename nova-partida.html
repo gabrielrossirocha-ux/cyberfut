@@ -730,6 +730,57 @@
 
         alternarTipo();
         atualizarSelectMensalistas();
+        // Carregar locais do banco
+async function carregarLocais() {
+    const { data, error } = await supabaseClient
+        .from('locais')
+        .select('id, nome, endereco')
+        .order('nome');
+    
+    if (error) {
+        console.error('Erro ao carregar locais:', error);
+        return;
+    }
+    
+    const select = document.getElementById('localPartida');
+    select.innerHTML = '<option value="">Selecione um local</option>';
+    
+    data.forEach(local => {
+        const option = document.createElement('option');
+        option.value = local.id;
+        option.textContent = local.nome;
+        option.dataset.endereco = local.endereco;
+        select.appendChild(option);
+    });
+}
+
+// Quando selecionar um local, mostrar o endereço
+document.getElementById('localPartida').addEventListener('change', (e) => {
+    const select = e.target;
+    const selectedOption = select.options[select.selectedIndex];
+    const endereco = selectedOption.dataset.endereco || '';
+    
+    const enderecoContainer = document.getElementById('enderecoContainer');
+    const enderecoInput = document.getElementById('enderecoPartida');
+    
+    if (selectedOption.value) {
+        enderecoContainer.style.display = 'block';
+        enderecoInput.value = endereco;
+    } else {
+        enderecoContainer.style.display = 'none';
+        enderecoInput.value = '';
+    }
+});
+
+// Modificar a função de salvar partida para usar local_id
+// Na parte de criar partida, substitua por:
+const partida = {
+    data: data,
+    horario: document.getElementById('horarioPartida').value,
+    local_id: parseInt(document.getElementById('localPartida').value),
+    endereco: document.getElementById('enderecoPartida').value,
+    observacoes: document.getElementById('observacoes').value
+};
     </script>
 </body>
 </html>
