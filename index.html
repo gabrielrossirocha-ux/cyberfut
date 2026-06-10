@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>CYSS Futebol - Início</title>
+    <title>CYSS Futebol</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,21 +13,131 @@
             min-height: 100vh;
             padding: 16px;
             position: relative;
+            overflow-x: hidden;
         }
-        body::before {
-            content: '';
+        
+        /* ============================================ */
+        /* ANIMAÇÃO DE ABERTURA (INTRO) */
+        /* ============================================ */
+        #intro {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('image.png');
-            background-repeat: repeat;
-            background-size: 120px;
-            opacity: 0.1;
-            pointer-events: none;
-            z-index: 0;
+            inset: 0;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
         }
+        .stadium {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center,
+                rgba(30,30,30,.8) 0%,
+                rgba(0,0,0,1) 70%);
+        }
+        .lights {
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 200px;
+            background: radial-gradient(circle,
+                rgba(255,255,255,.9) 0%,
+                rgba(255,255,255,.1) 10%,
+                transparent 20%);
+            background-size: 100px 100px;
+            animation: lightsOn 1s ease forwards;
+            opacity: 0;
+        }
+        @keyframes lightsOn { to { opacity: 1; } }
+        
+        .particles { position: absolute; inset: 0; }
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff0000;
+            border-radius: 50%;
+            animation: float 3s linear infinite;
+        }
+        @keyframes float {
+            from { transform: translateY(100vh); opacity: 0; }
+            20% { opacity: 1; }
+            to { transform: translateY(-100px); opacity: 0; }
+        }
+        
+        .ball {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            background: url("https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg") center/contain no-repeat;
+            animation: shoot 3s forwards;
+            z-index: 5;
+        }
+        @keyframes shoot {
+            0% { transform: scale(.3); opacity: 0; }
+            20% { transform: scale(1); opacity: 1; }
+            60% { transform: scale(1.4) rotate(360deg); }
+            100% { transform: scale(12) rotate(1080deg); opacity: 0; }
+        }
+        
+        .flash {
+            position: absolute;
+            inset: 0;
+            background: red;
+            opacity: 0;
+            animation: explode 1s ease forwards;
+            animation-delay: 2.8s;
+        }
+        @keyframes explode {
+            0% { opacity: 0; }
+            20% { opacity: .9; }
+            100% { opacity: 0; }
+        }
+        
+        .logo-wrapper {
+            position: absolute;
+            text-align: center;
+            opacity: 0;
+            animation: showLogo 1s ease forwards;
+            animation-delay: 3.2s;
+            z-index: 10;
+        }
+        .logo-anim {
+            width: 280px;
+            max-width: 70vw;
+            filter: drop-shadow(0 0 15px red) drop-shadow(0 0 30px rgba(255,0,0,0.5));
+            border-radius: 20px;
+        }
+        .title-anim {
+            color: #fff;
+            font-size: 42px;
+            font-weight: bold;
+            margin-top: 20px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px red;
+        }
+        .subtitle-anim {
+            color: #ccc;
+            margin-top: 8px;
+            letter-spacing: 2px;
+        }
+        @keyframes showLogo {
+            from { transform: scale(.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .intro-hidden {
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+        
+        /* ============================================ */
+        /* CONTEÚDO PRINCIPAL (MENU) */
+        /* ============================================ */
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -82,6 +192,15 @@
             font-size: 0.7em;
         }
         
+        /* Conteúdo principal começa invisível */
+        .main-content {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .main-content.visible {
+            opacity: 1;
+        }
+        
         @media (min-width: 768px) {
             body { padding: 20px; }
             .logo-area { gap: 20px; padding: 15px 30px; }
@@ -92,45 +211,103 @@
             .menu-icon { font-size: 4em; }
             .menu-card h2 { font-size: 1.5em; }
             .footer { font-size: 0.8em; }
+            .title-anim { font-size: 42px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo-area" id="logoHome">
-                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
-                <h1>⚽ CYSS FUTEBOL</h1>
-            </div>
-            <p class="subtitulo">Sistema de gestão de partidas e avaliações</p>
+    <!-- TELA DE ABERTURA (INTRO) -->
+    <div id="intro">
+        <div class="stadium"></div>
+        <div class="lights"></div>
+        <div class="particles" id="particles"></div>
+        <div class="ball"></div>
+        <div class="flash"></div>
+        <div class="logo-wrapper">
+            <img class="logo-anim" src="image.png" alt="CYSS Futebol">
+            <div class="title-anim">CYSS FUTEBOL</div>
+            <div class="subtitle-anim">Campeonato Interno</div>
         </div>
+    </div>
 
-        <div class="menu">
-            <div class="menu-card" id="btnNovaPartida">
-                <div class="menu-icon">📅</div>
-                <h2>Nova Partida</h2>
-                <p>Criar uma nova partida, adicionar jogadores e sortear os times</p>
+    <!-- CONTEÚDO PRINCIPAL (MENU) -->
+    <div class="main-content" id="mainContent">
+        <div class="container">
+            <div class="header">
+                <div class="logo-area" id="logoHome">
+                    <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
+                    <h1>⚽ CYSS FUTEBOL</h1>
+                </div>
+                <p class="subtitulo">Sistema de gestão de partidas e avaliações</p>
             </div>
 
-            <div class="menu-card" id="btnAvaliar">
-                <div class="menu-icon">⭐</div>
-                <h2>Avaliar Partidas</h2>
-                <p>Mensalistas: faça login e avalie os jogadores das partidas</p>
+            <div class="menu">
+                <div class="menu-card" id="btnNovaPartida">
+                    <div class="menu-icon">📅</div>
+                    <h2>Nova Partida</h2>
+                    <p>Criar uma nova partida, adicionar jogadores e sortear os times</p>
+                </div>
+
+                <div class="menu-card" id="btnAvaliar">
+                    <div class="menu-icon">⭐</div>
+                    <h2>Avaliar Partidas</h2>
+                    <p>Mensalistas: faça login e avalie os jogadores das partidas</p>
+                </div>
+
+                <div class="menu-card" id="btnRanking">
+                    <div class="menu-icon">🏆</div>
+                    <h2>Ranking Geral</h2>
+                    <p>Veja o acumulado de estrelas de todos os jogadores</p>
+                </div>
             </div>
 
-            <div class="menu-card" id="btnRanking">
-                <div class="menu-icon">🏆</div>
-                <h2>Ranking Geral</h2>
-                <p>Veja o acumulado de estrelas de todos os jogadores</p>
+            <div class="footer">
+                <p>CYSS FUTEBOL | Goleiros sempre em times diferentes | Avaliações por partida</p>
             </div>
-        </div>
-
-        <div class="footer">
-            <p>CYSS FUTEBOL | Goleiros sempre em times diferentes | Avaliações por partida</p>
         </div>
     </div>
 
     <script>
+        // Criar partículas da animação
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 120; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.animationDelay = (Math.random() * 3) + 's';
+            p.style.animationDuration = (2 + Math.random() * 3) + 's';
+            container.appendChild(p);
+        }
+
+        // Controle de primeiro acesso usando localStorage
+        const jaVisitou = localStorage.getItem('cyss_visitou');
+        const intro = document.getElementById('intro');
+        const mainContent = document.getElementById('mainContent');
+
+        function mostrarConteudo() {
+            mainContent.classList.add('visible');
+        }
+
+        function esconderIntro() {
+            intro.classList.add('intro-hidden');
+            mostrarConteudo();
+        }
+
+        if (jaVisitou) {
+            // Já visitou antes - esconde intro imediatamente
+            intro.style.display = 'none';
+            mostrarConteudo();
+        } else {
+            // Primeira visita - mostra animação
+            localStorage.setItem('cyss_visitou', 'true');
+            
+            // Após a animação, esconder intro e mostrar conteúdo
+            setTimeout(() => {
+                esconderIntro();
+            }, 5000);
+        }
+
+        // Eventos dos botões do menu
         document.getElementById('btnNovaPartida').addEventListener('click', () => {
             window.location.href = 'nova-partida.html';
         });
