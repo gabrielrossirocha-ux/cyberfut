@@ -194,31 +194,27 @@
 
         let abaAtual = 'dashboard';
 
-        // ============================================
-        // CARREGAR ADMINISTRADORES (quem tem is_admin = true)
-        // ============================================
+        // Função para formatar data sem problema de fuso horário
+        function formatarDataAdmin(dataString) {
+            if (!dataString) return '-';
+            const [ano, mes, dia] = dataString.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
         async function carregarAdmins() {
             const { data, error } = await supabaseClient
                 .from('mensalistas')
                 .select('id, nome')
                 .eq('is_admin', true)
                 .order('nome');
-            
-            if (error) {
-                console.error('Erro:', error);
-                return [];
-            }
+            if (error) return [];
             return data || [];
         }
 
-        // ============================================
-        // POPULAR SELECT DE LOGIN (só quem é admin)
-        // ============================================
         async function popularSelectAdmin() {
             const admins = await carregarAdmins();
             const select = document.getElementById('selectAdmin');
             select.innerHTML = '<option value="">Selecione seu nome</option>';
-            
             admins.forEach(admin => {
                 const option = document.createElement('option');
                 option.value = admin.id;
@@ -227,45 +223,15 @@
             });
         }
 
-        // ============================================
-        // LOGIN
-        // ============================================
         document.getElementById('btnLoginAdmin').addEventListener('click', async () => {
             const adminId = document.getElementById('selectAdmin').value;
             const senha = document.getElementById('senhaAdmin').value;
-            
-            if (!adminId) {
-                alert('Selecione seu nome!');
-                return;
-            }
-            if (!senha) {
-                alert('Digite sua senha!');
-                return;
-            }
-            
-            // Buscar o mensalista e verificar se é admin
-            const { data, error } = await supabaseClient
-                .from('mensalistas')
-                .select('id, nome, senha_hash, is_admin')
-                .eq('id', adminId)
-                .single();
-            
-            if (error || !data) {
-                alert('Usuário não encontrado!');
-                return;
-            }
-            
-            if (!data.is_admin) {
-                alert('Você não tem permissão de administrador!');
-                return;
-            }
-            
-            if (senha !== data.senha_hash) {
-                alert('Senha incorreta!');
-                return;
-            }
-            
-            // Login bem sucedido
+            if (!adminId) { alert('Selecione seu nome!'); return; }
+            if (!senha) { alert('Digite sua senha!'); return; }
+            const { data, error } = await supabaseClient.from('mensalistas').select('id, nome, senha_hash, is_admin').eq('id', adminId).single();
+            if (error || !data) { alert('Usuário não encontrado!'); return; }
+            if (!data.is_admin) { alert('Você não tem permissão de administrador!'); return; }
+            if (senha !== data.senha_hash) { alert('Senha incorreta!'); return; }
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
             carregarDashboard();
@@ -274,9 +240,6 @@
             carregarPartidas();
         });
 
-        // ============================================
-        // TABS
-        // ============================================
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -290,19 +253,14 @@
             });
         });
 
-        // ============================================
-        // DASHBOARD
-        // ============================================
         async function carregarDashboard() {
             const container = document.getElementById('tabContent');
             container.innerHTML = '<div class="loading">Carregando...</div>';
-            
             const { count: partidas } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true });
             const { count: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('*', { count: 'exact', head: true });
             const { count: mensalistas } = await supabaseClient.from('mensalistas').select('*', { count: 'exact', head: true });
             const { count: admins } = await supabaseClient.from('mensalistas').select('*', { count: 'exact', head: true }).eq('is_admin', true);
             const { count: locais } = await supabaseClient.from('locais').select('*', { count: 'exact', head: true });
-            
             container.innerHTML = `
                 <div class="stats-grid">
                     <div class="stat-card"><div class="stat-number">${partidas || 0}</div><div class="stat-label">Partidas</div></div>
@@ -314,9 +272,6 @@
             `;
         }
 
-        // ============================================
-        // MENSALISTAS (com opção de tornar admin)
-        // ============================================
         async function carregarMensalistas() {
             const { data } = await supabaseClient.from('mensalistas').select('*').order('nome');
             const container = document.getElementById('tabContent');
@@ -338,16 +293,13 @@
                 <tr>
                     <td>${m.id}</td>
                     <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;"></td>
-                    <td style="text-align:center;">
-                        <input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''}>
-                    </td>
+                    <td style="text-align:center;"><input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''}></td>
                     <td>
                         <button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
                         <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button>
                     </td>
                 </tr>
             `).join('');
-            
             document.getElementById('btnAdicionarMensalista').onclick = adicionarMensalista;
         }
 
@@ -359,6 +311,7 @@
             if (error) { alert('Erro: ' + error.message); return; }
             carregarMensalistas();
             carregarDashboard();
+            popularSelectAdmin();
         };
 
         window.editarMensalista = async (id) => {
@@ -369,7 +322,7 @@
             alert('Mensalista atualizado!');
             carregarMensalistas();
             carregarDashboard();
-            popularSelectAdmin(); // atualiza select de login
+            popularSelectAdmin();
         };
 
         window.deletarMensalista = async (id) => {
@@ -381,9 +334,6 @@
             popularSelectAdmin();
         };
 
-        // ============================================
-        // LOCAIS
-        // ============================================
         async function carregarLocais() {
             const { data } = await supabaseClient.from('locais').select('*').order('nome');
             const container = document.getElementById('tabContent');
@@ -412,7 +362,6 @@
                     </td>
                 </tr>
             `).join('');
-            
             document.getElementById('btnAdicionarLocal').onclick = adicionarLocal;
         }
 
@@ -448,16 +397,16 @@
             carregarDashboard();
         };
 
-        // ============================================
-        // PARTIDAS
-        // ============================================
+        // CORREÇÃO: Função carregarPartidas com data formatada corretamente
         async function carregarPartidas() {
             const { data } = await supabaseClient.from('partidas').select('*').order('data', { ascending: false });
             const container = document.getElementById('tabContent');
             container.innerHTML = `
                 <div class="tabela-container">
                     <table>
-                        <thead><tr><th>ID</th><th>Data</th><th>Horário</th><th>Local ID</th><th>Ações</th></tr></thead>
+                        <thead>
+                            <tr><th>ID</th><th>Data</th><th>Horário</th><th>Local ID</th><th>Ações</th></tr>
+                        </thead>
                         <tbody id="partidasTable"></tbody>
                     </table>
                 </div>
@@ -466,7 +415,7 @@
             tbody.innerHTML = (data || []).map(p => `
                 <tr>
                     <td>${p.id}</td>
-                    <td>${new Date(p.data).toLocaleDateString('pt-BR')}</td>
+                    <td>${formatarDataAdmin(p.data)}</td>
                     <td>${p.horario || '-'}</td>
                     <td>${p.local_id || '-'}</td>
                     <td><button class="btn btn-vermelho btn-pequeno" onclick="deletarPartida(${p.id})">🗑️ Excluir</button></td>
@@ -484,9 +433,6 @@
             carregarDashboard();
         };
 
-        // ============================================
-        // FERRAMENTAS
-        // ============================================
         function carregarFerramentas() {
             const container = document.getElementById('tabContent');
             container.innerHTML = `
@@ -521,16 +467,10 @@
             };
         }
 
-        // ============================================
-        // LOGO VOLTAR
-        // ============================================
         document.getElementById('logoVoltar').addEventListener('click', () => {
             window.location.href = 'index.html';
         });
 
-        // ============================================
-        // INICIALIZAR
-        // ============================================
         popularSelectAdmin();
     </script>
 </body>
