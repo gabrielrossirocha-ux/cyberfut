@@ -144,7 +144,7 @@
             const senha = document.getElementById('senha').value;
             if (!id || !senha) { alert('Preencha todos os campos'); return; }
             const { data } = await supabaseClient.from('mensalistas').select('*').eq('id', id).single();
-            if (!data || senha !== data.senha_hash) { alert('Senha incorreta! Senha padrão: futebol123'); return; }
+            if (!data || senha !== data.senha_hash) { alert('Senha incorreta!'); return; }
             mensalistaAtual = { id: data.id, nome: data.nome };
             partidaId = localStorage.getItem('partidaAtual');
             if (!partidaId) { alert('Nenhuma partida selecionada!'); return; }
@@ -197,11 +197,8 @@
                         if (notaSelecionada === 0) { alert('Selecione uma nota!'); return; }
                         const comentario = card.querySelector('textarea').value.substring(0, 100);
                         await supabaseClient.from('avaliacoes_partida').insert({
-                            partida_id: partidaId,
-                            avaliador_id: mensalistaAtual.id,
-                            avaliado_nome: j.jogador_nome,
-                            nota: notaSelecionada,
-                            comentario: comentario
+                            partida_id: partidaId, avaliador_id: mensalistaAtual.id,
+                            avaliado_nome: j.jogador_nome, nota: notaSelecionada, comentario: comentario
                         });
                         alert(`✅ ${j.jogador_nome} avaliado!`);
                         await carregarAvaliacoesFeitas();
