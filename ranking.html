@@ -143,7 +143,15 @@
         .variacao.subiu { background: #e8f5e9; color: #2e7d32; }
         .variacao.desceu { background: #ffebee; color: #c62828; }
         .variacao.manteve { background: #f5f5f5; color: #666; }
-        .ranking-nome { flex: 2; font-weight: 600; font-size: 0.9em; word-break: break-word; }
+        .ranking-nome {
+            flex: 2;
+            font-weight: 600;
+            font-size: 0.9em;
+            word-break: break-word;
+            cursor: pointer;
+            color: #8b0000;
+        }
+        .ranking-nome:hover { text-decoration: underline; }
         .ranking-estrelas { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
         .estrela { color: #ffcc00; font-size: 1em; }
         .ranking-total { font-weight: 700; color: #8b0000; min-width: 60px; text-align: right; font-size: 0.85em; }
@@ -172,23 +180,13 @@
         }
         .loading { text-align: center; padding: 30px; color: #666; }
         
-        /* MODO RETRATO (VERTICAL) */
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
             .tab { padding: 6px 12px; font-size: 0.8em; }
-            .filtro-group { padding: 4px 10px; }
-            select, .btn-filtro { padding: 6px 10px; font-size: 12px; }
-            .info-ranking { font-size: 0.75em; padding: 8px; }
-            .ranking-item { padding: 10px; gap: 6px; }
-            .ranking-posicao { font-size: 0.95em; min-width: 60px; }
             .ranking-nome { font-size: 0.8em; }
-            .ranking-total { font-size: 0.75em; min-width: 50px; }
-            .ranking-detalhe { font-size: 0.6em; min-width: 70px; }
-            .variacao { font-size: 0.65em; padding: 2px 4px; }
             .logo { max-width: 40px; }
             h1 { font-size: 1.2em; }
-            .btn-voltar { padding: 10px; font-size: 14px; }
         }
         
         @media (min-width: 768px) and (orientation: landscape) {
@@ -197,11 +195,6 @@
             .logo { max-width: 60px; }
             h1 { font-size: 1.8em; }
             .card { padding: 25px; }
-            .tab { padding: 10px 25px; font-size: 1.1em; }
-            .ranking-posicao { min-width: 100px; font-size: 1.3em; }
-            .ranking-nome { font-size: 1.05em; }
-            .estrela { font-size: 1.2em; }
-            .ranking-total { font-size: 1em; }
         }
     </style>
 </head>
@@ -265,7 +258,7 @@
             const { data: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('avaliado_nome, nota').eq('partida_id', partidaId);
             const { data: escala } = await supabaseClient.from('escala_partida').select('jogador_nome, tipo').eq('partida_id', partidaId);
             if (!avaliacoes || !escala) return [];
-            const convidadosNomes = ['G1', 'G2', 'C1'];
+            const convidadosNomes = ['G1', 'G2', 'C1', 'C2', 'C3'];
             const jogadoresFiltrados = escala.filter(e => tipo === 'mensalistas' ? e.tipo === 'mensalista' : e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome));
             const nomesFiltrados = new Set(jogadoresFiltrados.map(j => j.jogador_nome));
             const avaliacoesFiltradas = avaliacoes.filter(a => nomesFiltrados.has(a.avaliado_nome));
@@ -301,7 +294,7 @@
             
             const { data: todasAvaliacoes } = await supabaseClient.from('avaliacoes_partida').select('avaliado_nome, nota');
             const { data: todasEscalas } = await supabaseClient.from('escala_partida').select('jogador_nome, tipo');
-            const convidadosNomes = ['G1', 'G2', 'C1'];
+            const convidadosNomes = ['G1', 'G2', 'C1', 'C2', 'C3'];
             const jogadoresFiltrados = todasEscalas?.filter(e => abaAtual === 'mensalistas' ? e.tipo === 'mensalista' : e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome)) || [];
             const nomesFiltrados = new Set(jogadoresFiltrados.map(j => j.jogador_nome));
             const avaliacoesFiltradas = todasAvaliacoes?.filter(a => nomesFiltrados.has(a.avaliado_nome)) || [];
@@ -310,7 +303,20 @@
             const ranking = Object.keys(somaEstrelas).map(nome => ({ nome, totalEstrelas: somaEstrelas[nome], tipo: jogadoresFiltrados.find(j => j.jogador_nome === nome)?.tipo || 'convidado' }));
             ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
             if (ranking.length === 0) { container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada</div>'; return; }
-            container.innerHTML = ranking.map((j, idx) => `<div class="ranking-item"><div class="ranking-posicao"><span class="posicao-numero">${idx+1}º</span></div>`<div class="ranking-nome" style="cursor:pointer;" onclick="window.location.href='jogador.html?nome=${encodeURIComponent(j.nome)}'">${j.nome}${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div>`<div class="ranking-estrelas">${'★'.repeat(Math.min(j.totalEstrelas,10))}${j.totalEstrelas>10?` +${j.totalEstrelas-10}`:''}</div><div class="ranking-total">${j.totalEstrelas} ⭐</div><div class="ranking-detalhe">total</div></div>`).join('');
+            
+            container.innerHTML = ranking.map((j, idx) => {
+                const estrelasString = '★'.repeat(Math.min(j.totalEstrelas, 10)) + (j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : '');
+                const badge = j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>';
+                return `
+                    <div class="ranking-item">
+                        <div class="ranking-posicao"><span class="posicao-numero">${idx+1}º</span></div>
+                        <div class="ranking-nome" onclick="window.location.href='jogador.html?nome=${encodeURIComponent(j.nome)}'">${j.nome} ${badge}</div>
+                        <div class="ranking-estrelas">${estrelasString}</div>
+                        <div class="ranking-total">${j.totalEstrelas} ⭐</div>
+                        <div class="ranking-detalhe">total</div>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function carregarRankingPartida(partidaId) {
@@ -325,19 +331,51 @@
                 const rankingAnterior = await getRankingPartida(partidaAnterior.id, abaAtual);
                 rankingAnterior.forEach(item => { rankingAnteriorMap[item.nome] = item.posicao; });
                 comparando = true;
-                document.getElementById('infoComparacao').innerHTML = `📊 Comparado com a partida anterior (${new Date(partidaAnterior.data).toLocaleDateString('pt-BR')}) | <span style="color:#2e7d32;">↑ subiu</span> ↓ desceu = manteve`;
+                document.getElementById('infoComparacao').innerHTML = `📊 Comparado com a partida anterior (${new Date(partidaAnterior.data).toLocaleDateString('pt-BR')}) | ↑ subiu ↓ desceu = manteve`;
             } else { document.getElementById('infoComparacao').innerHTML = '📊 Primeira partida - sem comparação anterior'; }
             document.getElementById('infoRanking').innerHTML = `📅 Ranking da Partida - ${new Date(partidaAtual.data).toLocaleDateString('pt-BR')} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
             if (rankingAtual.length === 0) { container.innerHTML = '<div class="loading">Nenhuma avaliação para esta partida</div>'; return; }
-            container.innerHTML = rankingAtual.map(j => { const variacao = getVariacao(j.posicao, rankingAnteriorMap[j.nome]); return `<div class="ranking-item"><div class="ranking-posicao"><span class="posicao-numero">${j.posicao}º</span>${comparando ? `<span class="variacao ${variacao.classe}">${variacao.texto}</span>` : ''}</div><div class="ranking-nome">${j.nome}${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div><div class="ranking-estrelas">${'★'.repeat(Math.min(j.totalEstrelas,10))}</div><div class="ranking-total">${j.totalEstrelas} ⭐</div><div class="ranking-detalhe">nesta partida</div></div>`; }).join('');
+            
+            container.innerHTML = rankingAtual.map(j => {
+                const variacao = getVariacao(j.posicao, rankingAnteriorMap[j.nome]);
+                const estrelasString = '★'.repeat(Math.min(j.totalEstrelas, 10));
+                const badge = j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>';
+                return `
+                    <div class="ranking-item">
+                        <div class="ranking-posicao"><span class="posicao-numero">${j.posicao}º</span>${comparando ? `<span class="variacao ${variacao.classe}">${variacao.texto}</span>` : ''}</div>
+                        <div class="ranking-nome" onclick="window.location.href='jogador.html?nome=${encodeURIComponent(j.nome)}'">${j.nome} ${badge}</div>
+                        <div class="ranking-estrelas">${estrelasString}</div>
+                        <div class="ranking-total">${j.totalEstrelas} ⭐</div>
+                        <div class="ranking-detalhe">nesta partida</div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        document.getElementById('btnCarregar').addEventListener('click', async () => { const valor = document.getElementById('selectPartida').value; valor === 'geral' ? await carregarRankingGeral() : await carregarRankingPartida(parseInt(valor)); });
+        document.getElementById('btnCarregar').addEventListener('click', async () => { 
+            const valor = document.getElementById('selectPartida').value; 
+            if (valor === 'geral') { await carregarRankingGeral(); } 
+            else { await carregarRankingPartida(parseInt(valor)); } 
+        });
+        
         document.getElementById('btnVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
         document.getElementById('logoVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
-        document.querySelectorAll('.tab').forEach(tab => { tab.addEventListener('click', async () => { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); abaAtual = tab.dataset.tab; const valor = document.getElementById('selectPartida').value; valor === 'geral' ? await carregarRankingGeral() : await carregarRankingPartida(parseInt(valor)); }); });
         
-        async function init() { await carregarPartidasSelect(); await carregarRankingGeral(); }
+        document.querySelectorAll('.tab').forEach(tab => { 
+            tab.addEventListener('click', async () => { 
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); 
+                tab.classList.add('active'); 
+                abaAtual = tab.dataset.tab; 
+                const valor = document.getElementById('selectPartida').value; 
+                if (valor === 'geral') { await carregarRankingGeral(); } 
+                else { await carregarRankingPartida(parseInt(valor)); } 
+            }); 
+        });
+        
+        async function init() { 
+            await carregarPartidasSelect(); 
+            await carregarRankingGeral(); 
+        }
         init();
     </script>
 </body>
