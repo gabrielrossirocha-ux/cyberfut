@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYSS Futebol - Ranking</title>
+    <title>CYSS Futebol - Ranking Geral</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,7 +24,7 @@
             background-image: url('image.png');
             background-repeat: repeat;
             background-size: 120px;
-            opacity: 0.08;
+            opacity: 0.1;
             pointer-events: none;
             z-index: 0;
         }
@@ -65,7 +65,8 @@
         .ranking-nome { flex: 2; font-weight: 600; }
         .ranking-estrelas { display: flex; gap: 5px; }
         .estrela { color: #ffcc00; font-size: 1.3em; }
-        .ranking-total { font-weight: 700; color: #8b0000; min-width: 80px; text-align: right; }
+        .ranking-total { font-weight: 700; color: #8b0000; min-width: 100px; text-align: right; }
+        .ranking-partidas { font-size: 0.8em; color: #666; min-width: 100px; text-align: right; }
         .badge-mensalista { background: #ffcc00; color: #8b0000; font-size: 0.7em; padding: 2px 8px; border-radius: 20px; margin-left: 10px; }
         .btn {
             background: #1a1a1a;
@@ -78,7 +79,18 @@
             margin-top: 20px;
             width: 100%;
         }
-        @media (max-width: 768px) { .ranking-item { flex-wrap: wrap; gap: 10px; } }
+        .info-ranking {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #ffe5e5;
+            border-radius: 12px;
+            font-size: 0.9em;
+        }
+        @media (max-width: 768px) { 
+            .ranking-item { flex-wrap: wrap; gap: 10px; }
+            .ranking-estrelas { order: 3; width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -86,14 +98,15 @@
         <div class="header">
             <div class="logo-area">
                 <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
-                <h1>🏆 Ranking da Partida</h1>
+                <h1>🏆 Ranking Geral</h1>
             </div>
         </div>
 
         <div class="card">
-            <div id="infoPartida" style="text-align: center; margin-bottom: 20px; padding: 10px; background: #ffe5e5; border-radius: 12px;">Carregando...</div>
+            <h2>⭐ Acumulado de Estrelas (Todas as Partidas)</h2>
+            <div class="info-ranking" id="infoRanking">Carregando...</div>
             <div id="rankingContainer">Carregando...</div>
-            <button id="btnVoltar" class="btn">← Voltar à Partida</button>
+            <button id="btnVoltar" class="btn">← Voltar à Página Inicial</button>
         </div>
     </div>
 
@@ -103,39 +116,89 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function carregarRanking() {
-            const urlParams = new URLSearchParams(window.location.search);
-            let partidaId = urlParams.get('partida') || localStorage.getItem('partidaRanking');
-            if (!partidaId) { document.getElementById('rankingContainer').innerHTML = 'Partida não encontrada'; return; }
-
-            const { data: partida } = await supabaseClient.from('partidas').select('*').eq('id', partidaId).single();
-            if (partida) document.getElementById('infoPartida').innerHTML = `📅 ${new Date(partida.data).toLocaleDateString('pt-BR')}`;
-
-            const { data: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('*').eq('partida_id', partidaId);
-            const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
-
-            if (!escala || escala.length === 0) { document.getElementById('rankingContainer').innerHTML = 'Nenhum jogador encontrado'; return; }
-
-            const estrelas = {};
-            if (avaliacoes) avaliacoes.forEach(a => { estrelas[a.avaliado_nome] = (estrelas[a.avaliado_nome] || 0) + a.nota; });
-
-            const ranking = escala.map(j => ({ nome: j.jogador_nome, tipo: j.tipo, total: estrelas[j.jogador_nome] || 0 }));
-            ranking.sort((a, b) => b.total - a.total);
-
-            if (ranking.every(r => r.total === 0)) { document.getElementById('rankingContainer').innerHTML = 'Nenhuma avaliação ainda'; return; }
-
+        async function carregarRankingGeral() {
+            // Buscar TODAS as avaliações de todas as partidas
+            const { data: todasAvaliacoes, error } = await supabaseClient
+                .from('avaliacoes_partida')
+                .select('avaliado_nome, nota');
+            
+            if (error) {
+                document.getElementById('rankingContainer').innerHTML = 'Erro ao carregar ranking';
+                return;
+            }
+            
+            if (!todasAvaliacoes || todasAvaliacoes.length === 0) {
+                document.getElementById('rankingContainer').innerHTML = 'Nenhuma avaliação registrada ainda.';
+                document.getElementById('infoRanking').innerHTML = '📊 Nenhuma partida avaliada até o momento';
+                return;
+            }
+            
+            // Somar estrelas por jogador
+            const somaEstrelas = {};
+            const contagemPartidas = {};
+            
+            todasAvaliacoes.forEach(a => {
+                const nome = a.avaliado_nome;
+                if (!somaEstrelas[nome]) {
+                    somaEstrelas[nome] = 0;
+                    contagemPartidas[nome] = new Set();
+                }
+                somaEstrelas[nome] += a.nota;
+                // Para contar quantas partidas diferentes o jogador foi avaliado
+                // Precisamos buscar as partidas distintas, mas como não temos partida_id aqui,
+                // vamos apenas contar o total de avaliações como aproximação
+            });
+            
+            // Buscar também quantas partidas cada jogador participou
+            const { data: todasEscalas } = await supabaseClient
+                .from('escala_partida')
+                .select('jogador_nome, partida_id');
+            
+            const partidasPorJogador = {};
+            if (todasEscalas) {
+                todasEscalas.forEach(e => {
+                    if (!partidasPorJogador[e.jogador_nome]) {
+                        partidasPorJogador[e.jogador_nome] = new Set();
+                    }
+                    partidasPorJogador[e.jogador_nome].add(e.partida_id);
+                });
+            }
+            
+            // Montar ranking
+            const ranking = Object.keys(somaEstrelas).map(nome => ({
+                nome: nome,
+                totalEstrelas: somaEstrelas[nome],
+                totalPartidas: partidasPorJogador[nome]?.size || 1,
+                media: (somaEstrelas[nome] / (partidasPorJogador[nome]?.size || 1)).toFixed(1)
+            }));
+            
+            ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
+            
+            // Contar total de partidas únicas
+            const totalPartidas = new Set(todasAvaliacoes.map(a => a.partida_id)).size;
+            
+            document.getElementById('infoRanking').innerHTML = `📊 Total de ${todasAvaliacoes.length} avaliações em ${totalPartidas} partidas`;
+            
             document.getElementById('rankingContainer').innerHTML = ranking.map((j, idx) => `
                 <div class="ranking-item">
                     <div class="ranking-posicao">${idx + 1}º</div>
-                    <div class="ranking-nome">${j.nome} ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : ''}</div>
-                    <div class="ranking-estrelas">${'★'.repeat(Math.min(j.total, 5))}${'☆'.repeat(Math.max(0, 5 - j.total))}</div>
-                    <div class="ranking-total">${j.total} ⭐</div>
+                    <div class="ranking-nome">
+                        ${j.nome}
+                    </div>
+                    <div class="ranking-estrelas">
+                        ${'★'.repeat(Math.min(j.totalEstrelas, 10))}${j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : ''}
+                    </div>
+                    <div class="ranking-total">${j.totalEstrelas} ⭐</div>
+                    <div class="ranking-partidas">📊 ${j.totalPartidas} jogos | média ${j.media}</div>
                 </div>
             `).join('');
         }
 
-        document.getElementById('btnVoltar').addEventListener('click', () => { window.location.href = 'partida.html'; });
-        carregarRanking();
+        document.getElementById('btnVoltar').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+        
+        carregarRankingGeral();
     </script>
 </body>
 </html>
