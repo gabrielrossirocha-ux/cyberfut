@@ -187,7 +187,6 @@
         .btn-cancelar { background: #666; color: white; }
         .btn-confirmar { background: #2c5f2d; color: white; }
         
-        /* MODO RETRATO (VERTICAL) */
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
@@ -296,11 +295,16 @@
             const container = document.getElementById('listaPartidasContainer');
             container.innerHTML = '<div class="status-avaliacao">Carregando...</div>';
             
-            const { data: partidas } = await supabaseClient.from('partidas').select('id, data, local, horario').order('data', { ascending: false });
+            const { data: partidas } = await supabaseClient.from('partidas').select('id, data, horario, local_id').order('data', { ascending: false });
             if (!partidas || partidas.length === 0) {
                 container.innerHTML = '<div class="status-avaliacao">Nenhuma partida encontrada</div>';
                 return;
             }
+            
+            // Buscar locais para exibir o nome
+            const { data: locais } = await supabaseClient.from('locais').select('id, nome');
+            const locaisMap = {};
+            locais?.forEach(l => { locaisMap[l.id] = l.nome; });
             
             const { data: avaliadas } = await supabaseClient.from('avaliacoes_partida').select('partida_id').eq('avaliador_id', mensalistaAtual.id);
             const idsAvaliados = new Set(avaliadas?.map(a => a.partida_id) || []);
@@ -311,13 +315,16 @@
                 return;
             }
             
-            container.innerHTML = naoAvaliadas.map(partida => `
-                <div class="jogador-card" style="cursor:pointer;" data-id="${partida.id}">
-                    document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} | ⏰ ${partida.horario || 'Horário não informado'} | 📍 ${partida.local_nome || 'Local não informado'}`;
-                    <div style="word-break:break-word;">📍 ${partida.local || 'Local não informado'}</div>
-                    <button class="btn" style="margin-top:12px;" data-id="${partida.id}">⭐ Avaliar esta partida</button>
-                </div>
-            `).join('');
+            container.innerHTML = naoAvaliadas.map(partida => {
+                const localNome = locaisMap[partida.local_id] || 'Local não informado';
+                return `
+                    <div class="jogador-card" style="cursor:pointer;" data-id="${partida.id}">
+                        <div class="jogador-nome">📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
+                        <div style="word-break:break-word;">📍 ${localNome}</div>
+                        <button class="btn" style="margin-top:12px;" data-id="${partida.id}">⭐ Avaliar esta partida</button>
+                    </div>
+                `;
+            }).join('');
             
             document.querySelectorAll('[data-id]').forEach(el => {
                 el.addEventListener('click', async (e) => {
@@ -329,7 +336,7 @@
 
         async function selecionarPartida(partidaId) {
             partidaSelecionada = partidaId;
-            const { data: partida } = await supabaseClient.from('partidas').select('*').eq('id', partidaId).single();
+            const { data: partida } = await supabaseClient.from('partidas').select('*, locais(nome)').eq('id', partidaId).single();
             const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
             jogadoresPartida = escala?.filter(j => j.jogador_nome !== mensalistaAtual.nome) || [];
             
@@ -344,7 +351,10 @@
             selecaoScreen.style.display = 'none';
             avaliacoesScreen.style.display = 'block';
             document.getElementById('userInfo').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Avalie os jogadores</span>`;
-            document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} | 📍 ${partida.local || 'Local não informado'}`;
+            
+            const localNome = partida?.locais?.nome || 'Local não informado';
+            document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} | ⏰ ${partida.horario || 'Horário não informado'} | 📍 ${localNome}`;
+            
             renderizarJogadores();
             atualizarStatus();
         }
