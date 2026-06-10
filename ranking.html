@@ -310,7 +310,7 @@
             const ranking = Object.keys(somaEstrelas).map(nome => ({ nome, totalEstrelas: somaEstrelas[nome], tipo: jogadoresFiltrados.find(j => j.jogador_nome === nome)?.tipo || 'convidado' }));
             ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
             if (ranking.length === 0) { container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada</div>'; return; }
-            container.innerHTML = ranking.map((j, idx) => `<div class="ranking-item"><div class="ranking-posicao"><span class="posicao-numero">${idx+1}º</span></div><div class="ranking-nome">${j.nome}${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div><div class="ranking-estrelas">${'★'.repeat(Math.min(j.totalEstrelas,10))}${j.totalEstrelas>10?` +${j.totalEstrelas-10}`:''}</div><div class="ranking-total">${j.totalEstrelas} ⭐</div><div class="ranking-detalhe">total</div></div>`).join('');
+            container.innerHTML = ranking.map((j, idx) => `<div class="ranking-item"><div class="ranking-posicao"><span class="posicao-numero">${idx+1}º</span></div>`<div class="ranking-nome" style="cursor:pointer;" onclick="window.location.href='jogador.html?nome=${encodeURIComponent(j.nome)}'">${j.nome}${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div>`<div class="ranking-estrelas">${'★'.repeat(Math.min(j.totalEstrelas,10))}${j.totalEstrelas>10?` +${j.totalEstrelas-10}`:''}</div><div class="ranking-total">${j.totalEstrelas} ⭐</div><div class="ranking-detalhe">total</div></div>`).join('');
         }
 
         async function carregarRankingPartida(partidaId) {
