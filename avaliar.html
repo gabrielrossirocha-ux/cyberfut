@@ -113,7 +113,7 @@
             border-left-color: #2c5f2d;
             background: #f0fff0;
         }
-        .jogador-nome { font-size: 1.2em; font-weight: 700; color: #8b0000; margin-bottom: 8px; }
+        .jogador-nome { font-size: 1.2em; font-weight: 700; color: #8b0000; margin-bottom: 8px; word-break: break-word; }
         .jogador-nome small { font-size: 0.75em; font-weight: normal; color: #666; }
         textarea {
             width: 100%;
@@ -187,7 +187,22 @@
         .btn-cancelar { background: #666; color: white; }
         .btn-confirmar { background: #2c5f2d; color: white; }
         
-        @media (min-width: 768px) {
+        /* MODO RETRATO (VERTICAL) */
+        @media (orientation: portrait) {
+            body { padding: 12px; }
+            .card { padding: 15px; }
+            .card h2 { font-size: 1.1em; }
+            .btn { padding: 12px; font-size: 14px; min-height: 44px; }
+            .estrela { font-size: 32px; }
+            .jogador-card { padding: 12px; }
+            .jogador-nome { font-size: 1em; }
+            .user-info { font-size: 0.8em; }
+            .status-avaliacao { font-size: 0.75em; padding: 10px; }
+            .logo { max-width: 40px; }
+            h1 { font-size: 1.2em; }
+        }
+        
+        @media (min-width: 768px) and (orientation: landscape) {
             body { padding: 20px; }
             .logo-area { gap: 20px; padding: 15px 30px; }
             .logo { max-width: 60px; }
@@ -195,7 +210,6 @@
             .card { padding: 25px; }
             .jogadores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
             .estrela { font-size: 35px; }
-            .estrela:hover { transform: scale(1.1); }
         }
     </style>
 </head>
@@ -232,7 +246,7 @@
             <div class="user-info" id="userInfo"></div>
             <div class="card">
                 <h2>📝 Avaliar Jogadores da Partida</h2>
-                <div id="infoPartidaSelecionada" style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; font-size:0.9em;"></div>
+                <div id="infoPartidaSelecionada" style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; font-size:0.9em; word-break:break-word;"></div>
                 <div id="statusContainer" class="status-avaliacao"></div>
                 <div id="jogadoresContainer">Carregando...</div>
                 <button id="btnSalvarTodas" class="btn btn-salvar" disabled>💾 SALVAR TODAS AS AVALIAÇÕES</button>
@@ -300,7 +314,7 @@
             container.innerHTML = naoAvaliadas.map(partida => `
                 <div class="jogador-card" style="cursor:pointer;" data-id="${partida.id}">
                     <div class="jogador-nome">📅 ${new Date(partida.data).toLocaleDateString('pt-BR')} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
-                    <div>📍 ${partida.local || 'Local não informado'}</div>
+                    <div style="word-break:break-word;">📍 ${partida.local || 'Local não informado'}</div>
                     <button class="btn" style="margin-top:12px;" data-id="${partida.id}">⭐ Avaliar esta partida</button>
                 </div>
             `).join('');
