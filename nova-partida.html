@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYSS Futebol - Início</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('image.png');
+            background-repeat: repeat;
+            background-size: 150px;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header { text-align: center; margin-bottom: 50px; }
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px 40px;
+            border-radius: 80px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            backdrop-filter: blur(5px);
+        }
+        .logo { max-width: 80px; height: auto; border-radius: 16px; }
+        h1 { color: white; font-size: 2.2em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .subtitulo { color: #ffcccc; text-align: center; font-size: 1em; }
+        
+        .menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .menu-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 35px 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .menu-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+        .menu-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        .menu-card h2 {
+            color: #8b0000;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .menu-card p {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8em;
+        }
+        @media (max-width: 768px) {
+            .logo-area { padding: 12px 25px; }
+            .logo { max-width: 50px; }
+            h1 { font-size: 1.5em; }
+            .menu-icon { font-size: 3em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area">
+                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
+                <h1>⚽ CYSS FUTEBOL</h1>
+            </div>
+            <p class="subtitulo">Sistema de gestão de partidas e avaliações</p>
+        </div>
+
+        <div class="menu">
+            <div class="menu-card" id="btnNovaPartida">
+                <div class="menu-icon">📅</div>
+                <h2>Nova Partida</h2>
+                <p>Criar uma nova partida, adicionar jogadores e sortear os times</p>
+            </div>
+
+            <div class="menu-card" id="btnAvaliar">
+                <div class="menu-icon">⭐</div>
+                <h2>Avaliar Partidas</h2>
+                <p>Mensalistas: faça login e avalie os jogadores das partidas</p>
+            </div>
+
+            <div class="menu-card" id="btnRanking">
+                <div class="menu-icon">🏆</div>
+                <h2>Ranking Geral</h2>
+                <p>Veja o acumulado de estrelas de todos os jogadores</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>CYSS FUTEBOL | Goleiros sempre em times diferentes | Avaliações por partida</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('btnNovaPartida').addEventListener('click', () => {
+            window.location.href = 'nova-partida.html';
+        });
+        document.getElementById('btnAvaliar').addEventListener('click', () => {
+            window.location.href = 'avaliar.html';
+        });
+        document.getElementById('btnRanking').addEventListener('click', () => {
+            window.location.href = 'ranking.html';
+        });
+    </script>
+</body>
+</html>
