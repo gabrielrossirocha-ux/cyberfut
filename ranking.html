@@ -147,17 +147,21 @@
             flex: 2;
             font-weight: 600;
             font-size: 0.9em;
-            word-break: break-word;
             cursor: pointer;
             color: #8b0000;
+            /* CORREÇÃO RESPONSIVIDADE - evitar quebra de nomes */
+            white-space: nowrap;
+            overflow-x: auto;
+            text-overflow: ellipsis;
+            max-width: 150px;
         }
         .ranking-nome:hover { text-decoration: underline; }
         .ranking-estrelas { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
         .estrela { color: #ffcc00; font-size: 1em; }
         .ranking-total { font-weight: 700; color: #8b0000; min-width: 60px; text-align: right; font-size: 0.85em; }
         .ranking-detalhe { font-size: 0.65em; color: #666; min-width: 80px; text-align: right; }
-        .badge-mensalista { background: #ffcc00; color: #8b0000; font-size: 0.6em; padding: 2px 6px; border-radius: 20px; margin-left: 6px; display: inline-block; }
-        .badge-convidado { background: #555; color: white; font-size: 0.6em; padding: 2px 6px; border-radius: 20px; margin-left: 6px; display: inline-block; }
+        .badge-mensalista { background: #ffcc00; color: #8b0000; font-size: 0.6em; padding: 2px 6px; border-radius: 20px; margin-left: 6px; display: inline-block; white-space: nowrap; }
+        .badge-convidado { background: #555; color: white; font-size: 0.6em; padding: 2px 6px; border-radius: 20px; margin-left: 6px; display: inline-block; white-space: nowrap; }
         .btn-voltar {
             background: #1a1a1a;
             color: white;
@@ -180,13 +184,25 @@
         }
         .loading { text-align: center; padding: 30px; color: #666; }
         
+        /* CORREÇÃO RESPONSIVIDADE - MODO RETRATO */
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
             .tab { padding: 6px 12px; font-size: 0.8em; }
-            .ranking-nome { font-size: 0.8em; }
+            .ranking-nome {
+                font-size: 0.75em;
+                white-space: normal;
+                word-break: break-word;
+                max-width: 100px;
+                overflow-x: visible;
+            }
+            .ranking-posicao { font-size: 0.9em; min-width: 55px; }
+            .ranking-total { font-size: 0.7em; min-width: 45px; }
+            .ranking-detalhe { font-size: 0.55em; min-width: 60px; }
             .logo { max-width: 40px; }
             h1 { font-size: 1.2em; }
+            .variacao { font-size: 0.6em; padding: 2px 4px; }
+            .badge-mensalista, .badge-convidado { font-size: 0.55em; padding: 1px 4px; }
         }
         
         @media (min-width: 768px) and (orientation: landscape) {
@@ -195,6 +211,11 @@
             .logo { max-width: 60px; }
             h1 { font-size: 1.8em; }
             .card { padding: 25px; }
+            .tab { padding: 10px 25px; font-size: 1.1em; }
+            .ranking-posicao { min-width: 100px; font-size: 1.3em; }
+            .ranking-nome { font-size: 1.05em; max-width: 250px; white-space: nowrap; }
+            .estrela { font-size: 1.2em; }
+            .ranking-total { font-size: 1em; }
         }
     </style>
 </head>
