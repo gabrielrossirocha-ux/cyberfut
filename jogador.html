@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>CYSS Futebol - Perfil do Jogador</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            padding: 16px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('image.png');
+            background-repeat: repeat;
+            background-size: 120px;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header { text-align: center; margin-bottom: 25px; }
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 20px;
+            border-radius: 60px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .logo-area:active { transform: scale(0.98); }
+        .logo { max-width: 45px; height: auto; border-radius: 12px; }
+        h1 { color: white; font-size: 1.4em; }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            color: #8b0000;
+            border-bottom: 3px solid #8b0000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+        .perfil-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .jogador-nome {
+            font-size: 2em;
+            font-weight: 700;
+            color: #8b0000;
+            margin-bottom: 10px;
+        }
+        .jogador-badge {
+            display: inline-block;
+            background: #ffcc00;
+            color: #8b0000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .estatisticas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .estatistica-card {
+            background: #f5f5f5;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+        }
+        .estatistica-valor {
+            font-size: 2em;
+            font-weight: 700;
+            color: #8b0000;
+        }
+        .estatistica-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .grafico-container {
+            margin: 20px 0;
+            min-height: 300px;
+        }
+        canvas {
+            max-height: 300px;
+            width: 100%;
+        }
+        .historico-tabela {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .historico-tabela th, .historico-tabela td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        .historico-tabela th {
+            background: #f5f5f5;
+            color: #8b0000;
+        }
+        .comentarios-lista {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .comentario-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #8b0000;
+        }
+        .comentario-cabecalho {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+        .comentario-avaliador {
+            font-weight: 600;
+            color: #8b0000;
+        }
+        .comentario-nota {
+            background: #ffcc00;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .comentario-texto {
+            color: #333;
+            font-size: 0.9em;
+            line-height: 1.4;
+            word-break: break-word;
+            margin: 8px 0;
+        }
+        .comentario-data {
+            font-size: 0.7em;
+            color: #999;
+            margin-top: 8px;
+        }
+        .comentario-partida {
+            font-size: 0.7em;
+            color: #8b0000;
+            background: #ffe5e5;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .btn-voltar {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .btn-voltar:hover {
+            background: #333;
+            transform: translateY(-2px);
+        }
+        .estrela-pequena {
+            color: #ffcc00;
+            font-size: 0.9em;
+        }
+        
+        @media (orientation: portrait) {
+            body { padding: 12px; }
+            .card { padding: 15px; }
+            .jogador-nome { font-size: 1.5em; }
+            .estatistica-valor { font-size: 1.5em; }
+            .historico-tabela th, .historico-tabela td { padding: 6px; font-size: 0.75em; }
+            .comentario-item { padding: 12px; }
+        }
+        
+        @media (min-width: 768px) and (orientation: landscape) {
+            body { padding: 20px; }
+            .logo-area { gap: 20px; padding: 15px 30px; }
+            .logo { max-width: 60px; }
+            h1 { font-size: 1.8em; }
+            .card { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area" id="logoVoltar">
+                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
+                <h1>⭐ Perfil do Jogador</h1>
+            </div>
+        </div>
+
+        <div id="content">
+            <div class="loading">Carregando perfil...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let chartInstance = null;
+
+        // Pegar nome do jogador da URL
+        function getJogadorNome() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('nome');
+        }
+
+        // Carregar dados do jogador
+        async function carregarPerfil() {
+            const nome = getJogadorNome();
+            if (!nome) {
+                document.getElementById('content').innerHTML = '<div class="card"><div class="loading">Jogador não especificado</div><button class="btn-voltar" onclick="window.location.href=\'ranking.html\'">Voltar ao Ranking</button></div>';
+                return;
+            }
+
+            document.getElementById('content').innerHTML = '<div class="loading">Carregando...</div>';
+
+            // Buscar todas as avaliações do jogador (com dados da partida e avaliador)
+            const { data: avaliacoes, error } = await supabaseClient
+                .from('avaliacoes_partida')
+                .select(`
+                    nota,
+                    comentario,
+                    data_avaliacao,
+                    partida_id,
+                    avaliador_id,
+                    mensalistas!avaliacoes_partida_avaliador_id_fkey (nome)
+                `)
+                .eq('avaliado_nome', nome)
+                .order('data_avaliacao', { ascending: true });
+
+            if (error || !avaliacoes || avaliacoes.length === 0) {
+                document.getElementById('content').innerHTML = `
+                    <div class="card">
+                        <div class="perfil-header">
+                            <div class="jogador-nome">${nome}</div>
+                        </div>
+                        <div class="loading">Nenhuma avaliação encontrada para ${nome}</div>
+                        <button class="btn-voltar" onclick="window.location.href='ranking.html'">Voltar ao Ranking</button>
+                    </div>`;
+                return;
+            }
+
+            // Buscar dados das partidas
+            const partidaIds = [...new Set(avaliacoes.map(a => a.partida_id))];
+            const { data: partidas } = await supabaseClient
+                .from('partidas')
+                .select('id, data, local')
+                .in('id', partidaIds)
+                .order('data', { ascending: true });
+
+            const partidasMap = {};
+            partidas?.forEach(p => { partidasMap[p.id] = p; });
+
+            // Calcular estatísticas
+            const notas = avaliacoes.map(a => a.nota);
+            const somaNotas = notas.reduce((acc, n) => acc + n, 0);
+            const media = (somaNotas / notas.length).toFixed(2);
+            const melhorNota = Math.max(...notas);
+            const piorNota = Math.min(...notas);
+            const totalEstrelas = somaNotas;
+
+            // Dados para o gráfico (nota média por partida)
+            const notasPorPartida = {};
+            avaliacoes.forEach(a => {
+                if (!notasPorPartida[a.partida_id]) {
+                    notasPorPartida[a.partida_id] = { soma: 0, count: 0, data: partidasMap[a.partida_id]?.data };
+                }
+                notasPorPartida[a.partida_id].soma += a.nota;
+                notasPorPartida[a.partida_id].count++;
+            });
+
+            const partidasOrdenadas = Object.keys(notasPorPartida).sort((a, b) => 
+                new Date(notasPorPartida[a].data) - new Date(notasPorPartida[b].data)
+            );
+
+            const labels = partidasOrdenadas.map(id => {
+                const data = new Date(notasPorPartida[id].data);
+                return `${data.toLocaleDateString('pt-BR')}`;
+            });
+            const mediasPorPartida = partidasOrdenadas.map(id => 
+                (notasPorPartida[id].soma / notasPorPartida[id].count).toFixed(1)
+            );
+
+            // Agrupar comentários
+            const comentariosComDados = avaliacoes
+                .filter(a => a.comentario && a.comentario.trim() !== '')
+                .map(a => ({
+                    nota: a.nota,
+                    comentario: a.comentario,
+                    data: a.data_avaliacao,
+                    avaliador: a.mensalistas?.nome || 'Mensalista',
+                    partida: partidasMap[a.partida_id]
+                }))
+                .sort((a, b) => new Date(b.data) - new Date(a.data));
+
+            // Montar HTML
+            const estrelasMelhor = '★'.repeat(melhorNota) + '☆'.repeat(5 - melhorNota);
+            const estrelasPior = '★'.repeat(piorNota) + '☆'.repeat(5 - piorNota);
+
+            let html = `
+                <div class="card">
+                    <div class="perfil-header">
+                        <div class="jogador-nome">${nome}</div>
+                        <span class="jogador-badge">⭐ ${totalEstrelas} estrelas no total</span>
+                    </div>
+                </div>
+
+                <!-- ESTATÍSTICAS -->
+                <div class="card">
+                    <h2>📊 Estatísticas</h2>
+                    <div class="estatisticas-grid">
+                        <div class="estatistica-card">
+                            <div class="estatistica-valor">${media}</div>
+                            <div class="estatistica-label">Média de Estrelas</div>
+                        </div>
+                        <div class="estatistica-card">
+                            <div class="estatistica-valor">${totalEstrelas}</div>
+                            <div class="estatistica-label">Total de Estrelas</div>
+                        </div>
+                        <div class="estatistica-card">
+                            <div class="estatistica-valor">${melhorNota} ⭐</div>
+                            <div class="estatistica-label">Melhor Nota</div>
+                            <div style="font-size:0.8em;">${estrelasMelhor}</div>
+                        </div>
+                        <div class="estatistica-card">
+                            <div class="estatistica-valor">${piorNota} ⭐</div>
+                            <div class="estatistica-label">Pior Nota</div>
+                            <div style="font-size:0.8em;">${estrelasPior}</div>
+                        </div>
+                        <div class="estatistica-card">
+                            <div class="estatistica-valor">${avaliacoes.length}</div>
+                            <div class="estatistica-label">Avaliações Recebidas</div>
+                        </div>
+                        <div class="estatistica-card">
+                            <div class="estatistica-valor">${Object.keys(notasPorPartida).length}</div>
+                            <div class="estatistica-label">Partidas Avaliadas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRÁFICO DE EVOLUÇÃO -->
+                <div class="card">
+                    <h2>📈 Evolução por Partida</h2>
+                    <div class="grafico-container">
+                        <canvas id="graficoEvolucao"></canvas>
+                    </div>
+                </div>
+
+                <!-- HISTÓRICO DE NOTAS -->
+                <div class="card">
+                    <h2>📋 Histórico de Notas</h2>
+                    <div style="overflow-x: auto;">
+                        <table class="historico-tabela">
+                            <thead>
+                                <tr><th>Data</th><th>Local</th><th>Nota</th><th>Estrelas</th></tr>
+                            </thead>
+                            <tbody>
+                                ${partidasOrdenadas.map(id => {
+                                    const partida = partidasMap[id];
+                                    const mediaPartida = (notasPorPartida[id].soma / notasPorPartida[id].count).toFixed(1);
+                                    const estrelas = '★'.repeat(Math.round(mediaPartida)) + '☆'.repeat(5 - Math.round(mediaPartida));
+                                    return `<tr><td>${new Date(partida.data).toLocaleDateString('pt-BR')}</td><td>${partida.local || 'Sem local'}</td><td>${mediaPartida}</td><td>${estrelas}</td></tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            // COMENTÁRIOS
+            if (comentariosComDados.length > 0) {
+                html += `
+                    <div class="card">
+                        <h2>💬 Comentários Recebidos</h2>
+                        <div class="comentarios-lista">
+                            ${comentariosComDados.map(c => `
+                                <div class="comentario-item">
+                                    <div class="comentario-cabecalho">
+                                        <span class="comentario-avaliador">👤 ${c.avaliador}</span>
+                                        <span class="comentario-nota">⭐ ${c.nota} estrelas</span>
+                                    </div>
+                                    <div class="comentario-texto">"${c.comentario}"</div>
+                                    <div class="comentario-data">
+                                        📅 ${new Date(c.data).toLocaleDateString('pt-BR')}
+                                        ${c.partida ? `<span class="comentario-partida"> 🏟️ ${c.partida.local || 'Partida'} (${new Date(c.partida.data).toLocaleDateString('pt-BR')})</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="card">
+                        <h2>💬 Comentários</h2>
+                        <div class="loading">Nenhum comentário recebido ainda</div>
+                    </div>
+                `;
+            }
+
+            html += `<button class="btn-voltar" onclick="window.location.href='ranking.html'">← Voltar ao Ranking</button>`;
+
+            document.getElementById('content').innerHTML = html;
+
+            // Criar gráfico
+            if (chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('graficoEvolucao').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Média de Estrelas',
+                        data: mediasPorPartida,
+                        borderColor: '#8b0000',
+                        backgroundColor: 'rgba(139, 0, 0, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#8b0000',
+                        pointBorderColor: 'white',
+                        pointBorderWidth: 2,
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 5,
+                            title: { display: true, text: 'Estrelas' },
+                            ticks: { stepSize: 1 }
+                        },
+                        x: { title: { display: true, text: 'Partidas' } }
+                    },
+                    plugins: {
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw} ⭐ estrelas` } },
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        }
+
+        document.getElementById('logoVoltar').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        carregarPerfil();
+    </script>
+</body>
+</html>
