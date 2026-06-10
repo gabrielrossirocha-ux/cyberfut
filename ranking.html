@@ -29,7 +29,7 @@
             z-index: 0;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -150,10 +150,37 @@
             background: #f9f9f9;
         }
         .ranking-posicao {
-            font-size: 1.5em;
+            font-size: 1.3em;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 100px;
+        }
+        .posicao-numero {
             color: #8b0000;
-            width: 60px;
+            min-width: 40px;
+        }
+        .variacao {
+            font-size: 0.8em;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .variacao.subiu {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .variacao.desceu {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .variacao.manteve {
+            background: #f5f5f5;
+            color: #666;
         }
         .ranking-nome {
             flex: 2;
@@ -239,6 +266,7 @@
             .filtro-group { justify-content: space-between; }
             .tabs { flex-direction: column; align-items: stretch; }
             .tab { text-align: center; }
+            .ranking-posicao { min-width: auto; }
         }
     </style>
 </head>
@@ -288,6 +316,7 @@
 
         let partidasLista = [];
         let abaAtual = 'mensalistas';
+        let rankingAnterior = {}; // Guarda posições anteriores
 
         // Carregar lista de partidas para o select
         async function carregarPartidasSelect() {
@@ -315,6 +344,63 @@
             });
         }
 
+        // Calcular ranking anterior (antes da última partida)
+        async function calcularRankingAnterior(tipo) {
+            if (partidasLista.length < 2) return {};
+            
+            // Pega as partidas exceto a mais recente
+            const partidasAnteriores = [...partidasLista].slice(1);
+            if (partidasAnteriores.length === 0) return {};
+            
+            const idsAnteriores = partidasAnteriores.map(p => p.id);
+            
+            // Buscar avaliações das partidas anteriores
+            const { data: avaliacoes } = await supabaseClient
+                .from('avaliacoes_partida')
+                .select('avaliado_nome, nota, partida_id')
+                .in('partida_id', idsAnteriores);
+            
+            // Buscar escalas para saber os tipos
+            const { data: escalas } = await supabaseClient
+                .from('escala_partida')
+                .select('jogador_nome, tipo');
+            
+            if (!avaliacoes) return {};
+            
+            // Filtrar por tipo
+            const convidadosNomes = ['G1', 'G2', 'C1'];
+            const nomesFiltrados = new Set();
+            escalas?.forEach(e => {
+                if (tipo === 'mensalistas' && e.tipo === 'mensalista') {
+                    nomesFiltrados.add(e.jogador_nome);
+                } else if (tipo === 'convidados' && (e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome))) {
+                    nomesFiltrados.add(e.jogador_nome);
+                }
+            });
+            
+            // Calcular soma de estrelas
+            const somaEstrelas = {};
+            avaliacoes.forEach(a => {
+                if (nomesFiltrados.has(a.avaliado_nome)) {
+                    if (!somaEstrelas[a.avaliado_nome]) somaEstrelas[a.avaliado_nome] = 0;
+                    somaEstrelas[a.avaliado_nome] += a.nota;
+                }
+            });
+            
+            // Criar ranking ordenado
+            const ranking = Object.entries(somaEstrelas)
+                .map(([nome, total]) => ({ nome, total }))
+                .sort((a, b) => b.total - a.total);
+            
+            // Mapear posição anterior
+            const posicoes = {};
+            ranking.forEach((item, idx) => {
+                posicoes[item.nome] = idx + 1;
+            });
+            
+            return posicoes;
+        }
+
         // Carregar ranking
         async function carregarRanking(partidaId = null) {
             const container = document.getElementById('rankingContainer');
@@ -327,6 +413,9 @@
             let escala = [];
             let titulo = '';
             let totalPartidas = 0;
+            
+            // Buscar ranking anterior para variação
+            const rankingPosicoesAnteriores = await calcularRankingAnterior(abaAtual);
             
             // Buscar dados
             if (partidaId === 'geral' || partidaId === null) {
@@ -347,7 +436,7 @@
                 const partidasUnicas = new Set(avaliacoes.map(a => a.partida_id));
                 totalPartidas = partidasUnicas.size;
                 
-                // Calcular maior pontuação em uma única partida (apenas para mensalistas)
+                // Calcular maior pontuação em uma única partida
                 if (abaAtual === 'mensalistas') {
                     const pontuacaoPorPartida = {};
                     avaliacoes.forEach(a => {
@@ -362,8 +451,8 @@
                     let maiorPontuacao = { nome: '', total: 0, partida: '' };
                     for (const [key, total] of Object.entries(pontuacaoPorPartida)) {
                         if (total > maiorPontuacao.total) {
-                            const [partidaId, nome] = key.split('_');
-                            const partida = partidasLista.find(p => p.id == partidaId);
+                            const [partidaIdPart, nome] = key.split('_');
+                            const partida = partidasLista.find(p => p.id == partidaIdPart);
                             const dataPartida = partida ? new Date(partida.data).toLocaleDateString('pt-BR') : 'data desconhecida';
                             maiorPontuacao = { nome, total, partida: dataPartida };
                         }
@@ -371,7 +460,7 @@
                     
                     if (maiorPontuacao.total > 0) {
                         maiorContainer.innerHTML = `
-                            🏅 <strong>MAIOR PONTUAÇÃO EM UMA ÚNICA PARTIDA (Mensalistas)</strong> 🏅<br>
+                            🏅 <strong>MAIOR PONTUAÇÃO EM UMA ÚNICA PARTIDA</strong> 🏅<br>
                             <span>${maiorPontuacao.nome}</span> recebeu <strong>${maiorPontuacao.total} estrelas</strong> na partida de <strong>${maiorPontuacao.partida}</strong>!
                         `;
                     } else {
@@ -402,7 +491,7 @@
                 totalPartidas = 1;
             }
             
-            // Filtrar por tipo (mensalista ou convidado)
+            // Filtrar por tipo
             const convidadosNomes = ['G1', 'G2', 'C1'];
             const jogadoresFiltrados = escala.filter(e => {
                 if (abaAtual === 'mensalistas') {
@@ -432,31 +521,62 @@
                 tipoJogador[j.jogador_nome] = j.tipo;
             });
             
-            // Montar ranking
-            const ranking = Object.keys(somaEstrelas).map(nome => ({
+            // Montar ranking atual
+            const rankingAtual = Object.keys(somaEstrelas).map(nome => ({
                 nome: nome,
                 totalEstrelas: somaEstrelas[nome],
                 tipo: tipoJogador[nome] || (convidadosNomes.includes(nome) ? 'convidado' : 'mensalista')
             }));
             
-            ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
+            rankingAtual.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
             
-            if (ranking.length === 0) {
+            if (rankingAtual.length === 0) {
                 container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada</div>';
                 infoDiv.innerHTML = titulo + ' | 📊 0 avaliações';
                 return;
             }
             
-            const totalAvaliacoes = avaliacoesFiltradas.length;
-            infoDiv.innerHTML = `${titulo} | 📊 ${totalAvaliacoes} avaliações | 👥 ${ranking.length} jogadores`;
+            // Calcular variação de posição
+            const rankingComVariacao = rankingAtual.map((jogador, idx) => {
+                const posicaoAtual = idx + 1;
+                const posicaoAnterior = rankingPosicoesAnteriores[jogador.nome];
+                let variacao = 0;
+                let textoVariacao = '';
+                let classeVariacao = '';
+                
+                if (posicaoAnterior) {
+                    variacao = posicaoAnterior - posicaoAtual;
+                    if (variacao > 0) {
+                        textoVariacao = `↑ ${variacao}`;
+                        classeVariacao = 'subiu';
+                    } else if (variacao < 0) {
+                        textoVariacao = `↓ ${Math.abs(variacao)}`;
+                        classeVariacao = 'desceu';
+                    } else {
+                        textoVariacao = '=';
+                        classeVariacao = 'manteve';
+                    }
+                } else {
+                    textoVariacao = 'Novo';
+                    classeVariacao = 'subiu';
+                }
+                
+                return { ...jogador, posicaoAtual, variacao: textoVariacao, classeVariacao };
+            });
             
-            container.innerHTML = ranking.map((j, idx) => {
+            const totalAvaliacoes = avaliacoesFiltradas.length;
+            infoDiv.innerHTML = `${titulo} | 📊 ${totalAvaliacoes} avaliações | 👥 ${rankingComVariacao.length} jogadores`;
+            
+            container.innerHTML = rankingComVariacao.map((j, idx) => {
                 const estrelasCheias = Math.min(j.totalEstrelas, 10);
                 const estrelasString = '★'.repeat(estrelasCheias) + (j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : '');
                 
                 return `
                     <div class="ranking-item">
-                        <div class="ranking-posicao">${idx + 1}º</div>
+                        <div class="ranking-posicao">
+                            <span class="posicao-numero">${j.posicaoAtual}º</span>
+                            <span class="variacao ${j.classeVariacao}">${j.variacao}</span>
+                        </div>
                         <div class="ranking-nome">
                             ${j.nome}
                             ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}
