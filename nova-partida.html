@@ -178,9 +178,15 @@
                 </div>
             </div>
             <div class="campo">
-                <label>📍 Local</label>
-                <input type="text" id="localPartida" placeholder="Ex: Quadra do Centro">
-            </div>
+    <label>📍 Local</label>
+    <select id="localPartida" required>
+        <option value="">Selecione um local</option>
+    </select>
+</div>
+<div class="campo" id="enderecoContainer" style="display: none;">
+    <label>🏟️ Endereço</label>
+    <input type="text" id="enderecoPartida" readonly style="background:#f5f5f5;">
+</div>
             <div class="campo">
                 <label>🏟️ Endereço</label>
                 <input type="text" id="enderecoPartida" placeholder="Rua, número, bairro">
