@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>CYSS Futebol - Administração</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            padding: 16px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('image.png');
+            background-repeat: repeat;
+            background-size: 120px;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header { text-align: center; margin-bottom: 25px; }
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 20px;
+            border-radius: 60px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .logo-area:active { transform: scale(0.98); }
+        .logo { max-width: 45px; height: auto; border-radius: 12px; }
+        h1 { color: white; font-size: 1.4em; }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            color: #8b0000;
+            border-bottom: 3px solid #8b0000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn {
+            background: #8b0000;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+            min-height: 40px;
+        }
+        .btn-pequeno { padding: 6px 12px; font-size: 12px; }
+        .btn-verde { background: #2c5f2d; }
+        .btn-azul { background: #1e4a76; }
+        .btn-cinza { background: #666; }
+        .btn-vermelho { background: #8b0000; }
+        .btn:active { transform: scale(0.98); }
+        .btn:hover { opacity: 0.9; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .tab {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s;
+            color: #666;
+        }
+        .tab.active { background: #8b0000; color: white; }
+        
+        /* Tabelas */
+        .tabela-container { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th { background: #f5f5f5; color: #8b0000; font-weight: 600; }
+        tr:hover { background: #f9f9f9; }
+        
+        /* Formulários */
+        .form-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .form-row input, .form-row select {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        
+        /* Estatísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #f5f5f5;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #8b0000;
+        }
+        .stat-label { font-size: 0.8em; color: #666; }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        
+        @media (orientation: portrait) {
+            body { padding: 12px; }
+            .card { padding: 15px; }
+            th, td { padding: 8px; font-size: 0.8em; }
+            .btn { padding: 8px 16px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area" id="logoVoltar">
+                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
+                <h1>🔧 Administração</h1>
+            </div>
+        </div>
+
+        <!-- TELA DE LOGIN -->
+        <div id="loginScreen" class="card">
+            <div style="max-width: 400px; margin: 0 auto;">
+                <h2>🔐 Acesso Restrito</h2>
+                <input type="text" id="adminUser" class="login-input" placeholder="Usuário" style="width:100%; padding:12px; margin:10px 0; border:2px solid #ddd; border-radius:12px;">
+                <input type="password" id="adminPass" class="login-input" placeholder="Senha" style="width:100%; padding:12px; margin:10px 0; border:2px solid #ddd; border-radius:12px;">
+                <button id="btnLoginAdmin" class="btn" style="width:100%;">Entrar</button>
+            </div>
+        </div>
+
+        <!-- CONTEÚDO ADMIN -->
+        <div id="adminContent" style="display: none;">
+            <!-- Tabs -->
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+                    <button class="tab" data-tab="mensalistas">👥 Mensalistas</button>
+                    <button class="tab" data-tab="locais">📍 Locais</button>
+                    <button class="tab" data-tab="partidas">⚽ Partidas</button>
+                    <button class="tab" data-tab="ferramentas">🛠️ Ferramentas</button>
+                </div>
+                <div id="tabContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let abaAtual = 'dashboard';
+        let mensalistasLista = [];
+        let locaisLista = [];
+
+        // Login
+        document.getElementById('btnLoginAdmin').addEventListener('click', () => {
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+            if (user === 'admin' && pass === 'cyss2026') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                carregarDashboard();
+                carregarMensalistas();
+                carregarLocais();
+                carregarPartidas();
+            } else {
+                alert('Usuário ou senha incorretos!');
+            }
+        });
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                abaAtual = tab.dataset.tab;
+                if (abaAtual === 'dashboard') carregarDashboard();
+                else if (abaAtual === 'mensalistas') carregarMensalistas();
+                else if (abaAtual === 'locais') carregarLocais();
+                else if (abaAtual === 'partidas') carregarPartidas();
+                else if (abaAtual === 'ferramentas') carregarFerramentas();
+            });
+        });
+
+        // Dashboard
+        async function carregarDashboard() {
+            const container = document.getElementById('tabContent');
+            container.innerHTML = '<div class="loading">Carregando...</div>';
+            
+            const { count: partidas } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true });
+            const { count: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('*', { count: 'exact', head: true });
+            const { count: mensalistas } = await supabaseClient.from('mensalistas').select('*', { count: 'exact', head: true });
+            const { data: convidados } = await supabaseClient.from('escala_partida').select('jogador_nome').eq('tipo', 'convidado');
+            const convidadosUnicos = new Set(convidados?.map(c => c.jogador_nome) || []);
+            const { count: locais } = await supabaseClient.from('locais').select('*', { count: 'exact', head: true });
+            
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-number">${partidas || 0}</div><div class="stat-label">Partidas</div></div>
+                    <div class="stat-card"><div class="stat-number">${avaliacoes || 0}</div><div class="stat-label">Avaliações</div></div>
+                    <div class="stat-card"><div class="stat-number">${mensalistas || 0}</div><div class="stat-label">Mensalistas</div></div>
+                    <div class="stat-card"><div class="stat-number">${convidadosUnicos.size}</div><div class="stat-label">Convidados Únicos</div></div>
+                    <div class="stat-card"><div class="stat-number">${locais || 0}</div><div class="stat-label">Locais</div></div>
+                </div>
+                <div style="margin-top:20px; padding:15px; background:#f0f0f0; border-radius:16px;">
+                    <strong>📊 Resumo do Sistema</strong><br>
+                    Média de avaliações por partida: ${partidas > 0 ? (avaliacoes / partidas).toFixed(1) : 0}
+                </div>
+            `;
+        }
+
+        // Mensalistas
+        async function carregarMensalistas() {
+            const { data } = await supabaseClient.from('mensalistas').select('*').order('nome');
+            mensalistasLista = data || [];
+            const container = document.getElementById('tabContent');
+            container.innerHTML = `
+                <div class="form-row">
+                    <input type="text" id="novoMensalista" placeholder="Nome do mensalista">
+                    <input type="text" id="novaSenha" placeholder="Senha" value="futebol123">
+                    <button class="btn btn-verde" id="btnAdicionarMensalista">➕ Adicionar</button>
+                </div>
+                <div class="tabela-container">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nome</th><th>Senha</th><th>Ações</th></tr></thead>
+                        <tbody id="mensalistasTable"></tbody>
+                    </table>
+                </div>
+            `;
+            const tbody = document.getElementById('mensalistasTable');
+            tbody.innerHTML = mensalistasLista.map(m => `
+                <tr>
+                    <td>${m.id}</td>
+                    <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;"></td>
+                    <td><input type="text" id="senha_${m.id}" value="${m.senha_hash}" style="width:100%;"></td>
+                    <td><button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
+                    <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button></td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('btnAdicionarMensalista').onclick = adicionarMensalista;
+        }
+
+        window.adicionarMensalista = async () => {
+            const nome = document.getElementById('novoMensalista').value.trim();
+            const senha = document.getElementById('novaSenha').value;
+            if (!nome) { alert('Digite o nome!'); return; }
+            const { error } = await supabaseClient.from('mensalistas').insert({ nome, senha_hash: senha });
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarMensalistas();
+            carregarDashboard();
+        };
+
+        window.editarMensalista = async (id) => {
+            const nome = document.getElementById(`nome_${id}`).value;
+            const senha = document.getElementById(`senha_${id}`).value;
+            const { error } = await supabaseClient.from('mensalistas').update({ nome, senha_hash: senha }).eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            alert('Mensalista atualizado!');
+            carregarMensalistas();
+        };
+
+        window.deletarMensalista = async (id) => {
+            if (!confirm('Tem certeza? Isso removerá todas as avaliações deste mensalista.')) return;
+            const { error } = await supabaseClient.from('mensalistas').delete().eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarMensalistas();
+            carregarDashboard();
+        };
+
+        // Locais
+        async function carregarLocais() {
+            const { data } = await supabaseClient.from('locais').select('*').order('nome');
+            locaisLista = data || [];
+            const container = document.getElementById('tabContent');
+            container.innerHTML = `
+                <div class="form-row">
+                    <input type="text" id="novoLocalNome" placeholder="Nome do local">
+                    <input type="text" id="novoLocalEndereco" placeholder="Endereço">
+                    <button class="btn btn-verde" id="btnAdicionarLocal">➕ Adicionar</button>
+                </div>
+                <div class="tabela-container">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nome</th><th>Endereço</th><th>Ações</th></tr></thead>
+                        <tbody id="locaisTable"></tbody>
+                    </table>
+                </div>
+            `;
+            const tbody = document.getElementById('locaisTable');
+            tbody.innerHTML = locaisLista.map(l => `
+                <tr>
+                    <td>${l.id}</td>
+                    <td><input type="text" id="local_nome_${l.id}" value="${l.nome}" style="width:100%;"></td>
+                    <td><input type="text" id="local_endereco_${l.id}" value="${l.endereco || ''}" style="width:100%;"></td>
+                    <td><button class="btn btn-azul btn-pequeno" onclick="editarLocal(${l.id})">💾 Salvar</button>
+                    <button class="btn btn-vermelho btn-pequeno" onclick="deletarLocal(${l.id})">🗑️ Excluir</button></td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('btnAdicionarLocal').onclick = adicionarLocal;
+        }
+
+        window.adicionarLocal = async () => {
+            const nome = document.getElementById('novoLocalNome').value.trim();
+            const endereco = document.getElementById('novoLocalEndereco').value.trim();
+            if (!nome) { alert('Digite o nome do local!'); return; }
+            const { error } = await supabaseClient.from('locais').insert({ nome, endereco });
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarLocais();
+            carregarDashboard();
+        };
+
+        window.editarLocal = async (id) => {
+            const nome = document.getElementById(`local_nome_${id}`).value;
+            const endereco = document.getElementById(`local_endereco_${id}`).value;
+            const { error } = await supabaseClient.from('locais').update({ nome, endereco }).eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            alert('Local atualizado!');
+            carregarLocais();
+        };
+
+        window.deletarLocal = async (id) => {
+            // Verificar se há partidas usando este local
+            const { count } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true }).eq('local_id', id);
+            if (count > 0) {
+                alert(`Não é possível excluir! Este local está sendo usado em ${count} partida(s).`);
+                return;
+            }
+            if (!confirm('Tem certeza?')) return;
+            const { error } = await supabaseClient.from('locais').delete().eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarLocais();
+            carregarDashboard();
+        };
+
+        // Partidas
+        async function carregarPartidas() {
+            const { data } = await supabaseClient.from('partidas').select('*').order('data', { ascending: false });
+            const container = document.getElementById('tabContent');
+            container.innerHTML = `
+                <div class="tabela-container">
+                    <table>
+                        <thead><tr><th>ID</th><th>Data</th><th>Horário</th><th>Local</th><th>Ações</th></tr></thead>
+                        <tbody id="partidasTable"></tbody>
+                    </table>
+                </div>
+            `;
+            const tbody = document.getElementById('partidasTable');
+            tbody.innerHTML = (data || []).map(p => `
+                <tr>
+                    <td>${p.id}</td>
+                    <td>${new Date(p.data).toLocaleDateString('pt-BR')}</td>
+                    <td>${p.horario || '-'}</td>
+                    <td>${p.local_nome || 'ID: ' + p.local_id}</td>
+                    <td><button class="btn btn-vermelho btn-pequeno" onclick="deletarPartida(${p.id})">🗑️ Excluir</button></td>
+                </tr>
+            `).join('');
+        }
+
+        window.deletarPartida = async (id) => {
+            if (!confirm('Tem certeza? Isso removerá também a escala e avaliações desta partida.')) return;
+            const { error } = await supabaseClient.from('partidas').delete().eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarPartidas();
+            carregarDashboard();
+        };
+
+        // Ferramentas
+        function carregarFerramentas() {
+            const container = document.getElementById('tabContent');
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
+                        <h3 style="color: #8b0000;">🗑️ Limpeza de Dados</h3>
+                        <p>Remove todas as avaliações, mas mantém mensalistas, locais e estrutura.</p>
+                        <button class="btn" id="btnLimparAvaliacoes" style="background:#ff9800; margin-top:10px;">Limpar Avaliações</button>
+                    </div>
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
+                        <h3 style="color: #8b0000;">⚠️ Reset Completo</h3>
+                        <p>Remove TODOS os dados: partidas, avaliações, escalas. Mantém apenas mensalistas e locais.</p>
+                        <button class="btn btn-vermelho" id="btnResetCompleto">Resetar Banco</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('btnLimparAvaliacoes').onclick = async () => {
+                if (!confirm('Limpar TODAS as avaliações? Esta ação não pode ser desfeita!')) return;
+                const { error } = await supabaseClient.from('avaliacoes_partida').delete().neq('id', 0);
+                if (error) { alert('Erro: ' + error.message); return; }
+                alert('Avaliações removidas com sucesso!');
+                carregarDashboard();
+            };
+            document.getElementById('btnResetCompleto').onclick = async () => {
+                if (!confirm('⚠️ ATENÇÃO! Isso vai deletar TODAS as partidas, escalas e avaliações. Continuar?')) return;
+                await supabaseClient.from('avaliacoes_partida').delete().neq('id', 0);
+                await supabaseClient.from('escala_partida').delete().neq('id', 0);
+                await supabaseClient.from('partidas').delete().neq('id', 0);
+                alert('Banco resetado com sucesso!');
+                carregarDashboard();
+                carregarPartidas();
+            };
+        }
+
+        // Logo voltar
+        document.getElementById('logoVoltar').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
