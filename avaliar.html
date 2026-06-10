@@ -13,7 +13,7 @@
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
         .header { text-align: center; margin-bottom: 30px; }
         .logo-area {
             display: inline-flex;
@@ -61,6 +61,17 @@
             transition: all 0.3s;
         }
         .btn:hover { transform: translateY(-2px); }
+        .btn-salvar {
+            background: #2c5f2d;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+        .btn-salvar:hover { background: #1e4a1f; }
+        .btn-salvar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
         .estrelas { display: flex; gap: 8px; margin: 15px 0; justify-content: center; }
         .estrela { font-size: 35px; cursor: pointer; color: #ccc; transition: all 0.2s; }
         .estrela.selected { color: #ffcc00; }
@@ -70,8 +81,14 @@
             border-radius: 16px;
             padding: 20px;
             border-left: 5px solid #8b0000;
+            transition: all 0.2s;
+        }
+        .jogador-card.avaliado {
+            border-left-color: #2c5f2d;
+            background: #f0fff0;
         }
         .jogador-nome { font-size: 1.3em; font-weight: 700; color: #8b0000; margin-bottom: 10px; }
+        .jogador-nome small { font-size: 0.8em; font-weight: normal; }
         textarea {
             width: 100%;
             padding: 10px;
@@ -79,9 +96,8 @@
             border-radius: 10px;
             font-family: inherit;
             margin: 10px 0;
+            resize: vertical;
         }
-        .ja-avaliado { background: #e8f5e9; border-left-color: #4caf50; }
-        .badge-avaliado { background: #4caf50; color: white; font-size: 0.7em; padding: 2px 8px; border-radius: 20px; margin-left: 10px; }
         .user-info {
             display: flex;
             justify-content: space-between;
@@ -91,6 +107,64 @@
             border-radius: 12px;
             margin-bottom: 20px;
         }
+        .status-avaliacao {
+            background: #ffe5e5;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .status-avaliacao.completo {
+            background: #e8f5e9;
+            color: #2c5f2d;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h3 {
+            color: #8b0000;
+            margin-bottom: 20px;
+        }
+        .modal-resumo {
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .resumo-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+        .resumo-nota { color: #ffcc00; font-weight: bold; }
+        .modal-botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .modal-botoes button { flex: 1; }
+        .btn-cancelar { background: #666; }
+        .btn-confirmar { background: #2c5f2d; }
+        @media (max-width: 768px) { .estrela { font-size: 28px; } }
     </style>
 </head>
 <body>
@@ -115,8 +189,10 @@
             <div class="user-info" id="userInfo"></div>
             <div class="card">
                 <h2>📝 Avaliar Jogadores da Partida</h2>
+                <div id="statusContainer" class="status-avaliacao"></div>
                 <div id="jogadoresContainer">Carregando...</div>
-                <button id="btnVoltar" class="btn" style="background:#1a1a1a; margin-top:20px;">← Voltar</button>
+                <button id="btnSalvarTodas" class="btn btn-salvar" disabled>💾 SALVAR TODAS AS AVALIAÇÕES</button>
+                <button id="btnVoltar" class="btn" style="background:#1a1a1a; margin-top:10px;">← Voltar</button>
             </div>
         </div>
     </div>
@@ -130,7 +206,7 @@
         let mensalistaAtual = null;
         let partidaId = null;
         let jogadoresPartida = [];
-        let avaliacoesFeitas = {};
+        let avaliacoesPendentes = {}; // { nome: { nota, comentario } }
 
         async function carregarMensalistas() {
             const { data } = await supabaseClient.from('mensalistas').select('id, nome').order('nome');
@@ -149,11 +225,12 @@
             partidaId = localStorage.getItem('partidaAtual');
             if (!partidaId) { alert('Nenhuma partida selecionada!'); return; }
             await carregarJogadoresPartida();
-            await carregarAvaliacoesFeitas();
+            await carregarAvaliacoesExistentes();
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('avaliacoesScreen').style.display = 'block';
-            document.getElementById('userInfo').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Avalie os jogadores</span>`;
+            document.getElementById('userInfo').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Avalie os jogadores (você não pode se autoavaliar)</span>`;
             renderizarJogadores();
+            atualizarStatus();
         }
 
         async function carregarJogadoresPartida() {
@@ -161,56 +238,184 @@
             jogadoresPartida = data?.filter(j => j.jogador_nome !== mensalistaAtual.nome) || [];
         }
 
-        async function carregarAvaliacoesFeitas() {
+        async function carregarAvaliacoesExistentes() {
             const { data } = await supabaseClient.from('avaliacoes_partida').select('*').eq('partida_id', partidaId).eq('avaliador_id', mensalistaAtual.id);
-            avaliacoesFeitas = {};
-            if (data) data.forEach(a => { avaliacoesFeitas[a.avaliado_nome] = { nota: a.nota, comentario: a.comentario }; });
+            if (data && data.length > 0) {
+                // Se já avaliou todos, desabilitar
+                if (data.length === jogadoresPartida.length) {
+                    document.getElementById('btnSalvarTodas').disabled = true;
+                    document.getElementById('btnSalvarTodas').style.opacity = '0.5';
+                }
+            }
+        }
+
+        function atualizarStatus() {
+            const total = jogadoresPartida.length;
+            const avaliados = Object.keys(avaliacoesPendentes).filter(nome => avaliacoesPendentes[nome]?.nota > 0).length;
+            const container = document.getElementById('statusContainer');
+            if (avaliados === total && total > 0) {
+                container.innerHTML = `✅ Todos os ${total} jogadores avaliados! Clique em "SALVAR TODAS" para finalizar.`;
+                container.className = 'status-avaliacao completo';
+                document.getElementById('btnSalvarTodas').disabled = false;
+                document.getElementById('btnSalvarTodas').style.opacity = '1';
+            } else {
+                container.innerHTML = `📊 Progresso: ${avaliados} de ${total} jogadores avaliados. Selecione as notas e clique em "SALVAR TODAS" no final.`;
+                container.className = 'status-avaliacao';
+                document.getElementById('btnSalvarTodas').disabled = true;
+                document.getElementById('btnSalvarTodas').style.opacity = '0.5';
+            }
         }
 
         function renderizarJogadores() {
-            if (jogadoresPartida.length === 0) { document.getElementById('jogadoresContainer').innerHTML = '<p>Nenhum jogador para avaliar</p>'; return; }
+            if (jogadoresPartida.length === 0) { 
+                document.getElementById('jogadoresContainer').innerHTML = '<p>Nenhum jogador para avaliar</p>'; 
+                return; 
+            }
+            
             const container = document.getElementById('jogadoresContainer');
             container.innerHTML = '<div class="jogadores-grid"></div>';
             const grid = container.querySelector('.jogadores-grid');
+            
             jogadoresPartida.forEach(j => {
-                const jaAvaliado = avaliacoesFeitas[j.jogador_nome];
+                const pendente = avaliacoesPendentes[j.jogador_nome] || { nota: 0, comentario: '' };
                 const card = document.createElement('div');
-                card.className = `jogador-card ${jaAvaliado ? 'ja-avaliado' : ''}`;
-                let notaTemp = jaAvaliado?.nota || 0;
-                let comentarioTemp = jaAvaliado?.comentario || '';
+                card.className = `jogador-card ${pendente.nota > 0 ? 'avaliado' : ''}`;
+                card.setAttribute('data-jogador', j.jogador_nome);
+                
                 card.innerHTML = `
-                    <div class="jogador-nome">${j.jogador_nome} ${jaAvaliado ? '<span class="badge-avaliado">Já avaliado</span>' : ''}</div>
-                    <div class="estrelas">${[1,2,3,4,5].map(n => `<span class="estrela ${notaTemp >= n ? 'selected' : ''}" data-nota="${n}">★</span>`).join('')}</div>
-                    <textarea placeholder="Comentário (opcional)" maxlength="100">${comentarioTemp}</textarea>
-                    <button class="btn" ${jaAvaliado ? 'disabled' : ''}>${jaAvaliado ? '✓ Avaliado' : '⭐ Avaliar'}</button>
+                    <div class="jogador-nome">
+                        ${j.jogador_nome} <small>📍 ${j.posicao}</small>
+                        ${pendente.nota > 0 ? ' ✓' : ''}
+                    </div>
+                    <div class="estrelas" data-jogador="${j.jogador_nome}">
+                        ${[1,2,3,4,5].map(n => `
+                            <span class="estrela ${pendente.nota >= n ? 'selected' : ''}" data-nota="${n}">★</span>
+                        `).join('')}
+                    </div>
+                    <textarea class="comentario-input" placeholder="Comentário (opcional, até 100 caracteres)" maxlength="100">${pendente.comentario || ''}</textarea>
                 `;
+                
                 const estrelasDiv = card.querySelector('.estrelas');
-                let notaSelecionada = notaTemp;
+                const textarea = card.querySelector('.comentario-input');
+                
                 estrelasDiv.querySelectorAll('.estrela').forEach(estrela => {
                     estrela.addEventListener('click', () => {
-                        notaSelecionada = parseInt(estrela.dataset.nota);
-                        estrelasDiv.querySelectorAll('.estrela').forEach((s, i) => i < notaSelecionada ? s.classList.add('selected') : s.classList.remove('selected'));
+                        const nota = parseInt(estrela.dataset.nota);
+                        const jogadorNome = estrelasDiv.dataset.jogador;
+                        
+                        // Atualizar visual das estrelas
+                        estrelasDiv.querySelectorAll('.estrela').forEach((s, i) => {
+                            if (i < nota) s.classList.add('selected');
+                            else s.classList.remove('selected');
+                        });
+                        
+                        // Salvar no objeto pendente
+                        if (!avaliacoesPendentes[jogadorNome]) {
+                            avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: '' };
+                        }
+                        avaliacoesPendentes[jogadorNome].nota = nota;
+                        avaliacoesPendentes[jogadorNome].comentario = textarea.value;
+                        
+                        // Atualizar estilo do card
+                        if (nota > 0) card.classList.add('avaliado');
+                        else card.classList.remove('avaliado');
+                        
+                        atualizarStatus();
                     });
                 });
-                if (!jaAvaliado) {
-                    card.querySelector('button').addEventListener('click', async () => {
-                        if (notaSelecionada === 0) { alert('Selecione uma nota!'); return; }
-                        const comentario = card.querySelector('textarea').value.substring(0, 100);
-                        await supabaseClient.from('avaliacoes_partida').insert({
-                            partida_id: partidaId, avaliador_id: mensalistaAtual.id,
-                            avaliado_nome: j.jogador_nome, nota: notaSelecionada, comentario: comentario
-                        });
-                        alert(`✅ ${j.jogador_nome} avaliado!`);
-                        await carregarAvaliacoesFeitas();
-                        renderizarJogadores();
-                    });
-                }
+                
+                textarea.addEventListener('input', () => {
+                    const jogadorNome = card.getAttribute('data-jogador');
+                    if (avaliacoesPendentes[jogadorNome]) {
+                        avaliacoesPendentes[jogadorNome].comentario = textarea.value;
+                    } else if (textarea.value.trim()) {
+                        avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: textarea.value };
+                    }
+                });
+                
                 grid.appendChild(card);
             });
         }
 
+        function exibirModalConfirmacao() {
+            const avaliacoes = [];
+            for (const [nome, dados] of Object.entries(avaliacoesPendentes)) {
+                if (dados.nota > 0) {
+                    avaliacoes.push({ nome, nota: dados.nota, comentario: dados.comentario || 'Sem comentário' });
+                }
+            }
+            
+            if (avaliacoes.length === 0) {
+                alert('Nenhuma avaliação foi feita! Selecione as notas primeiro.');
+                return;
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>⚠️ Confirmar Avaliações</h3>
+                    <p>Você está prestes a avaliar <strong>${avaliacoes.length}</strong> jogador(es):</p>
+                    <div class="modal-resumo">
+                        ${avaliacoes.map(a => `
+                            <div class="resumo-item">
+                                <span><strong>${a.nome}</strong></span>
+                                <span class="resumo-nota">${'★'.repeat(a.nota)}${'☆'.repeat(5-a.nota)} (${a.nota} estrelas)</span>
+                                <span><small>${a.comentario.substring(0, 50)}${a.comentario.length > 50 ? '...' : ''}</small></span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <p style="color: #8b0000; margin-top: 15px;"><strong>ATENÇÃO:</strong> Após confirmar, as avaliações NÃO poderão ser alteradas!</p>
+                    <div class="modal-botoes">
+                        <button class="btn-cancelar">❌ Cancelar</button>
+                        <button class="btn-confirmar">✅ Confirmar e Salvar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.querySelector('.btn-cancelar').addEventListener('click', () => modal.remove());
+            modal.querySelector('.btn-confirmar').addEventListener('click', async () => {
+                modal.remove();
+                await salvarTodasAvaliacoes(avaliacoes);
+            });
+        }
+        
+        async function salvarTodasAvaliacoes(avaliacoes) {
+            let sucesso = 0;
+            let erros = 0;
+            
+            for (const a of avaliacoes) {
+                const { error } = await supabaseClient.from('avaliacoes_partida').insert({
+                    partida_id: partidaId,
+                    avaliador_id: mensalistaAtual.id,
+                    avaliado_nome: a.nome,
+                    nota: a.nota,
+                    comentario: a.comentario
+                });
+                
+                if (error) erros++;
+                else sucesso++;
+            }
+            
+            if (erros > 0) {
+                alert(`⚠️ ${sucesso} avaliações salvas, ${erros} erros. Tente novamente.`);
+            } else {
+                alert(`✅ Todas as ${sucesso} avaliações foram salvas com sucesso! Obrigado por avaliar.`);
+                // Desabilitar o botão após salvar
+                document.getElementById('btnSalvarTodas').disabled = true;
+                document.getElementById('btnSalvarTodas').style.opacity = '0.5';
+                // Atualizar status
+                document.getElementById('statusContainer').innerHTML = `✅ Todas as avaliações já foram registradas! Obrigado!`;
+                document.getElementById('statusContainer').className = 'status-avaliacao completo';
+            }
+        }
+
         document.getElementById('btnLogin').addEventListener('click', fazerLogin);
         document.getElementById('btnVoltar').addEventListener('click', () => { window.location.href = 'partida.html'; });
+        document.getElementById('btnSalvarTodas').addEventListener('click', exibirModalConfirmacao);
+        
         carregarMensalistas();
     </script>
 </body>
