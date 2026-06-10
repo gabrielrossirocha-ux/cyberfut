@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>CYSS Futebol - Ranking</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -11,7 +11,7 @@
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 16px;
             position: relative;
         }
         body::before {
@@ -34,61 +34,54 @@
             position: relative;
             z-index: 1;
         }
-        .header { text-align: center; margin-bottom: 30px; }
+        .header { text-align: center; margin-bottom: 25px; }
         .logo-area {
             display: inline-flex;
             align-items: center;
-            gap: 20px;
+            gap: 12px;
             background: rgba(0, 0, 0, 0.4);
-            padding: 15px 30px;
+            padding: 10px 20px;
             border-radius: 60px;
             margin-bottom: 15px;
             border: 1px solid rgba(255, 215, 0, 0.3);
             cursor: pointer;
             transition: transform 0.2s;
         }
-        .logo-area:hover { transform: scale(1.02); }
-        .logo { max-width: 60px; height: auto; border-radius: 12px; }
-        h1 { color: white; font-size: 1.8em; }
+        .logo-area:active { transform: scale(0.98); }
+        .logo { max-width: 45px; height: auto; border-radius: 12px; }
+        h1 { color: white; font-size: 1.4em; }
         .card {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 24px;
-            padding: 25px;
+            border-radius: 20px;
+            padding: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
         
-        /* Abas */
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
+            gap: 8px;
+            margin-bottom: 20px;
             border-bottom: 2px solid #ddd;
             padding-bottom: 10px;
+            flex-wrap: wrap;
         }
         .tab {
             background: none;
             border: none;
-            padding: 10px 25px;
-            font-size: 1.1em;
+            padding: 8px 16px;
+            font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
             border-radius: 30px;
             transition: all 0.3s;
             color: #666;
         }
-        .tab.active {
-            background: #8b0000;
-            color: white;
-        }
-        .tab:hover:not(.active) {
-            background: #f0f0f0;
-        }
+        .tab.active { background: #8b0000; color: white; }
         
-        /* Filtros */
         .filtros {
             display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 10px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
@@ -96,131 +89,66 @@
         .filtro-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             background: #f5f5f5;
-            padding: 8px 15px;
+            padding: 6px 12px;
             border-radius: 40px;
+            flex-wrap: wrap;
         }
-        .filtro-group label {
-            font-weight: 600;
-            color: #8b0000;
-        }
+        .filtro-group label { font-weight: 600; color: #8b0000; font-size: 0.85em; }
         select, .btn-filtro {
-            padding: 8px 15px;
+            padding: 8px 12px;
             border: 1px solid #ddd;
             border-radius: 30px;
-            font-size: 14px;
+            font-size: 13px;
             font-family: inherit;
             cursor: pointer;
             background: white;
         }
-        .btn-filtro {
-            background: #8b0000;
-            color: white;
-            border: none;
-            transition: all 0.3s;
-        }
-        .btn-filtro:hover {
-            background: #c0392b;
-            transform: translateY(-2px);
-        }
+        .btn-filtro { background: #8b0000; color: white; border: none; }
         .info-ranking {
             text-align: center;
-            margin-bottom: 20px;
-            padding: 12px;
+            margin-bottom: 15px;
+            padding: 10px;
             background: #ffe5e5;
             border-radius: 12px;
-            font-size: 0.9em;
+            font-size: 0.85em;
             font-weight: 500;
         }
-        
-        /* Ranking */
         .ranking-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
+            padding: 12px;
             border-bottom: 1px solid #eee;
-            transition: background 0.2s;
-        }
-        .ranking-item:hover {
-            background: #f9f9f9;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .ranking-posicao {
-            font-size: 1.3em;
+            font-size: 1.1em;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 8px;
-            min-width: 100px;
+            gap: 6px;
+            min-width: 70px;
         }
-        .posicao-numero {
-            color: #8b0000;
-            min-width: 40px;
-        }
+        .posicao-numero { color: #8b0000; }
         .variacao {
-            font-size: 0.75em;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .variacao.subiu {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-        .variacao.desceu {
-            background: #ffebee;
-            color: #c62828;
-        }
-        .variacao.manteve {
-            background: #f5f5f5;
-            color: #666;
-        }
-        .ranking-nome {
-            flex: 2;
-            font-weight: 600;
-            font-size: 1.05em;
-        }
-        .ranking-estrelas {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-        .estrela {
-            color: #ffcc00;
-            font-size: 1.2em;
-        }
-        .ranking-total {
-            font-weight: 700;
-            color: #8b0000;
-            min-width: 80px;
-            text-align: right;
-        }
-        .ranking-detalhe {
-            font-size: 0.75em;
-            color: #666;
-            min-width: 120px;
-            text-align: right;
-        }
-        .badge-mensalista {
-            background: #ffcc00;
-            color: #8b0000;
             font-size: 0.7em;
-            padding: 2px 8px;
+            font-weight: 600;
+            padding: 2px 6px;
             border-radius: 20px;
-            margin-left: 10px;
         }
-        .badge-convidado {
-            background: #555;
-            color: white;
-            font-size: 0.7em;
-            padding: 2px 8px;
-            border-radius: 20px;
-            margin-left: 10px;
-        }
+        .variacao.subiu { background: #e8f5e9; color: #2e7d32; }
+        .variacao.desceu { background: #ffebee; color: #c62828; }
+        .variacao.manteve { background: #f5f5f5; color: #666; }
+        .ranking-nome { flex: 2; font-weight: 600; font-size: 0.9em; }
+        .ranking-estrelas { display: flex; gap: 3px; align-items: center; }
+        .estrela { color: #ffcc00; font-size: 1em; }
+        .ranking-total { font-weight: 700; color: #8b0000; min-width: 60px; text-align: right; font-size: 0.85em; }
+        .ranking-detalhe { font-size: 0.65em; color: #666; min-width: 80px; text-align: right; }
+        .badge-mensalista { background: #ffcc00; color: #8b0000; font-size: 0.6em; padding: 2px 6px; border-radius: 20px; margin-left: 6px; }
+        .badge-convidado { background: #555; color: white; font-size: 0.6em; padding: 2px 6px; border-radius: 20px; margin-left: 6px; }
         .btn-voltar {
             background: #1a1a1a;
             color: white;
@@ -231,55 +159,47 @@
             font-weight: 600;
             margin-top: 20px;
             width: 100%;
-            transition: all 0.3s;
-        }
-        .btn-voltar:hover {
-            background: #333;
-            transform: translateY(-2px);
-        }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
         }
         .info-comparacao {
             text-align: center;
-            font-size: 0.8em;
+            font-size: 0.7em;
             color: #666;
-            margin-top: 5px;
             margin-bottom: 15px;
-            padding: 8px;
+            padding: 6px;
             background: #f0f0f0;
             border-radius: 20px;
         }
-        @media (max-width: 768px) {
-            .ranking-item { flex-wrap: wrap; gap: 10px; }
-            .ranking-estrelas { order: 3; width: 100%; justify-content: center; }
-            .filtros { flex-direction: column; align-items: stretch; }
-            .filtro-group { justify-content: space-between; }
-            .tabs { flex-direction: column; align-items: stretch; }
-            .tab { text-align: center; }
-            .ranking-posicao { min-width: auto; }
+        .loading { text-align: center; padding: 30px; color: #666; }
+        
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .logo-area { gap: 20px; padding: 15px 30px; }
+            .logo { max-width: 60px; }
+            h1 { font-size: 1.8em; }
+            .card { padding: 25px; }
+            .tab { padding: 10px 25px; font-size: 1.1em; }
+            .ranking-posicao { min-width: 100px; font-size: 1.3em; }
+            .ranking-nome { font-size: 1.05em; }
+            .estrela { font-size: 1.2em; }
+            .ranking-total { font-size: 1em; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo-area">
+            <div class="logo-area" id="logoVoltar">
                 <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
                 <h1>🏆 Ranking</h1>
             </div>
         </div>
 
         <div class="card">
-            <!-- Abas -->
             <div class="tabs">
                 <button class="tab active" data-tab="mensalistas">📌 Mensalistas</button>
                 <button class="tab" data-tab="convidados">🎟️ Convidados</button>
             </div>
             
-            <!-- Filtros -->
             <div class="filtros">
                 <div class="filtro-group">
                     <label>📅 Partida:</label>
@@ -292,9 +212,7 @@
 
             <div id="infoRanking" class="info-ranking">Carregando...</div>
             <div id="infoComparacao" class="info-comparacao"></div>
-            
             <div id="rankingContainer">Carregando...</div>
-            
             <button id="btnVoltar" class="btn-voltar">← Voltar ao Início</button>
         </div>
     </div>
@@ -308,23 +226,12 @@
         let partidasLista = [];
         let abaAtual = 'mensalistas';
 
-        // Carregar lista de partidas ordenadas por data
         async function carregarPartidasSelect() {
-            const { data, error } = await supabaseClient
-                .from('partidas')
-                .select('id, data, local')
-                .order('data', { ascending: true }); // Ordem crescente para facilitar anterior
-            
-            if (error) {
-                console.error('Erro ao carregar partidas:', error);
-                return;
-            }
-            
+            const { data, error } = await supabaseClient.from('partidas').select('id, data, local').order('data', { ascending: true });
+            if (error) return;
             partidasLista = data || [];
             const select = document.getElementById('selectPartida');
             select.innerHTML = '<option value="geral">🏆 RANKING GERAL (todas)</option>';
-            
-            // Adicionar partidas em ordem decrescente para exibição
             [...partidasLista].reverse().forEach(partida => {
                 const option = document.createElement('option');
                 option.value = partida.id;
@@ -332,71 +239,32 @@
                 option.textContent = `📅 ${dataFormatada} - ${partida.local || 'Sem local'}`;
                 select.appendChild(option);
             });
-            
-            console.log('Partidas carregadas:', partidasLista.length);
         }
 
-        // Buscar ranking de uma partida específica (retorna array com {nome, totalEstrelas, posicao})
         async function getRankingPartida(partidaId, tipo) {
-            const { data: avaliacoes } = await supabaseClient
-                .from('avaliacoes_partida')
-                .select('avaliado_nome, nota')
-                .eq('partida_id', partidaId);
-            
-            const { data: escala } = await supabaseClient
-                .from('escala_partida')
-                .select('jogador_nome, tipo')
-                .eq('partida_id', partidaId);
-            
+            const { data: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('avaliado_nome, nota').eq('partida_id', partidaId);
+            const { data: escala } = await supabaseClient.from('escala_partida').select('jogador_nome, tipo').eq('partida_id', partidaId);
             if (!avaliacoes || !escala) return [];
-            
             const convidadosNomes = ['G1', 'G2', 'C1'];
-            const jogadoresFiltrados = escala.filter(e => {
-                if (tipo === 'mensalistas') return e.tipo === 'mensalista';
-                return e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome);
-            });
-            
+            const jogadoresFiltrados = escala.filter(e => tipo === 'mensalistas' ? e.tipo === 'mensalista' : e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome));
             const nomesFiltrados = new Set(jogadoresFiltrados.map(j => j.jogador_nome));
             const avaliacoesFiltradas = avaliacoes.filter(a => nomesFiltrados.has(a.avaliado_nome));
-            
             const somaEstrelas = {};
-            avaliacoesFiltradas.forEach(a => {
-                if (!somaEstrelas[a.avaliado_nome]) somaEstrelas[a.avaliado_nome] = 0;
-                somaEstrelas[a.avaliado_nome] += a.nota;
-            });
-            
-            const tipoJogador = {};
-            jogadoresFiltrados.forEach(j => { tipoJogador[j.jogador_nome] = j.tipo; });
-            
-            const ranking = Object.keys(somaEstrelas).map(nome => ({
-                nome: nome,
-                totalEstrelas: somaEstrelas[nome],
-                tipo: tipoJogador[nome] || (convidadosNomes.includes(nome) ? 'convidado' : 'mensalista')
-            }));
-            
+            avaliacoesFiltradas.forEach(a => { if (!somaEstrelas[a.avaliado_nome]) somaEstrelas[a.avaliado_nome] = 0; somaEstrelas[a.avaliado_nome] += a.nota; });
+            const ranking = Object.keys(somaEstrelas).map(nome => ({ nome, totalEstrelas: somaEstrelas[nome], tipo: escala.find(e => e.jogador_nome === nome)?.tipo || 'convidado' }));
             ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
-            
-            // Adicionar posição
             return ranking.map((item, idx) => ({ ...item, posicao: idx + 1 }));
         }
 
-        // Encontrar partida anterior (baseado na data, independente do ID)
         function getPartidaAnterior(partidaAtualId) {
             const partidaAtual = partidasLista.find(p => p.id == partidaAtualId);
             if (!partidaAtual) return null;
-            
-            const dataAtual = new Date(partidaAtual.data);
-            // Buscar partidas com data MENOR que a atual
-            const anteriores = partidasLista.filter(p => new Date(p.data) < dataAtual);
+            const anteriores = partidasLista.filter(p => new Date(p.data) < new Date(partidaAtual.data));
             if (anteriores.length === 0) return null;
-            
-            // Pegar a MAIS RECENTE entre as anteriores
             anteriores.sort((a, b) => new Date(b.data) - new Date(a.data));
-            console.log('Partida anterior encontrada:', anteriores[0].id, new Date(anteriores[0].data).toLocaleDateString());
             return anteriores[0];
         }
 
-        // Gerar texto de variação
         function getVariacao(posAtual, posAnterior) {
             if (posAnterior === undefined) return { texto: 'Novo', classe: 'subiu' };
             const diferenca = posAnterior - posAtual;
@@ -405,174 +273,51 @@
             return { texto: '=', classe: 'manteve' };
         }
 
-        // Carregar ranking geral (sem setas)
         async function carregarRankingGeral() {
             const container = document.getElementById('rankingContainer');
-            const infoDiv = document.getElementById('infoRanking');
-            const infoCompDiv = document.getElementById('infoComparacao');
-            
+            document.getElementById('infoComparacao').innerHTML = '';
             container.innerHTML = '<div class="loading">Carregando...</div>';
-            infoDiv.innerHTML = `🏆 RANKING GERAL - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
-            infoCompDiv.innerHTML = '📊 Ranking acumulado de todas as partidas';
+            document.getElementById('infoRanking').innerHTML = `🏆 RANKING GERAL - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
             
-            const { data: todasAvaliacoes } = await supabaseClient
-                .from('avaliacoes_partida')
-                .select('avaliado_nome, nota');
-            
-            const { data: todasEscalas } = await supabaseClient
-                .from('escala_partida')
-                .select('jogador_nome, tipo');
-            
+            const { data: todasAvaliacoes } = await supabaseClient.from('avaliacoes_partida').select('avaliado_nome, nota');
+            const { data: todasEscalas } = await supabaseClient.from('escala_partida').select('jogador_nome, tipo');
             const convidadosNomes = ['G1', 'G2', 'C1'];
-            const jogadoresFiltrados = todasEscalas?.filter(e => {
-                if (abaAtual === 'mensalistas') return e.tipo === 'mensalista';
-                return e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome);
-            }) || [];
-            
+            const jogadoresFiltrados = todasEscalas?.filter(e => abaAtual === 'mensalistas' ? e.tipo === 'mensalista' : e.tipo === 'convidado' || convidadosNomes.includes(e.jogador_nome)) || [];
             const nomesFiltrados = new Set(jogadoresFiltrados.map(j => j.jogador_nome));
             const avaliacoesFiltradas = todasAvaliacoes?.filter(a => nomesFiltrados.has(a.avaliado_nome)) || [];
-            
             const somaEstrelas = {};
-            avaliacoesFiltradas.forEach(a => {
-                if (!somaEstrelas[a.avaliado_nome]) somaEstrelas[a.avaliado_nome] = 0;
-                somaEstrelas[a.avaliado_nome] += a.nota;
-            });
-            
-            const tipoJogador = {};
-            jogadoresFiltrados.forEach(j => { tipoJogador[j.jogador_nome] = j.tipo; });
-            
-            const ranking = Object.keys(somaEstrelas).map(nome => ({
-                nome, totalEstrelas: somaEstrelas[nome], tipo: tipoJogador[nome] || 'convidado'
-            }));
+            avaliacoesFiltradas.forEach(a => { if (!somaEstrelas[a.avaliado_nome]) somaEstrelas[a.avaliado_nome] = 0; somaEstrelas[a.avaliado_nome] += a.nota; });
+            const ranking = Object.keys(somaEstrelas).map(nome => ({ nome, totalEstrelas: somaEstrelas[nome], tipo: jogadoresFiltrados.find(j => j.jogador_nome === nome)?.tipo || 'convidado' }));
             ranking.sort((a, b) => b.totalEstrelas - a.totalEstrelas);
-            
-            if (ranking.length === 0) {
-                container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada</div>';
-                return;
-            }
-            
-            container.innerHTML = ranking.map((j, idx) => {
-                const estrelasCheias = Math.min(j.totalEstrelas, 10);
-                const estrelasString = '★'.repeat(estrelasCheias) + (j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : '');
-                return `
-                    <div class="ranking-item">
-                        <div class="ranking-posicao">
-                            <span class="posicao-numero">${idx + 1}º</span>
-                        </div>
-                        <div class="ranking-nome">
-                            ${j.nome}
-                            ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}
-                        </div>
-                        <div class="ranking-estrelas">${estrelasString}</div>
-                        <div class="ranking-total">${j.totalEstrelas} ⭐</div>
-                        <div class="ranking-detalhe">total acumulado</div>
-                    </div>
-                `;
-            }).join('');
+            if (ranking.length === 0) { container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada</div>'; return; }
+            container.innerHTML = ranking.map((j, idx) => `<div class="ranking-item"><div class="ranking-posicao"><span class="posicao-numero">${idx+1}º</span></div><div class="ranking-nome">${j.nome}${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div><div class="ranking-estrelas">${'★'.repeat(Math.min(j.totalEstrelas,10))}${j.totalEstrelas>10?` +${j.totalEstrelas-10}`:''}</div><div class="ranking-total">${j.totalEstrelas} ⭐</div><div class="ranking-detalhe">total</div></div>`).join('');
         }
 
-        // Carregar ranking de partida específica (COM setas)
         async function carregarRankingPartida(partidaId) {
             const container = document.getElementById('rankingContainer');
-            const infoDiv = document.getElementById('infoRanking');
-            const infoCompDiv = document.getElementById('infoComparacao');
-            
-            container.innerHTML = '<div class="loading">Carregando...</div>';
-            
             const partidaAtual = partidasLista.find(p => p.id == partidaId);
             if (!partidaAtual) return;
-            
             const partidaAnterior = getPartidaAnterior(partidaId);
-            
             const rankingAtual = await getRankingPartida(partidaId, abaAtual);
             let rankingAnteriorMap = {};
             let comparando = false;
-            
             if (partidaAnterior && rankingAtual.length > 0) {
                 const rankingAnterior = await getRankingPartida(partidaAnterior.id, abaAtual);
-                rankingAnterior.forEach(item => {
-                    rankingAnteriorMap[item.nome] = item.posicao;
-                });
+                rankingAnterior.forEach(item => { rankingAnteriorMap[item.nome] = item.posicao; });
                 comparando = true;
-                const dataAnterior = new Date(partidaAnterior.data).toLocaleDateString('pt-BR');
-                infoCompDiv.innerHTML = `📊 Comparado com a partida anterior (${dataAnterior}) | <span style="color:#2e7d32;">↑ subiu</span> &nbsp; <span style="color:#c62828;">↓ desceu</span> &nbsp; <span style="color:#666;">= manteve</span> &nbsp; <span style="color:#2e7d32;">Novo</span>`;
-            } else {
-                infoCompDiv.innerHTML = `📊 Primeira partida registrada - sem comparação anterior`;
-            }
-            
-            const dataFormatada = new Date(partidaAtual.data).toLocaleDateString('pt-BR');
-            infoDiv.innerHTML = `📅 Ranking da Partida - ${dataFormatada} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
-            
-            if (rankingAtual.length === 0) {
-                container.innerHTML = '<div class="loading">Nenhuma avaliação encontrada para esta partida</div>';
-                return;
-            }
-            
-            container.innerHTML = rankingAtual.map(j => {
-                const posAtual = j.posicao;
-                const posAnterior = rankingAnteriorMap[j.nome];
-                const variacao = getVariacao(posAtual, posAnterior);
-                const estrelasCheias = Math.min(j.totalEstrelas, 10);
-                const estrelasString = '★'.repeat(estrelasCheias) + (j.totalEstrelas > 10 ? ` +${j.totalEstrelas - 10}` : '');
-                
-                return `
-                    <div class="ranking-item">
-                        <div class="ranking-posicao">
-                            <span class="posicao-numero">${posAtual}º</span>
-                            ${comparando ? `<span class="variacao ${variacao.classe}">${variacao.texto}</span>` : ''}
-                        </div>
-                        <div class="ranking-nome">
-                            ${j.nome}
-                            ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}
-                        </div>
-                        <div class="ranking-estrelas">${estrelasString}</div>
-                        <div class="ranking-total">${j.totalEstrelas} ⭐</div>
-                        <div class="ranking-detalhe">nesta partida</div>
-                    </div>
-                `;
-            }).join('');
+                document.getElementById('infoComparacao').innerHTML = `📊 Comparado com a partida anterior (${new Date(partidaAnterior.data).toLocaleDateString('pt-BR')}) | <span style="color:#2e7d32;">↑ subiu</span> ↓ desceu = manteve`;
+            } else { document.getElementById('infoComparacao').innerHTML = '📊 Primeira partida - sem comparação anterior'; }
+            document.getElementById('infoRanking').innerHTML = `📅 Ranking da Partida - ${new Date(partidaAtual.data).toLocaleDateString('pt-BR')} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
+            if (rankingAtual.length === 0) { container.innerHTML = '<div class="loading">Nenhuma avaliação para esta partida</div>'; return; }
+            container.innerHTML = rankingAtual.map(j => { const variacao = getVariacao(j.posicao, rankingAnteriorMap[j.nome]); return `<div class="ranking-item"><div class="ranking-posicao"><span class="posicao-numero">${j.posicao}º</span>${comparando ? `<span class="variacao ${variacao.classe}">${variacao.texto}</span>` : ''}</div><div class="ranking-nome">${j.nome}${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div><div class="ranking-estrelas">${'★'.repeat(Math.min(j.totalEstrelas,10))}</div><div class="ranking-total">${j.totalEstrelas} ⭐</div><div class="ranking-detalhe">nesta partida</div></div>`; }).join('');
         }
+
+        document.getElementById('btnCarregar').addEventListener('click', async () => { const valor = document.getElementById('selectPartida').value; valor === 'geral' ? await carregarRankingGeral() : await carregarRankingPartida(parseInt(valor)); });
+        document.getElementById('btnVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
+        document.getElementById('logoVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
+        document.querySelectorAll('.tab').forEach(tab => { tab.addEventListener('click', async () => { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); abaAtual = tab.dataset.tab; const valor = document.getElementById('selectPartida').value; valor === 'geral' ? await carregarRankingGeral() : await carregarRankingPartida(parseInt(valor)); }); });
         
-        // Eventos
-        document.getElementById('btnCarregar').addEventListener('click', async () => {
-            const valor = document.getElementById('selectPartida').value;
-            if (valor === 'geral') {
-                await carregarRankingGeral();
-            } else {
-                await carregarRankingPartida(parseInt(valor));
-            }
-        });
-        
-        document.getElementById('btnVoltar').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-        
-        // Logo clicável
-        document.querySelector('.logo-area').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-        
-        // Abas
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', async () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                abaAtual = tab.dataset.tab;
-                const valor = document.getElementById('selectPartida').value;
-                if (valor === 'geral') {
-                    await carregarRankingGeral();
-                } else {
-                    await carregarRankingPartida(parseInt(valor));
-                }
-            });
-        });
-        
-        // Inicializar
-        async function init() {
-            await carregarPartidasSelect();
-            await carregarRankingGeral();
-        }
-        
+        async function init() { await carregarPartidasSelect(); await carregarRankingGeral(); }
         init();
     </script>
 </body>
