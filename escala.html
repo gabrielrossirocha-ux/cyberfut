@@ -385,12 +385,17 @@ function distribuirAlternado(lista, a, b) {
     lista.forEach((j, i) => i % 2 === 0 ? a.push(j) : b.push(j)); 
 }
 
-function embaralhar(arr) { 
-    for (let i = arr.length - 1; i > 0; i--) { 
-        const j = Math.floor(Math.random() * (i + 1)); 
-        [arr[i], arr[j]] = [arr[j], arr[i]]; 
-    } 
-    return arr; 
+// Função para ordenar jogadores por posição
+function ordenarPorPosicao(jogadores) {
+    const ordem = {
+        'Goleiro': 1,
+        'Fixo': 2,
+        'Ala Esquerda': 3,
+        'Ala Direita': 4,
+        'Pivô': 5
+    };
+    
+    return [...jogadores].sort((a, b) => (ordem[a.posicao] || 99) - (ordem[b.posicao] || 99)); 
 }
     </script>
 </body>
