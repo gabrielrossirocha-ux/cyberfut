@@ -86,6 +86,7 @@
         .btn-verde { background: #2c5f2d; }
         .btn-azul { background: #1e4a76; }
         .btn-vermelho { background: #8b0000; }
+        .btn-criar { background: #ff9800; color: #1a0000; }
         .btn:active { transform: scale(0.98); }
         
         .tabs {
@@ -115,8 +116,10 @@
         th { background: #f5f5f5; color: #8b0000; font-weight: 600; }
         tr:hover { background: #f9f9f9; }
         
-        .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-        .form-row input, .form-row select { flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-size: 14px; }
+        .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; align-items: flex-end; }
+        .form-group { flex: 1; min-width: 150px; }
+        .form-group label { display: block; font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-size: 14px; }
         
         .stats-grid {
             display: grid;
@@ -144,10 +147,25 @@
         }
         .loading { text-align: center; padding: 40px; color: #666; }
         
+        /* Checkbox grupo */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f0f0f0;
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        .checkbox-group input { width: 20px; height: 20px; margin: 0; }
+        .checkbox-group label { font-weight: 600; color: #8b0000; margin: 0; }
+        
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
             th, td { padding: 8px; font-size: 0.8em; }
+            .form-row { flex-direction: column; }
+            .form-group { width: 100%; }
         }
     </style>
 </head>
@@ -177,9 +195,10 @@
             <div class="card">
                 <div class="tabs">
                     <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+                    <button class="tab" data-tab="criar">⚡ Criar Partida</button>
+                    <button class="tab" data-tab="partidas">⚽ Partidas</button>
                     <button class="tab" data-tab="mensalistas">👥 Mensalistas</button>
                     <button class="tab" data-tab="locais">📍 Locais</button>
-                    <button class="tab" data-tab="partidas">⚽ Partidas</button>
                     <button class="tab" data-tab="ferramentas">🛠️ Ferramentas</button>
                 </div>
                 <div id="tabContent"></div>
@@ -187,12 +206,14 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let abaAtual = 'dashboard';
+        let locaisLista = [];
 
         // Função para formatar data sem problema de fuso horário
         function formatarDataAdmin(dataString) {
@@ -234,9 +255,9 @@
             if (senha !== data.senha_hash) { alert('Senha incorreta!'); return; }
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
+            await carregarLocais();
             carregarDashboard();
             carregarMensalistas();
-            carregarLocais();
             carregarPartidas();
         });
 
@@ -246,13 +267,22 @@
                 tab.classList.add('active');
                 abaAtual = tab.dataset.tab;
                 if (abaAtual === 'dashboard') carregarDashboard();
-                else if (abaAtual === 'mensalistas') carregarMensalistas();
-                else if (abaAtual === 'locais') carregarLocais();
+                else if (abaAtual === 'criar') carregarCriarPartida();
                 else if (abaAtual === 'partidas') carregarPartidas();
+                else if (abaAtual === 'mensalistas') carregarMensalistas();
+                else if (abaAtual === 'locais') carregarLocaisAdmin();
                 else if (abaAtual === 'ferramentas') carregarFerramentas();
             });
         });
 
+        async function carregarLocais() {
+            const { data, error } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
+            if (!error) locaisLista = data || [];
+        }
+
+        // ============================================
+        // DASHBOARD
+        // ============================================
         async function carregarDashboard() {
             const container = document.getElementById('tabContent');
             container.innerHTML = '<div class="loading">Carregando...</div>';
@@ -272,141 +302,278 @@
             `;
         }
 
-        async function carregarMensalistas() {
-            const { data } = await supabaseClient.from('mensalistas').select('*').order('nome');
+        // ============================================
+        // CRIAR PARTIDA RÁPIDA
+        // ============================================
+        function carregarCriarPartida() {
             const container = document.getElementById('tabContent');
-            container.innerHTML = `
-                <div class="form-row">
-                    <input type="text" id="novoMensalista" placeholder="Nome do mensalista">
-                    <input type="text" id="novaSenha" placeholder="Senha" value="futebol123">
-                    <button class="btn btn-verde" id="btnAdicionarMensalista">➕ Adicionar</button>
-                </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead><tr><th>ID</th><th>Nome</th><th>Admin</th><th>Ações</th></tr></thead>
-                        <tbody id="mensalistasTable"></tbody>
-                    </table>
-                </div>
-            `;
-            const tbody = document.getElementById('mensalistasTable');
-            tbody.innerHTML = (data || []).map(m => `
-                <tr>
-                    <td>${m.id}</td>
-                    <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;"></td>
-                    <td style="text-align:center;"><input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''}></td>
-                    <td>
-                        <button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
-                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-            document.getElementById('btnAdicionarMensalista').onclick = adicionarMensalista;
+            
+            // Buscar mensalistas para o select
+            supabaseClient.from('mensalistas').select('id, nome, nota_inicial').order('nome').then(({ data: mensalistas }) => {
+                const selectMensalistas = mensalistas?.map(m => `<option value="${m.nome}" data-nota="${m.nota_inicial || 3}">${m.nome}</option>`).join('');
+                
+                container.innerHTML = `
+                    <h2 style="color:#8b0000; margin-bottom:20px;">⚡ Criar Partida Rápida</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>📅 Data</label>
+                            <input type="date" id="rapida_data" value="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        <div class="form-group">
+                            <label>⏰ Horário</label>
+                            <input type="time" id="rapida_horario" value="19:00">
+                        </div>
+                        <div class="form-group">
+                            <label>📍 Local</label>
+                            <select id="rapida_local">
+                                <option value="">Selecione</option>
+                                ${locaisLista.map(l => `<option value="${l.id}" data-endereco="${l.endereco || ''}">${l.nome}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="todosMensalistas">
+                        <label for="todosMensalistas">📌 Incluir TODOS os mensalistas automaticamente</label>
+                    </div>
+                    
+                    <div class="form-row" id="selecaoIndividual" style="display: none;">
+                        <div class="form-group" style="flex:2;">
+                            <label>👥 Selecionar mensalistas individualmente</label>
+                            <select id="selectMensalistaInd" style="margin-bottom:10px;">
+                                <option value="">-- Selecione um mensalista --</option>
+                                ${selectMensalistas}
+                            </select>
+                            <div id="listaMensalistasSelecionados" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>🎟️ Convidado</label>
+                            <input type="text" id="convidadoNome" placeholder="Nome do convidado">
+                            <select id="convidadoPosicao" style="margin-top:8px;">
+                                <option value="Goleiro">🧤 Goleiro</option>
+                                <option value="Fixo">🛡️ Fixo</option>
+                                <option value="Ala Esquerda">⚡ Ala Esquerda</option>
+                                <option value="Ala Direita">⚡ Ala Direita</option>
+                                <option value="Pivô">🎯 Pivô</option>
+                            </select>
+                            <button id="btnAddConvidado" class="btn btn-pequeno" style="margin-top:8px; background:#555;">+ Adicionar Convidado</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 12px;">
+                        <strong>📋 Jogadores na partida:</strong>
+                        <div id="jogadoresSelecionados" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <button id="btnCriarPartidaRapida" class="btn btn-criar" style="background:#ff9800;">🎲 CRIAR PARTIDA E SORTEAR</button>
+                    </div>
+                    
+                    <div id="resultadoTimes" style="margin-top: 20px;"></div>
+                `;
+                
+                // Controle dos jogadores selecionados
+                let jogadoresSelecionados = [];
+                const todosCheckbox = document.getElementById('todosMensalistas');
+                const selecaoIndividual = document.getElementById('selecaoIndividual');
+                const listaDiv = document.getElementById('jogadoresSelecionados');
+                const listaMensalistasDiv = document.getElementById('listaMensalistasSelecionados');
+                const selectMensalistaInd = document.getElementById('selectMensalistaInd');
+                let mensalistasSelecionados = [];
+                
+                function atualizarListaExibicao() {
+                    listaDiv.innerHTML = jogadoresSelecionados.map(j => `
+                        <span style="background:#8b0000; color:white; padding:4px 12px; border-radius:20px; font-size:0.8em;">
+                            ${j.nome} (${j.posicao})
+                            <span style="cursor:pointer; margin-left:8px;" onclick="removerJogadorSelecionado('${j.nome}')">&times;</span>
+                        </span>
+                    `).join('');
+                    
+                    if (jogadoresSelecionados.length === 0) {
+                        listaDiv.innerHTML = '<span style="color:#999;">Nenhum jogador adicionado</span>';
+                    }
+                }
+                
+                window.removerJogadorSelecionado = (nome) => {
+                    jogadoresSelecionados = jogadoresSelecionados.filter(j => j.nome !== nome);
+                    if (mensalistasSelecionados.includes(nome)) {
+                        mensalistasSelecionados = mensalistasSelecionados.filter(m => m !== nome);
+                        atualizarListaMensalistas();
+                    }
+                    atualizarListaExibicao();
+                };
+                
+                function atualizarListaMensalistas() {
+                    listaMensalistasDiv.innerHTML = mensalistasSelecionados.map(nome => `
+                        <span style="background:#ffcc00; color:#8b0000; padding:4px 12px; border-radius:20px; font-size:0.8em;">
+                            📌 ${nome}
+                            <span style="cursor:pointer; margin-left:8px;" onclick="removerJogadorSelecionado('${nome}')">&times;</span>
+                        </span>
+                    `).join('');
+                    if (mensalistasSelecionados.length === 0) {
+                        listaMensalistasDiv.innerHTML = '<span style="color:#999;">Nenhum mensalista selecionado</span>';
+                    }
+                }
+                
+                selectMensalistaInd?.addEventListener('change', (e) => {
+                    const nome = e.target.value;
+                    if (nome && !mensalistasSelecionados.includes(nome) && !jogadoresSelecionados.some(j => j.nome === nome)) {
+                        mensalistasSelecionados.push(nome);
+                        const option = e.target.options[e.target.selectedIndex];
+                        const nota = option.dataset.nota;
+                        jogadoresSelecionados.push({ nome, posicao: 'Fixo', tipo: 'mensalista' });
+                        atualizarListaMensalistas();
+                        atualizarListaExibicao();
+                    }
+                    e.target.value = '';
+                });
+                
+                document.getElementById('btnAddConvidado')?.addEventListener('click', () => {
+                    const nome = document.getElementById('convidadoNome').value.trim();
+                    const posicao = document.getElementById('convidadoPosicao').value;
+                    if (nome && !jogadoresSelecionados.some(j => j.nome === nome)) {
+                        jogadoresSelecionados.push({ nome, posicao, tipo: 'convidado' });
+                        document.getElementById('convidadoNome').value = '';
+                        atualizarListaExibicao();
+                    } else if (nome) {
+                        alert('Jogador já adicionado!');
+                    } else {
+                        alert('Digite o nome do convidado!');
+                    }
+                });
+                
+                todosCheckbox?.addEventListener('change', async (e) => {
+                    if (e.target.checked) {
+                        selecaoIndividual.style.display = 'none';
+                        // Buscar todos os mensalistas
+                        const { data: todosMensalistas } = await supabaseClient.from('mensalistas').select('nome').order('nome');
+                        if (todosMensalistas) {
+                            jogadoresSelecionados = todosMensalistas.map(m => ({ nome: m.nome, posicao: 'Fixo', tipo: 'mensalista' }));
+                            atualizarListaExibicao();
+                        }
+                    } else {
+                        selecaoIndividual.style.display = 'block';
+                        jogadoresSelecionados = [];
+                        mensalistasSelecionados = [];
+                        atualizarListaMensalistas();
+                        atualizarListaExibicao();
+                    }
+                });
+                
+                document.getElementById('btnCriarPartidaRapida')?.addEventListener('click', async () => {
+                    const data = document.getElementById('rapida_data').value;
+                    const horario = document.getElementById('rapida_horario').value;
+                    const localId = document.getElementById('rapida_local').value;
+                    
+                    if (!data) { alert('Selecione a data!'); return; }
+                    if (!localId) { alert('Selecione o local!'); return; }
+                    if (jogadoresSelecionados.length < 4) { alert('Mínimo 4 jogadores!'); return; }
+                    
+                    const local = locaisLista.find(l => l.id == localId);
+                    
+                    // Salvar partida
+                    const partida = {
+                        data: data,
+                        horario: horario,
+                        local_id: parseInt(localId),
+                        endereco: local?.endereco || '',
+                        observacoes: 'Criada pelo admin'
+                    };
+                    
+                    const { data: novaPartida, error } = await supabaseClient.from('partidas').insert(partida).select().single();
+                    if (error) { alert('Erro ao criar partida: ' + error.message); return; }
+                    
+                    const partidaId = novaPartida.id;
+                    
+                    // Sortear times baseado nas notas
+                    // Buscar notas dos jogadores
+                    const { data: mensalistasNotas } = await supabaseClient.from('mensalistas').select('nome, nota_inicial');
+                    const notasMap = {};
+                    mensalistasNotas?.forEach(m => { notasMap[m.nome] = m.nota_inicial || 3; });
+                    
+                    // Separar goleiros
+                    const goleiros = jogadoresSelecionados.filter(j => j.posicao === 'Goleiro');
+                    const outros = jogadoresSelecionados.filter(j => j.posicao !== 'Goleiro');
+                    
+                    let timeA = [], timeB = [];
+                    let somaA = 0, somaB = 0;
+                    
+                    // Distribuir goleiros
+                    if (goleiros.length === 1) {
+                        timeA.push(goleiros[0]);
+                        somaA += notasMap[goleiros[0].nome] || 3;
+                    } else if (goleiros.length >= 2) {
+                        goleiros.forEach((g, i) => {
+                            const nota = notasMap[g.nome] || 3;
+                            if (i % 2 === 0) { timeA.push(g); somaA += nota; }
+                            else { timeB.push(g); somaB += nota; }
+                        });
+                    }
+                    
+                    // Ordenar outros por nota
+                    const outrosOrdenados = [...outros].sort((a, b) => (notasMap[b.nome] || 3) - (notasMap[a.nome] || 3));
+                    outrosOrdenados.forEach(j => {
+                        const nota = notasMap[j.nome] || 3;
+                        if (somaA <= somaB) { timeA.push(j); somaA += nota; }
+                        else { timeB.push(j); somaB += nota; }
+                    });
+                    
+                    // Balancear quantidade
+                    while (Math.abs(timeA.length - timeB.length) > 1) {
+                        if (timeA.length > timeB.length) { const m = timeA.pop(); timeB.unshift(m); }
+                        else { const m = timeB.pop(); timeA.unshift(m); }
+                    }
+                    
+                    // Salvar escala
+                    const escala = [...timeA.map(j => ({ ...j, time: 'A' })), ...timeB.map(j => ({ ...j, time: 'B' }))];
+                    for (const j of escala) {
+                        await supabaseClient.from('escala_partida').insert({
+                            partida_id: partidaId, jogador_nome: j.nome, posicao: j.posicao,
+                            habilidades: [], tipo: j.tipo, time: j.time
+                        });
+                    }
+                    
+                    // Exibir resultado
+                    const resultadoDiv = document.getElementById('resultadoTimes');
+                    const notaFormatada = (nota) => '⭐'.repeat(Math.round(nota)) + '☆'.repeat(5 - Math.round(nota));
+                    resultadoDiv.innerHTML = `
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
+                            <div style="background:#fff5f5; border-radius:16px; padding:15px;">
+                                <h3 style="color:#8b0000;">🔴 TIME VERMELHO</h3>
+                                ${timeA.map(j => `<div style="margin:8px 0;"><strong>${j.nome}</strong> - ${j.posicao} ${notaFormatada(notasMap[j.nome] || 3)}</div>`).join('')}
+                                <div style="margin-top:10px; font-weight:bold;">Soma: ${somaA.toFixed(1)} ⭐</div>
+                            </div>
+                            <div style="background:#fafafa; border-radius:16px; padding:15px;">
+                                <h3 style="color:#8b0000;">⚪ TIME BRANCO</h3>
+                                ${timeB.map(j => `<div style="margin:8px 0;"><strong>${j.nome}</strong> - ${j.posicao} ${notaFormatada(notasMap[j.nome] || 3)}</div>`).join('')}
+                                <div style="margin-top:10px; font-weight:bold;">Soma: ${somaB.toFixed(1)} ⭐</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:15px; text-align:center; color:#2c5f2d;">✅ Partida criada com sucesso!</div>
+                    `;
+                    
+                    carregarPartidas(); // atualiza lista
+                });
+                
+                // Inicializar lista vazia
+                atualizarListaExibicao();
+                if (!todosCheckbox?.checked) {
+                    selecaoIndividual.style.display = 'block';
+                }
+            });
         }
 
-        window.adicionarMensalista = async () => {
-            const nome = document.getElementById('novoMensalista').value.trim();
-            const senha = document.getElementById('novaSenha').value;
-            if (!nome) { alert('Digite o nome!'); return; }
-            const { error } = await supabaseClient.from('mensalistas').insert({ nome, senha_hash: senha, is_admin: false });
-            if (error) { alert('Erro: ' + error.message); return; }
-            carregarMensalistas();
-            carregarDashboard();
-            popularSelectAdmin();
-        };
-
-        window.editarMensalista = async (id) => {
-            const nome = document.getElementById(`nome_${id}`).value;
-            const is_admin = document.getElementById(`admin_${id}`).checked;
-            const { error } = await supabaseClient.from('mensalistas').update({ nome, is_admin }).eq('id', id);
-            if (error) { alert('Erro: ' + error.message); return; }
-            alert('Mensalista atualizado!');
-            carregarMensalistas();
-            carregarDashboard();
-            popularSelectAdmin();
-        };
-
-        window.deletarMensalista = async (id) => {
-            if (!confirm('Tem certeza? Isso removerá todas as avaliações deste mensalista.')) return;
-            const { error } = await supabaseClient.from('mensalistas').delete().eq('id', id);
-            if (error) { alert('Erro: ' + error.message); return; }
-            carregarMensalistas();
-            carregarDashboard();
-            popularSelectAdmin();
-        };
-
-        async function carregarLocais() {
-            const { data } = await supabaseClient.from('locais').select('*').order('nome');
-            const container = document.getElementById('tabContent');
-            container.innerHTML = `
-                <div class="form-row">
-                    <input type="text" id="novoLocalNome" placeholder="Nome do local">
-                    <input type="text" id="novoLocalEndereco" placeholder="Endereço">
-                    <button class="btn btn-verde" id="btnAdicionarLocal">➕ Adicionar</button>
-                </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead><tr><th>ID</th><th>Nome</th><th>Endereço</th><th>Ações</th></tr></thead>
-                        <tbody id="locaisTable"></tbody>
-                    </table>
-                </div>
-            `;
-            const tbody = document.getElementById('locaisTable');
-            tbody.innerHTML = (data || []).map(l => `
-                <tr>
-                    <td>${l.id}</td>
-                    <td><input type="text" id="local_nome_${l.id}" value="${l.nome}" style="width:100%;"></td>
-                    <td><input type="text" id="local_endereco_${l.id}" value="${l.endereco || ''}" style="width:100%;"></td>
-                    <td>
-                        <button class="btn btn-azul btn-pequeno" onclick="editarLocal(${l.id})">💾 Salvar</button>
-                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarLocal(${l.id})">🗑️ Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-            document.getElementById('btnAdicionarLocal').onclick = adicionarLocal;
-        }
-
-        window.adicionarLocal = async () => {
-            const nome = document.getElementById('novoLocalNome').value.trim();
-            const endereco = document.getElementById('novoLocalEndereco').value.trim();
-            if (!nome) { alert('Digite o nome do local!'); return; }
-            const { error } = await supabaseClient.from('locais').insert({ nome, endereco });
-            if (error) { alert('Erro: ' + error.message); return; }
-            carregarLocais();
-            carregarDashboard();
-        };
-
-        window.editarLocal = async (id) => {
-            const nome = document.getElementById(`local_nome_${id}`).value;
-            const endereco = document.getElementById(`local_endereco_${id}`).value;
-            const { error } = await supabaseClient.from('locais').update({ nome, endereco }).eq('id', id);
-            if (error) { alert('Erro: ' + error.message); return; }
-            alert('Local atualizado!');
-            carregarLocais();
-        };
-
-        window.deletarLocal = async (id) => {
-            const { count } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true }).eq('local_id', id);
-            if (count > 0) {
-                alert(`Não é possível excluir! Este local está sendo usado em ${count} partida(s).`);
-                return;
-            }
-            if (!confirm('Tem certeza?')) return;
-            const { error } = await supabaseClient.from('locais').delete().eq('id', id);
-            if (error) { alert('Erro: ' + error.message); return; }
-            carregarLocais();
-            carregarDashboard();
-        };
-
-        // CORREÇÃO: Função carregarPartidas com data formatada corretamente
+        // ============================================
+        // PARTIDAS
+        // ============================================
         async function carregarPartidas() {
             const { data } = await supabaseClient.from('partidas').select('*').order('data', { ascending: false });
             const container = document.getElementById('tabContent');
             container.innerHTML = `
                 <div class="tabela-container">
                     <table>
-                        <thead>
-                            <tr><th>ID</th><th>Data</th><th>Horário</th><th>Local ID</th><th>Ações</th></tr>
-                        </thead>
+                        <thead><tr><th>ID</th><th>Data</th><th>Horário</th><th>Local</th><th>Ações</th></tr></thead>
                         <tbody id="partidasTable"></tbody>
                     </table>
                 </div>
@@ -433,45 +600,56 @@
             carregarDashboard();
         };
 
-        function carregarFerramentas() {
+        // ============================================
+        // MENSALISTAS
+        // ============================================
+        async function carregarMensalistas() {
+            const { data } = await supabaseClient.from('mensalistas').select('*').order('nome');
             const container = document.getElementById('tabContent');
             container.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 20px;">
-                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
-                        <h3 style="color: #8b0000;">🗑️ Limpeza de Dados</h3>
-                        <p>Remove todas as avaliações, mas mantém partidas e escalas.</p>
-                        <button class="btn" id="btnLimparAvaliacoes" style="background:#ff9800; margin-top:10px;">Limpar Avaliações</button>
-                    </div>
-                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
-                        <h3 style="color: #8b0000;">⚠️ Reset Completo</h3>
-                        <p>Remove TODOS os dados: partidas, avaliações, escalas. Mantém apenas mensalistas e locais.</p>
-                        <button class="btn btn-vermelho" id="btnResetCompleto">Resetar Banco</button>
-                    </div>
+                <div class="form-row">
+                    <input type="text" id="novoMensalista" placeholder="Nome do mensalista">
+                    <input type="text" id="novaSenha" placeholder="Senha" value="futebol123">
+                    <input type="number" id="novaNota" placeholder="Nota inicial (1-5)" value="3" min="1" max="5" step="1">
+                    <button class="btn btn-verde" id="btnAdicionarMensalista">➕ Adicionar</button>
+                </div>
+                <div class="tabela-container">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nome</th><th>Nota</th><th>Admin</th><th>Ações</th></tr></thead>
+                        <tbody id="mensalistasTable"></tbody>
+                    </table>
                 </div>
             `;
-            document.getElementById('btnLimparAvaliacoes').onclick = async () => {
-                if (!confirm('Limpar TODAS as avaliações? Esta ação não pode ser desfeita!')) return;
-                const { error } = await supabaseClient.from('avaliacoes_partida').delete().neq('id', 0);
-                if (error) { alert('Erro: ' + error.message); return; }
-                alert('Avaliações removidas com sucesso!');
-                carregarDashboard();
-            };
-            document.getElementById('btnResetCompleto').onclick = async () => {
-                if (!confirm('⚠️ ATENÇÃO! Isso vai deletar TODAS as partidas, escalas e avaliações. Continuar?')) return;
-                await supabaseClient.from('avaliacoes_partida').delete().neq('id', 0);
-                await supabaseClient.from('escala_partida').delete().neq('id', 0);
-                await supabaseClient.from('partidas').delete().neq('id', 0);
-                alert('Banco resetado com sucesso!');
-                carregarDashboard();
-                carregarPartidas();
-            };
+            const tbody = document.getElementById('mensalistasTable');
+            tbody.innerHTML = (data || []).map(m => `
+                <tr>
+                    <td>${m.id}</td>
+                    <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;"></td>
+                    <td><input type="number" id="nota_${m.id}" value="${m.nota_inicial || 3}" style="width:70px;" min="1" max="5" step="1"></td>
+                    <td style="text-align:center;"><input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''}></td>
+                    <td>
+                        <button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
+                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('btnAdicionarMensalista').onclick = adicionarMensalista;
         }
 
-        document.getElementById('logoVoltar').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
+        window.adicionarMensalista = async () => {
+            const nome = document.getElementById('novoMensalista').value.trim();
+            const senha = document.getElementById('novaSenha').value;
+            const nota = parseInt(document.getElementById('novaNota').value) || 3;
+            if (!nome) { alert('Digite o nome!'); return; }
+            const { error } = await supabaseClient.from('mensalistas').insert({ nome, senha_hash: senha, is_admin: false, nota_inicial: nota });
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarMensalistas();
+            carregarDashboard();
+            popularSelectAdmin();
+        };
 
-        popularSelectAdmin();
-    </script>
-</body>
-</html>
+        window.editarMensalista = async (id) => {
+            const nome = document.getElementById(`nome_${id}`).value;
+            const nota = parseInt(document.getElementById(`nota_${id}`).value) || 3;
+            const is_admin = document.getElementById(`admin_${id}`).checked;
+            const { error } = await supabaseClient.from('mensalistas').update
