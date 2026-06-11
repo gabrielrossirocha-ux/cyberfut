@@ -224,6 +224,10 @@
         async function popularSelectAdmin() {
             console.log('🔍 Buscando administradores...');
             const select = document.getElementById('selectAdmin');
+            if (!select) {
+                console.error('Select não encontrado!');
+                return;
+            }
             select.innerHTML = '<option value="">Carregando...</option>';
             
             try {
@@ -598,4 +602,170 @@
                 <div class="tabela-container">
                     <table>
                         <thead><tr><th>ID</th><th>Nome</th><th>Nota Inicial</th><th>Admin</th><th>Ações</th></tr></thead>
-                        <
+                        <tbody id="mensalistasTable"></tbody>
+                    </table>
+                </div>
+            `;
+            const tbody = document.getElementById('mensalistasTable');
+            tbody.innerHTML = (data || []).map(m => `
+                <tr>
+                    <td>${m.id}</td>
+                    <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;"></td>
+                    <td><input type="number" id="nota_${m.id}" value="${m.nota_inicial || 3}" style="width:80px;" min="1" max="5" step="1"></td>
+                    <td style="text-align:center;"><input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''}></td>
+                    <td>
+                        <button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
+                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('btnAdicionarMensalista').onclick = adicionarMensalista;
+        }
+
+        window.adicionarMensalista = async () => {
+            const nome = document.getElementById('novoMensalista').value.trim();
+            const senha = document.getElementById('novaSenha').value;
+            const nota = parseInt(document.getElementById('novaNota').value) || 3;
+            if (!nome) { alert('Digite o nome!'); return; }
+            const { error } = await supabaseClient.from('mensalistas').insert({ nome, senha_hash: senha, is_admin: false, nota_inicial: nota });
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarMensalistas();
+            carregarDashboard();
+            popularSelectAdmin();
+        };
+
+        window.editarMensalista = async (id) => {
+            const nome = document.getElementById(`nome_${id}`).value;
+            const nota = parseInt(document.getElementById(`nota_${id}`).value) || 3;
+            const is_admin = document.getElementById(`admin_${id}`).checked;
+            const { error } = await supabaseClient.from('mensalistas').update({ nome, nota_inicial: nota, is_admin }).eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            alert('Mensalista atualizado!');
+            carregarMensalistas();
+            carregarDashboard();
+            popularSelectAdmin();
+        };
+
+        window.deletarMensalista = async (id) => {
+            if (!confirm('Tem certeza? Isso removerá todas as avaliações deste mensalista.')) return;
+            const { error } = await supabaseClient.from('mensalistas').delete().eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarMensalistas();
+            carregarDashboard();
+            popularSelectAdmin();
+        };
+
+        async function carregarLocaisAdmin() {
+            const { data } = await supabaseClient.from('locais').select('*').order('nome');
+            const container = document.getElementById('tabContent');
+            container.innerHTML = `
+                <div class="form-row">
+                    <input type="text" id="novoLocalNome" placeholder="Nome do local">
+                    <input type="text" id="novoLocalEndereco" placeholder="Endereço">
+                    <button class="btn btn-verde" id="btnAdicionarLocal">➕ Adicionar</button>
+                </div>
+                <div class="tabela-container">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nome</th><th>Endereço</th><th>Ações</th></tr></thead>
+                        <tbody id="locaisTable"></tbody>
+                    </table>
+                </div>
+            `;
+            const tbody = document.getElementById('locaisTable');
+            tbody.innerHTML = (data || []).map(l => `
+                <tr>
+                    <td>${l.id}</td>
+                    <td><input type="text" id="local_nome_${l.id}" value="${l.nome}" style="width:100%;"></td>
+                    <td><input type="text" id="local_endereco_${l.id}" value="${l.endereco || ''}" style="width:100%;"></td>
+                    <td>
+                        <button class="btn btn-azul btn-pequeno" onclick="editarLocal(${l.id})">💾 Salvar</button>
+                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarLocal(${l.id})">🗑️ Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('btnAdicionarLocal').onclick = adicionarLocal;
+        }
+
+        window.adicionarLocal = async () => {
+            const nome = document.getElementById('novoLocalNome').value.trim();
+            const endereco = document.getElementById('novoLocalEndereco').value.trim();
+            if (!nome) { alert('Digite o nome do local!'); return; }
+            const { error } = await supabaseClient.from('locais').insert({ nome, endereco });
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarLocaisAdmin();
+            carregarDashboard();
+            await carregarLocais();
+        };
+
+        window.editarLocal = async (id) => {
+            const nome = document.getElementById(`local_nome_${id}`).value;
+            const endereco = document.getElementById(`local_endereco_${id}`).value;
+            const { error } = await supabaseClient.from('locais').update({ nome, endereco }).eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            alert('Local atualizado!');
+            carregarLocaisAdmin();
+            await carregarLocais();
+        };
+
+        window.deletarLocal = async (id) => {
+            const { count } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true }).eq('local_id', id);
+            if (count > 0) {
+                alert(`Não é possível excluir! Este local está sendo usado em ${count} partida(s).`);
+                return;
+            }
+            if (!confirm('Tem certeza?')) return;
+            const { error } = await supabaseClient.from('locais').delete().eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarLocaisAdmin();
+            carregarDashboard();
+            await carregarLocais();
+        };
+
+        function carregarFerramentas() {
+            const container = document.getElementById('tabContent');
+            container.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
+                        <h3 style="color: #8b0000;">🗑️ Limpeza de Dados</h3>
+                        <p>Remove todas as avaliações, mas mantém partidas e escalas.</p>
+                        <button class="btn" id="btnLimparAvaliacoes" style="background:#ff9800; margin-top:10px;">Limpar Avaliações</button>
+                    </div>
+                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
+                        <h3 style="color: #8b0000;">⚠️ Reset Completo</h3>
+                        <p>Remove TODOS os dados: partidas, avaliações, escalas. Mantém apenas mensalistas e locais.</p>
+                        <button class="btn btn-vermelho" id="btnResetCompleto">Resetar Banco</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('btnLimparAvaliacoes').onclick = async () => {
+                if (!confirm('Limpar TODAS as avaliações? Esta ação não pode ser desfeita!')) return;
+                const { error } = await supabaseClient.from('avaliacoes_partida').delete().neq('id', 0);
+                if (error) { alert('Erro: ' + error.message); return; }
+                alert('Avaliações removidas com sucesso!');
+                carregarDashboard();
+            };
+            document.getElementById('btnResetCompleto').onclick = async () => {
+                if (!confirm('⚠️ ATENÇÃO! Isso vai deletar TODAS as partidas, escalas e avaliações. Continuar?')) return;
+                await supabaseClient.from('avaliacoes_partida').delete().neq('id', 0);
+                await supabaseClient.from('escala_partida').delete().neq('id', 0);
+                await supabaseClient.from('partidas').delete().neq('id', 0);
+                alert('Banco resetado com sucesso!');
+                carregarDashboard();
+                carregarPartidas();
+            };
+        }
+
+        document.getElementById('logoVoltar').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        // INICIALIZAÇÃO
+        async function init() {
+            console.log('Inicializando admin.html...');
+            await popularSelectAdmin();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
