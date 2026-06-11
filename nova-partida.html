@@ -296,8 +296,6 @@
 
         // Sorteio baseado apenas em notas (força)
         function sortearPorNotas(jogadores) {
-            // Separar goleiros (se houver marcação) - mas agora sem posição, todos são tratados iguais
-            // Apenas para manter compatibilidade com dados antigos
             const goleiros = jogadores.filter(j => j.posicao === 'Goleiro');
             const outros = jogadores.filter(j => j.posicao !== 'Goleiro');
             
@@ -306,7 +304,6 @@
             let somaA = 0;
             let somaB = 0;
             
-            // Se tiver goleiros, distribuir alternadamente
             if (goleiros.length === 1) {
                 timeA.push(goleiros[0]);
                 somaA += notasJogadores[goleiros[0].nome] || 3;
@@ -323,14 +320,12 @@
                 });
             }
             
-            // Ordenar outros por nota (mais forte primeiro)
             const outrosOrdenados = [...outros].sort((a, b) => {
                 const notaA = notasJogadores[a.nome] || 3;
                 const notaB = notasJogadores[b.nome] || 3;
                 return notaB - notaA;
             });
             
-            // Distribuir usando algoritmo guloso (time com menor soma recebe o próximo)
             outrosOrdenados.forEach(jogador => {
                 const nota = notasJogadores[jogador.nome] || 3;
                 if (somaA <= somaB) {
@@ -342,7 +337,6 @@
                 }
             });
             
-            // Balancear quantidade de jogadores
             while (Math.abs(timeA.length - timeB.length) > 1) {
                 if (timeA.length > timeB.length) {
                     const movido = timeA.pop();
@@ -357,7 +351,7 @@
                     somaB -= notaMovido;
                     somaA += notaMovido;
                 }
-            });
+            }
             
             return { timeA, timeB, somaA, somaB };
         }
@@ -371,22 +365,27 @@
         }
 
         async function carregarLocais() {
+            console.log('Carregando locais...');
             const { data, error } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
             if (error) {
+                console.error('Erro ao carregar locais:', error);
                 const select = document.getElementById('localPartida');
-                select.innerHTML = '<option value="">Erro ao carregar locais</option>';
+                if (select) select.innerHTML = '<option value="">Erro ao carregar locais</option>';
                 return;
             }
             locaisLista = data || [];
+            console.log('Locais carregados:', locaisLista.length);
             const select = document.getElementById('localPartida');
-            select.innerHTML = '<option value="">Selecione um local</option>';
-            locaisLista.forEach(local => {
-                const option = document.createElement('option');
-                option.value = local.id;
-                option.textContent = local.nome;
-                option.dataset.endereco = local.endereco || '';
-                select.appendChild(option);
-            });
+            if (select) {
+                select.innerHTML = '<option value="">Selecione um local</option>';
+                locaisLista.forEach(local => {
+                    const option = document.createElement('option');
+                    option.value = local.id;
+                    option.textContent = local.nome;
+                    option.dataset.endereco = local.endereco || '';
+                    select.appendChild(option);
+                });
+            }
         }
 
         document.getElementById('localPartida').addEventListener('change', (e) => {
@@ -404,11 +403,20 @@
         });
 
         function atualizarSelectMensalistas() {
+            console.log('Atualizando select de mensalistas...');
             const nomesNaEscala = new Set(jogadoresEscala.map(j => j.nome));
             const disponiveis = MENSALISTAS.filter(m => !nomesNaEscala.has(m));
             const select = document.getElementById('selectMensalista');
-            select.innerHTML = '<option value="">-- Selecione --</option>';
-            disponiveis.forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; select.appendChild(opt); });
+            if (select) {
+                select.innerHTML = '<option value="">-- Selecione --</option>';
+                disponiveis.forEach(m => { 
+                    const opt = document.createElement('option'); 
+                    opt.value = m; 
+                    opt.textContent = m; 
+                    select.appendChild(opt); 
+                });
+                console.log('Mensalistas disponíveis:', disponiveis.length);
+            }
         }
 
         function limparFormulario() {
@@ -418,8 +426,10 @@
 
         function alternarTipo() {
             const isMensalista = document.querySelector('input[name="tipo"]:checked').value === 'mensalista';
-            document.getElementById('mensalistaContainer').style.display = isMensalista ? 'block' : 'none';
-            document.getElementById('convidadoContainer').style.display = isMensalista ? 'none' : 'block';
+            const mensalistaContainer = document.getElementById('mensalistaContainer');
+            const convidadoContainer = document.getElementById('convidadoContainer');
+            if (mensalistaContainer) mensalistaContainer.style.display = isMensalista ? 'block' : 'none';
+            if (convidadoContainer) convidadoContainer.style.display = isMensalista ? 'none' : 'block';
         }
 
         document.querySelectorAll('input[name="tipo"]').forEach(r => r.addEventListener('change', alternarTipo));
@@ -437,7 +447,6 @@
                 if (!nome) { alert('Digite o nome do convidado!'); return; }
             }
             if (jogadoresEscala.some(j => j.nome === nome)) { alert('Jogador já está na escala!'); return; }
-            // Adicionar sem posição (usar "Fixo" como padrão para compatibilidade)
             jogadoresEscala.push({ id: Date.now(), nome, posicao: 'Fixo', tipo: isMensalista ? 'mensalista' : 'convidado' });
             atualizarLista();
             limparFormulario();
@@ -447,14 +456,23 @@
         function atualizarLista() {
             document.getElementById('totalJogadores').textContent = jogadoresEscala.length;
             const container = document.getElementById('listaJogadores');
-            if (jogadoresEscala.length === 0) { container.innerHTML = '<p class="vazio">Nenhum jogador adicionado</p>'; return; }
+            if (jogadoresEscala.length === 0) { 
+                container.innerHTML = '<p class="vazio">Nenhum jogador adicionado</p>'; 
+                return; 
+            }
             container.innerHTML = '<ul class="lista-jogadores">' + jogadoresEscala.map(j => `
                 <li><div><strong>${j.nome}</strong> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div><button class="btn-deletar" onclick="removerJogador(${j.id})">❌</button></li>
             `).join('') + '</ul>';
             atualizarSelectMensalistas();
         }
 
-        window.removerJogador = (id) => { jogadoresEscala = jogadoresEscala.filter(j => j.id !== id); atualizarLista(); timeA = []; timeB = []; document.getElementById('timesContainer').style.display = 'none'; };
+        window.removerJogador = (id) => { 
+            jogadoresEscala = jogadoresEscala.filter(j => j.id !== id); 
+            atualizarLista(); 
+            timeA = []; 
+            timeB = []; 
+            document.getElementById('timesContainer').style.display = 'none'; 
+        };
 
         document.getElementById('btnSortear').addEventListener('click', async () => {
             if (partidaFinalizada) { alert('⚠️ Esta partida já foi finalizada!'); return; }
@@ -522,9 +540,15 @@
             window.location.href = 'index.html';
         });
 
-        alternarTipo();
-        atualizarSelectMensalistas();
-        carregarLocais();
+        // INICIALIZAÇÃO
+        async function init() {
+            console.log('Inicializando nova-partida.html...');
+            await carregarLocais();
+            atualizarSelectMensalistas();
+            alternarTipo();
+        }
+        
+        init();
     </script>
 </body>
 </html>
