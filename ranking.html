@@ -183,7 +183,7 @@
         }
         .loading { text-align: center; padding: 30px; color: #666; }
         
-        /* Estilos da aba Regras */
+        /* Estilos da aba Regras - Apenas Ranking */
         .regras-container {
             padding: 10px;
         }
@@ -275,7 +275,7 @@
             <div class="tabs">
                 <button class="tab active" data-tab="mensalistas">📌 Mensalistas</button>
                 <button class="tab" data-tab="convidados">🎟️ Convidados</button>
-                <button class="tab" data-tab="regras">📋 Regras de Rankeamento</button>
+                <button class="tab" data-tab="regras">📋 Regras do Ranking</button>
             </div>
             
             <div id="filtrosContainer" class="filtros">
@@ -357,7 +357,6 @@
             const comparacaoDiv = document.getElementById('infoComparacao');
             const filtrosDiv = document.getElementById('filtrosContainer');
             
-            // Esconder filtros na aba de regras
             filtrosDiv.style.display = 'none';
             infoDiv.style.display = 'none';
             comparacaoDiv.style.display = 'none';
@@ -369,6 +368,7 @@
                         <p>O <strong class="destaque">Ranking Geral</strong> acumula todas as estrelas recebidas pelo jogador em <strong>TODAS as partidas</strong> que ele participou.</p>
                         <div class="formula">⭐ TOTAL = Soma de todas as estrelas recebidas em todas as partidas</div>
                         <p><strong>Exemplo:</strong> Se um jogador recebeu 5 estrelas na partida 1, 4 estrelas na partida 2 e 3 estrelas na partida 3, seu total será <strong>12 estrelas</strong>.</p>
+                        <p><strong>Por que separar Mensalistas e Convidados?</strong> Convidados são avaliados por 9 pessoas (todos os mensalistas), enquanto mensalistas são avaliados por 8 (todos exceto eles mesmos). A separação garante justiça na comparação.</p>
                     </div>
 
                     <div class="regra-categoria">
@@ -376,28 +376,6 @@
                         <p>O <strong class="destaque">Ranking por Partida</strong> mostra apenas as estrelas recebidas em uma <strong>partida específica</strong>.</p>
                         <div class="formula">⭐ TOTAL NA PARTIDA = Soma das estrelas recebidas NAQUELA partida</div>
                         <p><strong>Exemplo:</strong> Se você selecionar a partida do dia 10/06, verá quantas estrelas cada jogador recebeu apenas naquele jogo.</p>
-                    </div>
-
-                    <div class="regra-categoria">
-                        <h3>📊 Como os times são sorteados?</h3>
-                        <p>O sistema utiliza um algoritmo avançado para garantir times <strong>equilibrados</strong>:</p>
-                        <ul>
-                            <li><strong>Força do jogador:</strong> Calculada pela média de estrelas recebidas + histórico de vitórias + consistência</li>
-                            <li><strong>Distribuição:</strong> Jogadores mais fortes são distribuídos alternadamente entre os times</li>
-                            <li><strong>Goleiros:</strong> Sempre um goleiro em cada time</li>
-                            <li><strong>Objetivo:</strong> Deixar a soma das forças dos dois times o mais próximo possível</li>
-                        </ul>
-                    </div>
-
-                    <div class="regra-categoria">
-                        <h3>🔄 Como a "Força" do jogador é calculada?</h3>
-                        <p>A força de cada jogador é atualizada automaticamente após cada partida, usando a fórmula:</p>
-                        <div class="formula">FORÇA = (Média de Estrelas × 0.6) + (Taxa de Vitória × 0.3) + (Consistência × 0.1)</div>
-                        <ul>
-                            <li><strong>Média de Estrelas (60%):</strong> Média aritmética de todas as estrelas que o jogador já recebeu</li>
-                            <li><strong>Taxa de Vitória (30%):</strong> Percentual de partidas que o time do jogador venceu</li>
-                            <li><strong>Consistência (10%):</strong> Quão constante é o desempenho (baixo desvio padrão)</li>
-                        </ul>
                     </div>
 
                     <div class="regra-categoria">
@@ -412,16 +390,6 @@
                     </div>
 
                     <div class="regra-categoria">
-                        <h3>👥 Mensalistas vs Convidados</h3>
-                        <p>Os rankings são <strong>separados</strong> para garantir justiça:</p>
-                        <ul>
-                            <li><strong>📌 Mensalistas:</strong> Jogadores fixos do grupo</li>
-                            <li><strong>🎟️ Convidados:</strong> Jogadores eventuais (incluindo goleiros convidados G1, G2, etc.)</li>
-                        </ul>
-                        <p>Isso evita que convidados, que jogam poucas partidas, distorçam o ranking principal.</p>
-                    </div>
-
-                    <div class="regra-categoria">
                         <h3>⭐ Como as estrelas são atribuídas?</h3>
                         <p>Cada mensalista avalia os <strong>outros jogadores</strong> da partida com notas de <strong>1 a 5 estrelas</strong>:</p>
                         <ul>
@@ -432,6 +400,16 @@
                             <li>⭐ (1) = Desempenho insatisfatório</li>
                         </ul>
                         <p><strong>Atenção:</strong> As avaliações não podem ser alteradas após confirmadas!</p>
+                    </div>
+
+                    <div class="regra-categoria">
+                        <h3>🏅 Qual é a pontuação máxima possível?</h3>
+                        <p>O máximo de estrelas que um jogador pode receber em uma única partida depende do seu tipo:</p>
+                        <ul>
+                            <li><strong>Mensalista:</strong> 8 avaliadores × 5 estrelas = <strong class="destaque">40 estrelas</strong></li>
+                            <li><strong>Convidado:</strong> 9 avaliadores × 5 estrelas = <strong class="destaque">45 estrelas</strong></li>
+                        </ul>
+                        <p>Isso ocorre porque mensalistas não avaliam a si mesmos, enquanto convidados são avaliados por todos.</p>
                     </div>
                 </div>
             `;
