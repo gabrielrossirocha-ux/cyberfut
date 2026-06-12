@@ -133,7 +133,6 @@
             transition: all 0.3s;
         }
         .btn-voltar:hover { background: #333; transform: translateY(-2px); }
-        .estrela-pequena { color: #ffcc00; font-size: 0.9em; }
         
         @media (orientation: portrait) {
             body { padding: 12px; }
@@ -268,12 +267,11 @@
                 (notasPorPartida[id].soma / notasPorPartida[id].count).toFixed(1)
             );
 
-            // FILTRO: apenas comentários com texto (não vazio)
+            // Comentários: exibe sempre o avaliador e a nota, mas o texto do comentário só se existir
             const comentariosComDados = avaliacoes
-                .filter(a => a.comentario && a.comentario.trim() !== '')
                 .map(a => ({
                     nota: a.nota,
-                    comentario: a.comentario,
+                    comentario: a.comentario && a.comentario.trim() !== '' ? a.comentario : null,
                     data: a.data_avaliacao,
                     avaliador: a.mensalistas?.nome || 'Mensalista',
                     partida: partidasMap[a.partida_id]
@@ -360,7 +358,7 @@
             if (comentariosComDados.length > 0) {
                 html += `
                     <div class="card">
-                        <h2>💬 Comentários Recebidos</h2>
+                        <h2>💬 Avaliações Recebidas</h2>
                         <div class="comentarios-lista">
                             ${comentariosComDados.map(c => `
                                 <div class="comentario-item">
@@ -368,7 +366,7 @@
                                         <span class="comentario-avaliador">👤 ${c.avaliador}</span>
                                         <span class="comentario-nota">⭐ ${c.nota} estrelas</span>
                                     </div>
-                                    <div class="comentario-texto">"${c.comentario}"</div>
+                                    ${c.comentario ? `<div class="comentario-texto">"${c.comentario}"</div>` : ''}
                                     <div class="comentario-data">
                                         📅 ${new Date(c.data).toLocaleDateString('pt-BR')}
                                         ${c.partida ? `<span class="comentario-partida"> 🏟️ ${c.partida.local_nome} (${new Date(c.partida.data).toLocaleDateString('pt-BR')})</span>` : ''}
