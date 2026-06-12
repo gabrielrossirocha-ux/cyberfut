@@ -175,6 +175,13 @@
         let chartInstance = null;
         let locaisMap = {};
 
+        function isComentarioValido(comentario) {
+            if (!comentario) return false;
+            if (comentario === 'Sem comentário') return false;  // IGNORA O TEXTO LITERAL
+            if (comentario.trim() === '') return false;
+            return true;
+        }
+
         async function carregarLocaisMap() {
             const { data } = await supabaseClient.from('locais').select('id, nome');
             if (data) {
@@ -267,11 +274,10 @@
                 (notasPorPartida[id].soma / notasPorPartida[id].count).toFixed(1)
             );
 
-            // Comentários: exibe sempre o avaliador e a nota, mas o texto do comentário só se existir
             const comentariosComDados = avaliacoes
                 .map(a => ({
                     nota: a.nota,
-                    comentario: a.comentario && a.comentario.trim() !== '' ? a.comentario : null,
+                    comentario: isComentarioValido(a.comentario) ? a.comentario : null,
                     data: a.data_avaliacao,
                     avaliador: a.mensalistas?.nome || 'Mensalista',
                     partida: partidasMap[a.partida_id]
