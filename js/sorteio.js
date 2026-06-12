@@ -1,5 +1,6 @@
 // ============================================
 // BIBLIOTECA DE SORTEIO DE TIMES
+// Garantia: Goleiros SEMPRE um em cada time
 // ============================================
 
 /**
@@ -17,13 +18,16 @@ function sortearTimes(jogadores) {
     let somaA = 0;
     let somaB = 0;
     
-    // REGRA 1: Distribuir goleiros (prioridade máxima - UM EM CADA TIME)
+    // ============================================
+    // REGRA 1: Goleiros - prioridade máxima
+    // Garantir que fiquem em times diferentes
+    // ============================================
     if (goleiros.length === 1) {
         // Apenas um goleiro: vai para o time A
         timeA.push(goleiros[0]);
         somaA += goleiros[0].forca || 3;
     } else if (goleiros.length >= 2) {
-        // Dois ou mais goleiros: distribuir alternadamente (garante 1 em cada time)
+        // Dois ou mais goleiros: distribuir alternadamente
         goleiros.forEach((goleiro, index) => {
             const forca = goleiro.forca || 3;
             if (index % 2 === 0) {
@@ -36,14 +40,19 @@ function sortearTimes(jogadores) {
         });
     }
     
-    // REGRA 2: Ordenar outros jogadores por força (do mais forte para o mais fraco)
+    // ============================================
+    // REGRA 2: Jogadores de linha
+    // Ordenar por força (mais forte primeiro)
+    // ============================================
     const outrosOrdenados = [...outros].sort((a, b) => {
         const forcaA = a.forca || 3;
         const forcaB = b.forca || 3;
         return forcaB - forcaA;
     });
     
-    // REGRA 3: Distribuir os outros jogadores (priorizando time com menor força)
+    // ============================================
+    // REGRA 3: Distribuir no time com menor soma
+    // ============================================
     outrosOrdenados.forEach(jogador => {
         const forca = jogador.forca || 3;
         if (somaA <= somaB) {
@@ -55,7 +64,9 @@ function sortearTimes(jogadores) {
         }
     });
     
-    // REGRA 4: Balancear quantidade de jogadores (diferença máxima de 1)
+    // ============================================
+    // REGRA 4: Balancear quantidade (diferença máxima de 1)
+    // ============================================
     while (Math.abs(timeA.length - timeB.length) > 1) {
         if (timeA.length > timeB.length) {
             const movido = timeA.pop();
@@ -87,24 +98,6 @@ function embaralharArray(array) {
         [novoArray[i], novoArray[j]] = [novoArray[j], novoArray[i]];
     }
     return novoArray;
-}
-
-/**
- * Ordena jogadores por posição (para exibição)
- * @param {Array} jogadores 
- * @returns {Array}
- */
-function ordenarPorPosicao(jogadores) {
-    const ORDEM_POSICOES = { 
-        'Goleiro': 1, 
-        'Fixo': 2, 
-        'Ala Esquerda': 3, 
-        'Ala Direita': 4, 
-        'Pivô': 5 
-    };
-    return [...jogadores].sort((a, b) => 
-        (ORDEM_POSICOES[a.posicao] || 99) - (ORDEM_POSICOES[b.posicao] || 99)
-    );
 }
 
 /**
