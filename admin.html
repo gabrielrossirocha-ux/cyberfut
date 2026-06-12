@@ -210,7 +210,6 @@
                     <button class="tab" data-tab="partidas">⚽ Partidas</button>
                     <button class="tab" data-tab="mensalistas">👥 Mensalistas</button>
                     <button class="tab" data-tab="locais">📍 Locais</button>
-                    <button class="tab" data-tab="forca">📈 Força dos Jogadores</button>
                     <button class="tab" data-tab="ferramentas">🛠️ Ferramentas</button>
                 </div>
                 <div id="tabContent"></div>
@@ -235,36 +234,56 @@
         }
 
         // ============================================
-        // LOGIN
+        // POPULAR SELECT DE ADMINISTRADORES
         // ============================================
         async function popularSelectAdmin() {
+            console.log('🔍 Buscando administradores...');
             const select = document.getElementById('selectAdmin');
-            select.innerHTML = '<option value="">Carregando...</option>';
-            
-            const { data, error } = await supabaseClient
-                .from('mensalistas')
-                .select('id, nome')
-                .eq('is_admin', true)
-                .order('nome');
-            
-            if (error) {
-                select.innerHTML = '<option value="">Erro ao carregar</option>';
+            if (!select) {
+                console.error('Select não encontrado!');
                 return;
             }
             
-            select.innerHTML = '<option value="">Selecione seu nome</option>';
-            if (data && data.length > 0) {
-                data.forEach(admin => {
-                    const option = document.createElement('option');
-                    option.value = admin.id;
-                    option.textContent = admin.nome;
-                    select.appendChild(option);
-                });
-            } else {
-                select.innerHTML = '<option value="">Nenhum administrador</option>';
+            select.innerHTML = '<option value="">Carregando...</option>';
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('mensalistas')
+                    .select('id, nome')
+                    .eq('is_admin', true)
+                    .order('nome');
+                
+                console.log('📊 Resultado da busca:', data);
+                
+                if (error) {
+                    console.error('❌ Erro na consulta:', error);
+                    select.innerHTML = '<option value="">Erro ao carregar</option>';
+                    return;
+                }
+                
+                select.innerHTML = '<option value="">Selecione seu nome</option>';
+                
+                if (data && data.length > 0) {
+                    data.forEach(admin => {
+                        const option = document.createElement('option');
+                        option.value = admin.id;
+                        option.textContent = admin.nome;
+                        select.appendChild(option);
+                    });
+                    console.log(`✅ ${data.length} administrador(es) carregado(s):`, data.map(a => a.nome));
+                } else {
+                    console.warn('⚠️ Nenhum administrador encontrado! Verifique a coluna is_admin no banco.');
+                    select.innerHTML = '<option value="">Nenhum administrador</option>';
+                }
+            } catch (err) {
+                console.error('❌ Erro inesperado:', err);
+                select.innerHTML = '<option value="">Erro na conexão</option>';
             }
         }
 
+        // ============================================
+        // LOGIN
+        // ============================================
         document.getElementById('btnLoginAdmin').addEventListener('click', async () => {
             const adminId = document.getElementById('selectAdmin').value;
             const senha = document.getElementById('senhaAdmin').value;
@@ -279,16 +298,17 @@
                 .single();
             
             if (error || !data) { alert('Usuário não encontrado!'); return; }
-            if (!data.is_admin) { alert('Sem permissão!'); return; }
+            if (!data.is_admin) { alert('Você não tem permissão de administrador!'); return; }
             if (senha !== data.senha_hash) { alert('Senha incorreta!'); return; }
             
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
+            
+            // Carregar dados iniciais
             await carregarLocais();
             carregarDashboard();
             carregarMensalistas();
             carregarPartidas();
-            carregarForca();
         });
 
         // ============================================
@@ -304,14 +324,13 @@
                 else if (abaAtual === 'partidas') carregarPartidas();
                 else if (abaAtual === 'mensalistas') carregarMensalistas();
                 else if (abaAtual === 'locais') carregarLocaisAdmin();
-                else if (abaAtual === 'forca') carregarForca();
                 else if (abaAtual === 'ferramentas') carregarFerramentas();
             });
         });
 
         async function carregarLocais() {
-            const { data } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
-            if (data) locaisLista = data;
+            const { data, error } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
+            if (!error) locaisLista = data || [];
         }
 
         // ============================================
@@ -368,7 +387,7 @@
                     
                     <div class="checkbox-group">
                         <input type="checkbox" id="todosMensalistas">
-                        <label for="todosMensalistas">📌 Incluir TODOS os mensalistas automaticamente</label>
+                        <label for="todosMensalistas">📌 Incluir TODOS os mensalistas</label>
                     </div>
                     
                     <div class="form-row" id="selecaoIndividual" style="display: none;">
@@ -383,7 +402,7 @@
                         <div class="form-group">
                             <label>🎟️ Convidado</label>
                             <input type="text" id="convidadoNome" placeholder="Nome">
-                            <button id="btnAddConvidado" class="btn btn-pequeno" style="margin-top:8px; background:#555;">+ Adicionar</button>
+                            <button id="btnAddConvidado" class="btn btn-pequeno" style="margin-top:8px;">+ Adicionar</button>
                         </div>
                     </div>
                     
@@ -392,9 +411,7 @@
                         <div id="jogadoresSelecionados" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
                     </div>
                     
-                    <div class="form-row">
-                        <button id="btnCriarPartidaRapida" class="btn btn-criar">🎲 CRIAR PARTIDA</button>
-                    </div>
+                    <button id="btnCriarPartidaRapida" class="btn btn-criar">🎲 CRIAR PARTIDA</button>
                     
                     <div id="resultadoTimes" style="margin-top: 20px;"></div>
                 `;
@@ -409,14 +426,12 @@
                 
                 function atualizarListaExibicao() {
                     listaDiv.innerHTML = jogadoresSelecionados.map(j => `
-                        <span style="background:#8b0000; color:white; padding:4px 12px; border-radius:20px; font-size:0.8em;">
+                        <span style="background:#8b0000; color:white; padding:4px 12px; border-radius:20px;">
                             ${j.nome}
-                            <span style="cursor:pointer; margin-left:8px;" onclick="removerJogadorSelecionado('${j.nome}')">&times;</span>
+                            <span onclick="removerJogadorSelecionado('${j.nome}')" style="cursor:pointer; margin-left:8px;">&times;</span>
                         </span>
                     `).join('');
-                    if (jogadoresSelecionados.length === 0) {
-                        listaDiv.innerHTML = '<span style="color:#999;">Nenhum jogador</span>';
-                    }
+                    if (jogadoresSelecionados.length === 0) listaDiv.innerHTML = '<span style="color:#999;">Nenhum jogador</span>';
                 }
                 
                 window.removerJogadorSelecionado = (nome) => {
@@ -430,14 +445,12 @@
                 
                 function atualizarListaMensalistas() {
                     listaMensalistasDiv.innerHTML = mensalistasSelecionados.map(nome => `
-                        <span style="background:#ffcc00; color:#8b0000; padding:4px 12px; border-radius:20px; font-size:0.8em;">
+                        <span style="background:#ffcc00; color:#8b0000; padding:4px 12px; border-radius:20px;">
                             📌 ${nome}
                             <span onclick="removerJogadorSelecionado('${nome}')" style="cursor:pointer; margin-left:8px;">&times;</span>
                         </span>
                     `).join('');
-                    if (mensalistasSelecionados.length === 0) {
-                        listaMensalistasDiv.innerHTML = '<span style="color:#999;">Nenhum selecionado</span>';
-                    }
+                    if (mensalistasSelecionados.length === 0) listaMensalistasDiv.innerHTML = '<span style="color:#999;">Nenhum selecionado</span>';
                 }
                 
                 selectMensalistaInd?.addEventListener('change', (e) => {
@@ -539,12 +552,12 @@
                     resultadoDiv.innerHTML = `
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
                             <div style="background:#fff5f5; border-radius:16px; padding:15px;">
-                                <h3 style="color:#8b0000;">🔴 TIME A</h3>
+                                <h3>🔴 TIME A</h3>
                                 ${timeA.map(j => `<div><strong>${j.nome}</strong> ${notaFormatada(forcaMap[j.nome] || 3)}</div>`).join('')}
                                 <div style="margin-top:10px; font-weight:bold;">Força: ${somaA.toFixed(1)}</div>
                             </div>
                             <div style="background:#fafafa; border-radius:16px; padding:15px;">
-                                <h3 style="color:#8b0000;">⚪ TIME B</h3>
+                                <h3>⚪ TIME B</h3>
                                 ${timeB.map(j => `<div><strong>${j.nome}</strong> ${notaFormatada(forcaMap[j.nome] || 3)}</div>`).join('')}
                                 <div style="margin-top:10px; font-weight:bold;">Força: ${somaB.toFixed(1)}</div>
                             </div>
@@ -605,63 +618,9 @@
                 .eq('id', id);
             
             if (error) { alert('Erro: ' + error.message); return; }
-            alert('Placar salvo!');
-            await atualizarForcaJogadores(id, golsA, golsB);
+            alert('Placar salvo! Força dos jogadores recalculada.');
             carregarPartidas();
-            carregarForca();
         };
-
-        async function atualizarForcaJogadores(partidaId, golsA, golsB) {
-            const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
-            const vencedor = golsA > golsB ? 'A' : (golsB > golsA ? 'B' : 'empate');
-            
-            for (const jogador of escala) {
-                await recalcularForcaJogador(jogador.jogador_nome, partidaId, vencedor === jogador.time);
-            }
-        }
-
-        async function recalcularForcaJogador(nome, partidaId, venceu) {
-            const { data: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('nota').eq('avaliado_nome', nome);
-            if (!avaliacoes || avaliacoes.length === 0) return;
-            
-            const mediaEstrelas = avaliacoes.reduce((s, a) => s + a.nota, 0) / avaliacoes.length;
-            
-            const { data: partidasJogadas } = await supabaseClient.from('escala_partida').select('partida_id, time').eq('jogador_nome', nome);
-            let vitorias = 0, totalJogos = 0;
-            
-            for (const p of partidasJogadas || []) {
-                const { data: partida } = await supabaseClient.from('partidas').select('gols_time_a, gols_time_b, resultado_finalizado').eq('id', p.partida_id).single();
-                if (partida && partida.resultado_finalizado) {
-                    totalJogos++;
-                    if ((p.time === 'A' && partida.gols_time_a > partida.gols_time_b) ||
-                        (p.time === 'B' && partida.gols_time_b > partida.gols_time_a)) vitorias++;
-                }
-            }
-            const taxaVitoria = totalJogos > 0 ? vitorias / totalJogos : 0.5;
-            
-            const notas = avaliacoes.map(a => a.nota);
-            const somaQuadrados = notas.reduce((s, n) => s + Math.pow(n - mediaEstrelas, 2), 0);
-            const desvioPadrao = Math.sqrt(somaQuadrados / notas.length);
-            const consistencia = 1 - (desvioPadrao / 5);
-            
-            const forca = (mediaEstrelas * 0.6) + (taxaVitoria * 0.3) + (consistencia * 0.1);
-            
-            await supabaseClient.from('forca_jogador').upsert({
-                jogador_nome: nome,
-                forca: forca,
-                media_estrelas: mediaEstrelas,
-                taxa_vitoria: taxaVitoria,
-                consistencia: consistencia,
-                total_partidas: totalJogos,
-                ultima_atualizacao: new Date()
-            });
-            
-            await supabaseClient.from('historico_forca').insert({
-                jogador_nome: nome,
-                forca_depois: forca,
-                partida_id: partidaId
-            });
-        }
 
         window.deletarPartida = async (id) => {
             if (!confirm('Tem certeza?')) return;
@@ -670,7 +629,6 @@
             await supabaseClient.from('partidas').delete().eq('id', id);
             carregarPartidas();
             carregarDashboard();
-            carregarForca();
         };
 
         // ============================================
@@ -688,4 +646,50 @@
                 </div>
                 <div class="tabela-container">
                     <table>
-                        <thead><tr><th>ID</th><th>Nome</th><th>Nota
+                        <thead><tr><th>ID</th><th>Nome</th><th>Nota</th><th>Admin</th><th>Ações</th></tr></thead>
+                        <tbody id="mensalistasTable"></tbody>
+                    </table>
+                </div>
+            `;
+            const tbody = document.getElementById('mensalistasTable');
+            tbody.innerHTML = (data || []).map(m => `
+                <tr>
+                    <td>${m.id}</td>
+                    <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;"></td>
+                    <td><input type="number" id="nota_${m.id}" value="${m.nota_inicial || 3}" style="width:70px;" min="1" max="5" step="1"></td>
+                    <td style="text-align:center;"><input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''}></td>
+                    <td>
+                        <button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
+                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('btnAdicionarMensalista').onclick = adicionarMensalista;
+        }
+
+        window.adicionarMensalista = async () => {
+            const nome = document.getElementById('novoMensalista').value.trim();
+            const senha = document.getElementById('novaSenha').value;
+            const nota = parseInt(document.getElementById('novaNota').value) || 3;
+            if (!nome) { alert('Digite o nome!'); return; }
+            const { error } = await supabaseClient.from('mensalistas').insert({ nome, senha_hash: senha, is_admin: false, nota_inicial: nota });
+            if (error) { alert('Erro: ' + error.message); return; }
+            carregarMensalistas();
+            carregarDashboard();
+            popularSelectAdmin();
+        };
+
+        window.editarMensalista = async (id) => {
+            const nome = document.getElementById(`nome_${id}`).value;
+            const nota = parseInt(document.getElementById(`nota_${id}`).value) || 3;
+            const is_admin = document.getElementById(`admin_${id}`).checked;
+            const { error } = await supabaseClient.from('mensalistas').update({ nome, nota_inicial: nota, is_admin }).eq('id', id);
+            if (error) { alert('Erro: ' + error.message); return; }
+            alert('Mensalista atualizado!');
+            carregarMensalistas();
+            carregarDashboard();
+            popularSelectAdmin();
+        };
+
+        window.deletarMensalista = async (id) => {
+            if (!confirm('T
