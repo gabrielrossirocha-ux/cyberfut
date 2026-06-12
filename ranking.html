@@ -29,7 +29,7 @@
             z-index: 0;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -149,7 +149,6 @@
             font-size: 0.9em;
             cursor: pointer;
             color: #8b0000;
-            /* CORREÇÃO RESPONSIVIDADE - evitar quebra de nomes */
             white-space: nowrap;
             overflow-x: auto;
             text-overflow: ellipsis;
@@ -184,7 +183,52 @@
         }
         .loading { text-align: center; padding: 30px; color: #666; }
         
-        /* CORREÇÃO RESPONSIVIDADE - MODO RETRATO */
+        /* Estilos da aba Regras */
+        .regras-container {
+            padding: 10px;
+        }
+        .regra-categoria {
+            background: #f9f9f9;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #8b0000;
+        }
+        .regra-categoria h3 {
+            color: #8b0000;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+        .regra-categoria p {
+            color: #555;
+            font-size: 0.85em;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        .regra-categoria ul {
+            margin-left: 20px;
+            color: #555;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+        .regra-categoria li {
+            margin-bottom: 5px;
+        }
+        .formula {
+            background: #1a1a1a;
+            color: #ffcc00;
+            padding: 10px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.85em;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .destaque {
+            font-weight: 700;
+            color: #8b0000;
+        }
+        
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
@@ -202,7 +246,6 @@
             .logo { max-width: 40px; }
             h1 { font-size: 1.2em; }
             .variacao { font-size: 0.6em; padding: 2px 4px; }
-            .badge-mensalista, .badge-convidado { font-size: 0.55em; padding: 1px 4px; }
         }
         
         @media (min-width: 768px) and (orientation: landscape) {
@@ -232,9 +275,10 @@
             <div class="tabs">
                 <button class="tab active" data-tab="mensalistas">📌 Mensalistas</button>
                 <button class="tab" data-tab="convidados">🎟️ Convidados</button>
+                <button class="tab" data-tab="regras">📋 Regras de Rankeamento</button>
             </div>
             
-            <div class="filtros">
+            <div id="filtrosContainer" class="filtros">
                 <div class="filtro-group">
                     <label>📅 Partida:</label>
                     <select id="selectPartida">
@@ -307,11 +351,104 @@
             return { texto: '=', classe: 'manteve' };
         }
 
+        async function carregarRegras() {
+            const container = document.getElementById('rankingContainer');
+            const infoDiv = document.getElementById('infoRanking');
+            const comparacaoDiv = document.getElementById('infoComparacao');
+            const filtrosDiv = document.getElementById('filtrosContainer');
+            
+            // Esconder filtros na aba de regras
+            filtrosDiv.style.display = 'none';
+            infoDiv.style.display = 'none';
+            comparacaoDiv.style.display = 'none';
+            
+            container.innerHTML = `
+                <div class="regras-container">
+                    <div class="regra-categoria">
+                        <h3>🏆 Ranking Geral</h3>
+                        <p>O <strong class="destaque">Ranking Geral</strong> acumula todas as estrelas recebidas pelo jogador em <strong>TODAS as partidas</strong> que ele participou.</p>
+                        <div class="formula">⭐ TOTAL = Soma de todas as estrelas recebidas em todas as partidas</div>
+                        <p><strong>Exemplo:</strong> Se um jogador recebeu 5 estrelas na partida 1, 4 estrelas na partida 2 e 3 estrelas na partida 3, seu total será <strong>12 estrelas</strong>.</p>
+                    </div>
+
+                    <div class="regra-categoria">
+                        <h3>📅 Ranking por Partida</h3>
+                        <p>O <strong class="destaque">Ranking por Partida</strong> mostra apenas as estrelas recebidas em uma <strong>partida específica</strong>.</p>
+                        <div class="formula">⭐ TOTAL NA PARTIDA = Soma das estrelas recebidas NAQUELA partida</div>
+                        <p><strong>Exemplo:</strong> Se você selecionar a partida do dia 10/06, verá quantas estrelas cada jogador recebeu apenas naquele jogo.</p>
+                    </div>
+
+                    <div class="regra-categoria">
+                        <h3>📊 Como os times são sorteados?</h3>
+                        <p>O sistema utiliza um algoritmo avançado para garantir times <strong>equilibrados</strong>:</p>
+                        <ul>
+                            <li><strong>Força do jogador:</strong> Calculada pela média de estrelas recebidas + histórico de vitórias + consistência</li>
+                            <li><strong>Distribuição:</strong> Jogadores mais fortes são distribuídos alternadamente entre os times</li>
+                            <li><strong>Goleiros:</strong> Sempre um goleiro em cada time</li>
+                            <li><strong>Objetivo:</strong> Deixar a soma das forças dos dois times o mais próximo possível</li>
+                        </ul>
+                    </div>
+
+                    <div class="regra-categoria">
+                        <h3>🔄 Como a "Força" do jogador é calculada?</h3>
+                        <p>A força de cada jogador é atualizada automaticamente após cada partida, usando a fórmula:</p>
+                        <div class="formula">FORÇA = (Média de Estrelas × 0.6) + (Taxa de Vitória × 0.3) + (Consistência × 0.1)</div>
+                        <ul>
+                            <li><strong>Média de Estrelas (60%):</strong> Média aritmética de todas as estrelas que o jogador já recebeu</li>
+                            <li><strong>Taxa de Vitória (30%):</strong> Percentual de partidas que o time do jogador venceu</li>
+                            <li><strong>Consistência (10%):</strong> Quão constante é o desempenho (baixo desvio padrão)</li>
+                        </ul>
+                    </div>
+
+                    <div class="regra-categoria">
+                        <h3>⬆️⬇️ Setas de Variação</h3>
+                        <p>Ao selecionar uma <strong>partida específica</strong>, as setas mostram como o jogador se saiu em relação à <strong>partida anterior</strong>:</p>
+                        <ul>
+                            <li><span style="color:#2e7d32;">🟢 ↑ N</span> = Subiu N posições em relação à partida anterior</li>
+                            <li><span style="color:#c62828;">🔴 ↓ N</span> = Desceu N posições em relação à partida anterior</li>
+                            <li><span style="color:#666;">⚪ =</span> = Manteve a mesma posição</li>
+                            <li><span style="color:#2e7d32;">🟢 Novo</span> = Não estava na partida anterior</li>
+                        </ul>
+                    </div>
+
+                    <div class="regra-categoria">
+                        <h3>👥 Mensalistas vs Convidados</h3>
+                        <p>Os rankings são <strong>separados</strong> para garantir justiça:</p>
+                        <ul>
+                            <li><strong>📌 Mensalistas:</strong> Jogadores fixos do grupo</li>
+                            <li><strong>🎟️ Convidados:</strong> Jogadores eventuais (incluindo goleiros convidados G1, G2, etc.)</li>
+                        </ul>
+                        <p>Isso evita que convidados, que jogam poucas partidas, distorçam o ranking principal.</p>
+                    </div>
+
+                    <div class="regra-categoria">
+                        <h3>⭐ Como as estrelas são atribuídas?</h3>
+                        <p>Cada mensalista avalia os <strong>outros jogadores</strong> da partida com notas de <strong>1 a 5 estrelas</strong>:</p>
+                        <ul>
+                            <li>⭐⭐⭐⭐⭐ (5) = Desempenho excepcional</li>
+                            <li>⭐⭐⭐⭐ (4) = Bom desempenho</li>
+                            <li>⭐⭐⭐ (3) = Desempenho regular</li>
+                            <li>⭐⭐ (2) = Abaixo da média</li>
+                            <li>⭐ (1) = Desempenho insatisfatório</li>
+                        </ul>
+                        <p><strong>Atenção:</strong> As avaliações não podem ser alteradas após confirmadas!</p>
+                    </div>
+                </div>
+            `;
+        }
+
         async function carregarRankingGeral() {
             const container = document.getElementById('rankingContainer');
-            document.getElementById('infoComparacao').innerHTML = '';
+            const infoDiv = document.getElementById('infoRanking');
+            const comparacaoDiv = document.getElementById('infoComparacao');
+            const filtrosDiv = document.getElementById('filtrosContainer');
+            
+            filtrosDiv.style.display = 'flex';
+            infoDiv.style.display = 'block';
+            comparacaoDiv.style.display = 'block';
+            comparacaoDiv.innerHTML = '';
             container.innerHTML = '<div class="loading">Carregando...</div>';
-            document.getElementById('infoRanking').innerHTML = `🏆 RANKING GERAL - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
+            infoDiv.innerHTML = `🏆 RANKING GERAL - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
             
             const { data: todasAvaliacoes } = await supabaseClient.from('avaliacoes_partida').select('avaliado_nome, nota');
             const { data: todasEscalas } = await supabaseClient.from('escala_partida').select('jogador_nome, tipo');
@@ -342,6 +479,13 @@
 
         async function carregarRankingPartida(partidaId) {
             const container = document.getElementById('rankingContainer');
+            const infoDiv = document.getElementById('infoRanking');
+            const comparacaoDiv = document.getElementById('infoComparacao');
+            const filtrosDiv = document.getElementById('filtrosContainer');
+            
+            filtrosDiv.style.display = 'flex';
+            infoDiv.style.display = 'block';
+            
             const partidaAtual = partidasLista.find(p => p.id == partidaId);
             if (!partidaAtual) return;
             const partidaAnterior = getPartidaAnterior(partidaId);
@@ -352,9 +496,9 @@
                 const rankingAnterior = await getRankingPartida(partidaAnterior.id, abaAtual);
                 rankingAnterior.forEach(item => { rankingAnteriorMap[item.nome] = item.posicao; });
                 comparando = true;
-                document.getElementById('infoComparacao').innerHTML = `📊 Comparado com a partida anterior (${new Date(partidaAnterior.data).toLocaleDateString('pt-BR')}) | ↑ subiu ↓ desceu = manteve`;
-            } else { document.getElementById('infoComparacao').innerHTML = '📊 Primeira partida - sem comparação anterior'; }
-            document.getElementById('infoRanking').innerHTML = `📅 Ranking da Partida - ${new Date(partidaAtual.data).toLocaleDateString('pt-BR')} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
+                comparacaoDiv.innerHTML = `📊 Comparado com a partida anterior (${new Date(partidaAnterior.data).toLocaleDateString('pt-BR')}) | ↑ subiu ↓ desceu = manteve`;
+            } else { comparacaoDiv.innerHTML = '📊 Primeira partida - sem comparação anterior'; }
+            infoDiv.innerHTML = `📅 Ranking da Partida - ${new Date(partidaAtual.data).toLocaleDateString('pt-BR')} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
             if (rankingAtual.length === 0) { container.innerHTML = '<div class="loading">Nenhuma avaliação para esta partida</div>'; return; }
             
             container.innerHTML = rankingAtual.map(j => {
@@ -375,8 +519,13 @@
 
         document.getElementById('btnCarregar').addEventListener('click', async () => { 
             const valor = document.getElementById('selectPartida').value; 
-            if (valor === 'geral') { await carregarRankingGeral(); } 
-            else { await carregarRankingPartida(parseInt(valor)); } 
+            if (abaAtual === 'regras') {
+                await carregarRegras();
+            } else if (valor === 'geral') { 
+                await carregarRankingGeral(); 
+            } else { 
+                await carregarRankingPartida(parseInt(valor)); 
+            } 
         });
         
         document.getElementById('btnVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
@@ -387,9 +536,17 @@
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); 
                 tab.classList.add('active'); 
                 abaAtual = tab.dataset.tab; 
-                const valor = document.getElementById('selectPartida').value; 
-                if (valor === 'geral') { await carregarRankingGeral(); } 
-                else { await carregarRankingPartida(parseInt(valor)); } 
+                
+                if (abaAtual === 'regras') {
+                    await carregarRegras();
+                } else {
+                    const valor = document.getElementById('selectPartida').value; 
+                    if (valor === 'geral') { 
+                        await carregarRankingGeral(); 
+                    } else { 
+                        await carregarRankingPartida(parseInt(valor)); 
+                    } 
+                }
             }); 
         });
         
