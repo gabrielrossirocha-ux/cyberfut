@@ -213,6 +213,15 @@
                 <div id="mensalistaContainer"><select id="selectMensalista"><option value="">-- Selecione --</option></select></div>
                 <div id="convidadoContainer" style="display: none;"><input type="text" id="nomeConvidado" placeholder="Nome do convidado"></div>
 
+                <select id="posicao">
+                    <option value="">Selecione a posição</option>
+                    <option value="Goleiro">🧤 Goleiro</option>
+                    <option value="Fixo">🛡️ Fixo</option>
+                    <option value="Ala Esquerda">⚡ Ala Esquerda</option>
+                    <option value="Ala Direita">⚡ Ala Direita</option>
+                    <option value="Pivô">🎯 Pivô</option>
+                </select>
+
                 <button id="btnAdicionar" class="btn">➕ Adicionar à Escala</button>
                 <div class="contador">Jogadores: <span id="totalJogadores">0</span> / 12</div>
             </div>
@@ -237,6 +246,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/sorteio.js"></script>
     <script>
         const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
@@ -249,143 +259,23 @@
         let partidaFinalizada = false;
         let locaisLista = [];
 
-        // Cache de notas dos jogadores
-        let notasJogadores = {};
-
-        // Buscar nota do jogador (nota inicial + média histórica)
-        async function carregarNotasJogadores() {
-            const { data: mensalistas } = await supabaseClient
-                .from('mensalistas')
-                .select('nome, nota_inicial');
-            
-            if (mensalistas) {
-                mensalistas.forEach(m => {
-                    notasJogadores[m.nome] = m.nota_inicial || 3;
-                });
-            }
-            
-            const { data: avaliacoes } = await supabaseClient
-                .from('avaliacoes_partida')
-                .select('avaliado_nome, nota');
-            
-            if (avaliacoes && avaliacoes.length > 0) {
-                const somaNotas = {};
-                const totalAvaliacoes = {};
-                
-                avaliacoes.forEach(a => {
-                    if (!somaNotas[a.avaliado_nome]) {
-                        somaNotas[a.avaliado_nome] = 0;
-                        totalAvaliacoes[a.avaliado_nome] = 0;
-                    }
-                    somaNotas[a.avaliado_nome] += a.nota;
-                    totalAvaliacoes[a.avaliado_nome]++;
-                });
-                
-                for (const nome in somaNotas) {
-                    const media = somaNotas[nome] / totalAvaliacoes[nome];
-                    notasJogadores[nome] = Math.round(media * 10) / 10;
-                }
-            }
-            
-            jogadoresEscala.forEach(j => {
-                if (!notasJogadores[j.nome]) {
-                    notasJogadores[j.nome] = 3;
-                }
-            });
-        }
-
-        // Sorteio baseado apenas em notas (força)
-        function sortearPorNotas(jogadores) {
-            const goleiros = jogadores.filter(j => j.posicao === 'Goleiro');
-            const outros = jogadores.filter(j => j.posicao !== 'Goleiro');
-            
-            let timeA = [];
-            let timeB = [];
-            let somaA = 0;
-            let somaB = 0;
-            
-            if (goleiros.length === 1) {
-                timeA.push(goleiros[0]);
-                somaA += notasJogadores[goleiros[0].nome] || 3;
-            } else if (goleiros.length >= 2) {
-                goleiros.forEach((goleiro, index) => {
-                    const nota = notasJogadores[goleiro.nome] || 3;
-                    if (index % 2 === 0) {
-                        timeA.push(goleiro);
-                        somaA += nota;
-                    } else {
-                        timeB.push(goleiro);
-                        somaB += nota;
-                    }
-                });
-            }
-            
-            const outrosOrdenados = [...outros].sort((a, b) => {
-                const notaA = notasJogadores[a.nome] || 3;
-                const notaB = notasJogadores[b.nome] || 3;
-                return notaB - notaA;
-            });
-            
-            outrosOrdenados.forEach(jogador => {
-                const nota = notasJogadores[jogador.nome] || 3;
-                if (somaA <= somaB) {
-                    timeA.push(jogador);
-                    somaA += nota;
-                } else {
-                    timeB.push(jogador);
-                    somaB += nota;
-                }
-            });
-            
-            while (Math.abs(timeA.length - timeB.length) > 1) {
-                if (timeA.length > timeB.length) {
-                    const movido = timeA.pop();
-                    timeB.unshift(movido);
-                    const notaMovido = notasJogadores[movido.nome] || 3;
-                    somaA -= notaMovido;
-                    somaB += notaMovido;
-                } else if (timeB.length > timeA.length) {
-                    const movido = timeB.pop();
-                    timeA.unshift(movido);
-                    const notaMovido = notasJogadores[movido.nome] || 3;
-                    somaB -= notaMovido;
-                    somaA += notaMovido;
-                }
-            }
-            
-            return { timeA, timeB, somaA, somaB };
-        }
-
-        function embaralharArray(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-
         async function carregarLocais() {
-            console.log('Carregando locais...');
             const { data, error } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
             if (error) {
-                console.error('Erro ao carregar locais:', error);
                 const select = document.getElementById('localPartida');
-                if (select) select.innerHTML = '<option value="">Erro ao carregar locais</option>';
+                select.innerHTML = '<option value="">Erro ao carregar locais</option>';
                 return;
             }
             locaisLista = data || [];
-            console.log('Locais carregados:', locaisLista.length);
             const select = document.getElementById('localPartida');
-            if (select) {
-                select.innerHTML = '<option value="">Selecione um local</option>';
-                locaisLista.forEach(local => {
-                    const option = document.createElement('option');
-                    option.value = local.id;
-                    option.textContent = local.nome;
-                    option.dataset.endereco = local.endereco || '';
-                    select.appendChild(option);
-                });
-            }
+            select.innerHTML = '<option value="">Selecione um local</option>';
+            locaisLista.forEach(local => {
+                const option = document.createElement('option');
+                option.value = local.id;
+                option.textContent = local.nome;
+                option.dataset.endereco = local.endereco || '';
+                select.appendChild(option);
+            });
         }
 
         document.getElementById('localPartida').addEventListener('change', (e) => {
@@ -403,20 +293,11 @@
         });
 
         function atualizarSelectMensalistas() {
-            console.log('Atualizando select de mensalistas...');
             const nomesNaEscala = new Set(jogadoresEscala.map(j => j.nome));
             const disponiveis = MENSALISTAS.filter(m => !nomesNaEscala.has(m));
             const select = document.getElementById('selectMensalista');
-            if (select) {
-                select.innerHTML = '<option value="">-- Selecione --</option>';
-                disponiveis.forEach(m => { 
-                    const opt = document.createElement('option'); 
-                    opt.value = m; 
-                    opt.textContent = m; 
-                    select.appendChild(opt); 
-                });
-                console.log('Mensalistas disponíveis:', disponiveis.length);
-            }
+            select.innerHTML = '<option value="">-- Selecione --</option>';
+            disponiveis.forEach(m => { const opt = document.createElement('option'); opt.value = m; opt.textContent = m; select.appendChild(opt); });
         }
 
         function limparFormulario() {
@@ -426,10 +307,8 @@
 
         function alternarTipo() {
             const isMensalista = document.querySelector('input[name="tipo"]:checked').value === 'mensalista';
-            const mensalistaContainer = document.getElementById('mensalistaContainer');
-            const convidadoContainer = document.getElementById('convidadoContainer');
-            if (mensalistaContainer) mensalistaContainer.style.display = isMensalista ? 'block' : 'none';
-            if (convidadoContainer) convidadoContainer.style.display = isMensalista ? 'none' : 'block';
+            document.getElementById('mensalistaContainer').style.display = isMensalista ? 'block' : 'none';
+            document.getElementById('convidadoContainer').style.display = isMensalista ? 'none' : 'block';
         }
 
         document.querySelectorAll('input[name="tipo"]').forEach(r => r.addEventListener('change', alternarTipo));
@@ -437,6 +316,8 @@
         document.getElementById('btnAdicionar').addEventListener('click', () => {
             if (partidaFinalizada) { alert('Esta partida já foi finalizada!'); return; }
             if (jogadoresEscala.length >= 12) { alert('Limite de 12 jogadores!'); return; }
+            const posicao = document.getElementById('posicao').value;
+            if (!posicao) { alert('Selecione a posição!'); return; }
             const isMensalista = document.querySelector('input[name="tipo"]:checked').value === 'mensalista';
             let nome = '';
             if (isMensalista) {
@@ -447,7 +328,7 @@
                 if (!nome) { alert('Digite o nome do convidado!'); return; }
             }
             if (jogadoresEscala.some(j => j.nome === nome)) { alert('Jogador já está na escala!'); return; }
-            jogadoresEscala.push({ id: Date.now(), nome, posicao: 'Fixo', tipo: isMensalista ? 'mensalista' : 'convidado' });
+            jogadoresEscala.push({ id: Date.now(), nome, posicao, tipo: isMensalista ? 'mensalista' : 'convidado' });
             atualizarLista();
             limparFormulario();
             alternarTipo();
@@ -456,23 +337,14 @@
         function atualizarLista() {
             document.getElementById('totalJogadores').textContent = jogadoresEscala.length;
             const container = document.getElementById('listaJogadores');
-            if (jogadoresEscala.length === 0) { 
-                container.innerHTML = '<p class="vazio">Nenhum jogador adicionado</p>'; 
-                return; 
-            }
+            if (jogadoresEscala.length === 0) { container.innerHTML = '<p class="vazio">Nenhum jogador adicionado</p>'; return; }
             container.innerHTML = '<ul class="lista-jogadores">' + jogadoresEscala.map(j => `
-                <li><div><strong>${j.nome}</strong> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div><button class="btn-deletar" onclick="removerJogador(${j.id})">❌</button></li>
+                <li><div><strong>${j.nome}</strong> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}<br><small>📍 ${j.posicao}</small></div><button class="btn-deletar" onclick="removerJogador(${j.id})">❌</button></li>
             `).join('') + '</ul>';
             atualizarSelectMensalistas();
         }
 
-        window.removerJogador = (id) => { 
-            jogadoresEscala = jogadoresEscala.filter(j => j.id !== id); 
-            atualizarLista(); 
-            timeA = []; 
-            timeB = []; 
-            document.getElementById('timesContainer').style.display = 'none'; 
-        };
+        window.removerJogador = (id) => { jogadoresEscala = jogadoresEscala.filter(j => j.id !== id); atualizarLista(); timeA = []; timeB = []; document.getElementById('timesContainer').style.display = 'none'; };
 
         document.getElementById('btnSortear').addEventListener('click', async () => {
             if (partidaFinalizada) { alert('⚠️ Esta partida já foi finalizada!'); return; }
@@ -487,12 +359,25 @@
             const localSelecionado = locaisLista.find(l => l.id == localId);
             const endereco = localSelecionado?.endereco || '';
 
-            await carregarNotasJogadores();
+            // Buscar forças dos jogadores
+            const forcasMap = {};
+            const { data: forcas } = await supabaseClient.from('forca_jogador').select('jogador_nome, forca');
+            forcas?.forEach(f => { forcasMap[f.jogador_nome] = f.forca || 3; });
             
-            const { timeA: timesA, timeB: timesB, somaA, somaB } = sortearPorNotas(jogadoresEscala);
+            // Preparar array para sorteio
+            const jogadoresParaSorteio = jogadoresEscala.map(j => ({
+                nome: j.nome,
+                forca: forcasMap[j.nome] || 3,
+                posicao: j.posicao,
+                tipo: j.tipo
+            }));
+            
+            // SORTEAR TIMES usando a biblioteca externa
+            const { timeA: timesA, timeB: timesB, somaA, somaB } = sortearTimes(jogadoresParaSorteio);
             timeA = timesA;
             timeB = timesB;
             
+            // Salvar partida
             const partida = {
                 data: data,
                 horario: document.getElementById('horarioPartida').value,
@@ -530,8 +415,8 @@
             alert(`✅ Partida finalizada!\n\nTime A: ${somaA.toFixed(1)} estrelas\nTime B: ${somaB.toFixed(1)} estrelas\nDiferença: ${Math.abs(somaA - somaB).toFixed(1)} estrelas`);
 
             document.getElementById('timesContainer').style.display = 'block';
-            document.getElementById('timeALista').innerHTML = timeA.map(j => `<li><strong>${j.nome}</strong> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div><div style="font-size:0.7em; color:#8b0000;">${notaFormatada(notasJogadores[j.nome] || 3)}</div></li>`).join('');
-            document.getElementById('timeBLista').innerHTML = timeB.map(j => `<li><strong>${j.nome}</strong> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div><div style="font-size:0.7em; color:#8b0000;">${notaFormatada(notasJogadores[j.nome] || 3)}</div></li>`).join('');
+            document.getElementById('timeALista').innerHTML = timeA.map(j => `<li><strong>${j.nome}</strong> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div><div style="font-size:0.7em; color:#8b0000;">${notaFormatada(forcasMap[j.nome] || 3)}</div></li>`).join('');
+            document.getElementById('timeBLista').innerHTML = timeB.map(j => `<li><strong>${j.nome}</strong> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div><div style="font-size:0.7em; color:#8b0000;">${notaFormatada(forcasMap[j.nome] || 3)}</div></li>`).join('');
 
             localStorage.setItem('partidaRanking', partidaId);
         });
@@ -540,15 +425,9 @@
             window.location.href = 'index.html';
         });
 
-        // INICIALIZAÇÃO
-        async function init() {
-            console.log('Inicializando nova-partida.html...');
-            await carregarLocais();
-            atualizarSelectMensalistas();
-            alternarTipo();
-        }
-        
-        init();
+        alternarTipo();
+        atualizarSelectMensalistas();
+        carregarLocais();
     </script>
 </body>
 </html>
