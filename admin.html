@@ -159,6 +159,18 @@
         .checkbox-group input { width: 20px; height: 20px; margin: 0; }
         .checkbox-group label { font-weight: 600; color: #8b0000; margin: 0; }
         
+        .placar-input {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .placar-input input {
+            width: 55px;
+            padding: 6px;
+            text-align: center;
+            margin: 0;
+        }
+        
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
@@ -198,6 +210,7 @@
                     <button class="tab" data-tab="partidas">⚽ Partidas</button>
                     <button class="tab" data-tab="mensalistas">👥 Mensalistas</button>
                     <button class="tab" data-tab="locais">📍 Locais</button>
+                    <button class="tab" data-tab="forca">📈 Força dos Jogadores</button>
                     <button class="tab" data-tab="ferramentas">🛠️ Ferramentas</button>
                 </div>
                 <div id="tabContent"></div>
@@ -221,47 +234,34 @@
             return `${dia}/${mes}/${ano}`;
         }
 
+        // ============================================
+        // LOGIN
+        // ============================================
         async function popularSelectAdmin() {
-            console.log('🔍 Buscando administradores...');
             const select = document.getElementById('selectAdmin');
-            if (!select) {
-                console.error('Select não encontrado!');
-                return;
-            }
             select.innerHTML = '<option value="">Carregando...</option>';
             
-            try {
-                const { data, error } = await supabaseClient
-                    .from('mensalistas')
-                    .select('id, nome')
-                    .eq('is_admin', true)
-                    .order('nome');
-                
-                console.log('📊 Resultado da busca:', data);
-                
-                if (error) {
-                    console.error('❌ Erro:', error);
-                    select.innerHTML = '<option value="">Erro ao carregar</option>';
-                    return;
-                }
-                
-                select.innerHTML = '<option value="">Selecione seu nome</option>';
-                
-                if (data && data.length > 0) {
-                    data.forEach(admin => {
-                        const option = document.createElement('option');
-                        option.value = admin.id;
-                        option.textContent = admin.nome;
-                        select.appendChild(option);
-                    });
-                    console.log(`✅ ${data.length} administrador(es) carregado(s):`, data.map(a => a.nome));
-                } else {
-                    console.log('⚠️ Nenhum administrador encontrado!');
-                    select.innerHTML = '<option value="">Nenhum administrador cadastrado</option>';
-                }
-            } catch (err) {
-                console.error('❌ Erro na consulta:', err);
-                select.innerHTML = '<option value="">Erro na conexão</option>';
+            const { data, error } = await supabaseClient
+                .from('mensalistas')
+                .select('id, nome')
+                .eq('is_admin', true)
+                .order('nome');
+            
+            if (error) {
+                select.innerHTML = '<option value="">Erro ao carregar</option>';
+                return;
+            }
+            
+            select.innerHTML = '<option value="">Selecione seu nome</option>';
+            if (data && data.length > 0) {
+                data.forEach(admin => {
+                    const option = document.createElement('option');
+                    option.value = admin.id;
+                    option.textContent = admin.nome;
+                    select.appendChild(option);
+                });
+            } else {
+                select.innerHTML = '<option value="">Nenhum administrador</option>';
             }
         }
 
@@ -279,7 +279,7 @@
                 .single();
             
             if (error || !data) { alert('Usuário não encontrado!'); return; }
-            if (!data.is_admin) { alert('Você não tem permissão de administrador!'); return; }
+            if (!data.is_admin) { alert('Sem permissão!'); return; }
             if (senha !== data.senha_hash) { alert('Senha incorreta!'); return; }
             
             document.getElementById('loginScreen').style.display = 'none';
@@ -288,8 +288,12 @@
             carregarDashboard();
             carregarMensalistas();
             carregarPartidas();
+            carregarForca();
         });
 
+        // ============================================
+        // TABS
+        // ============================================
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -300,15 +304,19 @@
                 else if (abaAtual === 'partidas') carregarPartidas();
                 else if (abaAtual === 'mensalistas') carregarMensalistas();
                 else if (abaAtual === 'locais') carregarLocaisAdmin();
+                else if (abaAtual === 'forca') carregarForca();
                 else if (abaAtual === 'ferramentas') carregarFerramentas();
             });
         });
 
         async function carregarLocais() {
-            const { data, error } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
-            if (!error) locaisLista = data || [];
+            const { data } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
+            if (data) locaisLista = data;
         }
 
+        // ============================================
+        // DASHBOARD
+        // ============================================
         async function carregarDashboard() {
             const container = document.getElementById('tabContent');
             container.innerHTML = '<div class="loading">Carregando...</div>';
@@ -328,6 +336,9 @@
             `;
         }
 
+        // ============================================
+        // CRIAR PARTIDA RÁPIDA
+        // ============================================
         function carregarCriarPartida() {
             const container = document.getElementById('tabContent');
             
@@ -362,27 +373,27 @@
                     
                     <div class="form-row" id="selecaoIndividual" style="display: none;">
                         <div class="form-group" style="flex:2;">
-                            <label>👥 Selecionar mensalistas individualmente</label>
+                            <label>👥 Selecionar mensalistas</label>
                             <select id="selectMensalistaInd" style="margin-bottom:10px;">
-                                <option value="">-- Selecione um mensalista --</option>
+                                <option value="">-- Selecione --</option>
                                 ${selectMensalistas}
                             </select>
                             <div id="listaMensalistasSelecionados" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
                         </div>
                         <div class="form-group">
                             <label>🎟️ Convidado</label>
-                            <input type="text" id="convidadoNome" placeholder="Nome do convidado">
-                            <button id="btnAddConvidado" class="btn btn-pequeno" style="margin-top:8px; background:#555;">+ Adicionar Convidado</button>
+                            <input type="text" id="convidadoNome" placeholder="Nome">
+                            <button id="btnAddConvidado" class="btn btn-pequeno" style="margin-top:8px; background:#555;">+ Adicionar</button>
                         </div>
                     </div>
                     
                     <div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 12px;">
-                        <strong>📋 Jogadores na partida:</strong>
+                        <strong>📋 Jogadores:</strong>
                         <div id="jogadoresSelecionados" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
                     </div>
                     
                     <div class="form-row">
-                        <button id="btnCriarPartidaRapida" class="btn btn-criar" style="background:#ff9800;">🎲 CRIAR PARTIDA E SORTEAR</button>
+                        <button id="btnCriarPartidaRapida" class="btn btn-criar">🎲 CRIAR PARTIDA</button>
                     </div>
                     
                     <div id="resultadoTimes" style="margin-top: 20px;"></div>
@@ -404,7 +415,7 @@
                         </span>
                     `).join('');
                     if (jogadoresSelecionados.length === 0) {
-                        listaDiv.innerHTML = '<span style="color:#999;">Nenhum jogador adicionado</span>';
+                        listaDiv.innerHTML = '<span style="color:#999;">Nenhum jogador</span>';
                     }
                 }
                 
@@ -421,11 +432,11 @@
                     listaMensalistasDiv.innerHTML = mensalistasSelecionados.map(nome => `
                         <span style="background:#ffcc00; color:#8b0000; padding:4px 12px; border-radius:20px; font-size:0.8em;">
                             📌 ${nome}
-                            <span style="cursor:pointer; margin-left:8px;" onclick="removerJogadorSelecionado('${nome}')">&times;</span>
+                            <span onclick="removerJogadorSelecionado('${nome}')" style="cursor:pointer; margin-left:8px;">&times;</span>
                         </span>
                     `).join('');
                     if (mensalistasSelecionados.length === 0) {
-                        listaMensalistasDiv.innerHTML = '<span style="color:#999;">Nenhum mensalista selecionado</span>';
+                        listaMensalistasDiv.innerHTML = '<span style="color:#999;">Nenhum selecionado</span>';
                     }
                 }
                 
@@ -449,14 +460,14 @@
                     } else if (nome) {
                         alert('Jogador já adicionado!');
                     } else {
-                        alert('Digite o nome do convidado!');
+                        alert('Digite o nome!');
                     }
                 });
                 
                 todosCheckbox?.addEventListener('change', async (e) => {
                     if (e.target.checked) {
                         selecaoIndividual.style.display = 'none';
-                        const { data: todosMensalistas } = await supabaseClient.from('mensalistas').select('nome').order('nome');
+                        const { data: todosMensalistas } = await supabaseClient.from('mensalistas').select('nome');
                         if (todosMensalistas) {
                             jogadoresSelecionados = todosMensalistas.map(m => ({ nome: m.nome, tipo: 'mensalista' }));
                             atualizarListaExibicao();
@@ -490,35 +501,30 @@
                     };
                     
                     const { data: novaPartida, error } = await supabaseClient.from('partidas').insert(partida).select().single();
-                    if (error) { alert('Erro ao criar partida: ' + error.message); return; }
+                    if (error) { alert('Erro: ' + error.message); return; }
                     
                     const partidaId = novaPartida.id;
                     
-                    const { data: mensalistasNotas } = await supabaseClient.from('mensalistas').select('nome, nota_inicial');
-                    const notasMap = {};
-                    mensalistasNotas?.forEach(m => { notasMap[m.nome] = m.nota_inicial || 3; });
-                    jogadoresSelecionados.forEach(j => { if (!notasMap[j.nome]) notasMap[j.nome] = 3; });
+                    const { data: forcas } = await supabaseClient.from('forca_jogador').select('jogador_nome, forca');
+                    const forcaMap = {};
+                    forcas?.forEach(f => { forcaMap[f.jogador_nome] = f.forca || 3; });
+                    jogadoresSelecionados.forEach(j => { if (!forcaMap[j.nome]) forcaMap[j.nome] = 3; });
                     
-                    const jogadoresOrdenados = [...jogadoresSelecionados].sort((a, b) => (notasMap[b.nome] || 3) - (notasMap[a.nome] || 3));
+                    const ordenados = [...jogadoresSelecionados].sort((a, b) => (forcaMap[b.nome] || 3) - (forcaMap[a.nome] || 3));
                     
                     let timeA = [], timeB = [];
                     let somaA = 0, somaB = 0;
                     
-                    jogadoresOrdenados.forEach(j => {
-                        const nota = notasMap[j.nome] || 3;
+                    ordenados.forEach(j => {
+                        const forca = forcaMap[j.nome] || 3;
                         if (somaA <= somaB) {
                             timeA.push(j);
-                            somaA += nota;
+                            somaA += forca;
                         } else {
                             timeB.push(j);
-                            somaB += nota;
+                            somaB += forca;
                         }
                     });
-                    
-                    while (Math.abs(timeA.length - timeB.length) > 1) {
-                        if (timeA.length > timeB.length) { const m = timeA.pop(); timeB.unshift(m); }
-                        else { const m = timeB.pop(); timeA.unshift(m); }
-                    }
                     
                     const escala = [...timeA.map(j => ({ ...j, time: 'A' })), ...timeB.map(j => ({ ...j, time: 'B' }))];
                     for (const j of escala) {
@@ -533,36 +539,37 @@
                     resultadoDiv.innerHTML = `
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
                             <div style="background:#fff5f5; border-radius:16px; padding:15px;">
-                                <h3 style="color:#8b0000;">🔴 TIME VERMELHO</h3>
-                                ${timeA.map(j => `<div style="margin:8px 0;"><strong>${j.nome}</strong> ${notaFormatada(notasMap[j.nome] || 3)}</div>`).join('')}
-                                <div style="margin-top:10px; font-weight:bold;">Soma: ${somaA.toFixed(1)} ⭐</div>
+                                <h3 style="color:#8b0000;">🔴 TIME A</h3>
+                                ${timeA.map(j => `<div><strong>${j.nome}</strong> ${notaFormatada(forcaMap[j.nome] || 3)}</div>`).join('')}
+                                <div style="margin-top:10px; font-weight:bold;">Força: ${somaA.toFixed(1)}</div>
                             </div>
                             <div style="background:#fafafa; border-radius:16px; padding:15px;">
-                                <h3 style="color:#8b0000;">⚪ TIME BRANCO</h3>
-                                ${timeB.map(j => `<div style="margin:8px 0;"><strong>${j.nome}</strong> ${notaFormatada(notasMap[j.nome] || 3)}</div>`).join('')}
-                                <div style="margin-top:10px; font-weight:bold;">Soma: ${somaB.toFixed(1)} ⭐</div>
+                                <h3 style="color:#8b0000;">⚪ TIME B</h3>
+                                ${timeB.map(j => `<div><strong>${j.nome}</strong> ${notaFormatada(forcaMap[j.nome] || 3)}</div>`).join('')}
+                                <div style="margin-top:10px; font-weight:bold;">Força: ${somaB.toFixed(1)}</div>
                             </div>
                         </div>
-                        <div style="margin-top:15px; text-align:center; color:#2c5f2d;">✅ Partida criada com sucesso!</div>
+                        <div style="margin-top:15px; text-align:center; color:#2c5f2d;">✅ Partida criada!</div>
                     `;
                     
                     carregarPartidas();
                 });
                 
                 atualizarListaExibicao();
-                if (!todosCheckbox?.checked) {
-                    selecaoIndividual.style.display = 'block';
-                }
+                if (!todosCheckbox?.checked) selecaoIndividual.style.display = 'block';
             });
         }
 
+        // ============================================
+        // PARTIDAS (COM PLACAR)
+        // ============================================
         async function carregarPartidas() {
             const { data } = await supabaseClient.from('partidas').select('*').order('data', { ascending: false });
             const container = document.getElementById('tabContent');
             container.innerHTML = `
                 <div class="tabela-container">
                     <table>
-                        <thead><tr><th>ID</th><th>Data</th><th>Horário</th><th>Local</th><th>Ações</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Data</th><th>Horário</th><th>Placar</th><th>Ações</th></tr></thead>
                         <tbody id="partidasTable"></tbody>
                     </table>
                 </div>
@@ -573,199 +580,112 @@
                     <td>${p.id}</td>
                     <td>${formatarDataAdmin(p.data)}</td>
                     <td>${p.horario || '-'}</td>
-                    <td>${p.local_id || '-'}</td>
-                    <td><button class="btn btn-vermelho btn-pequeno" onclick="deletarPartida(${p.id})">🗑️ Excluir</button></td>
+                    <td>
+                        <div class="placar-input">
+                            <input type="number" id="golsA_${p.id}" value="${p.gols_time_a || 0}" min="0" style="width:55px;">
+                            <span>x</span>
+                            <input type="number" id="golsB_${p.id}" value="${p.gols_time_b || 0}" min="0" style="width:55px;">
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn btn-azul btn-pequeno" onclick="salvarPlacar(${p.id})">📝 Salvar</button>
+                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarPartida(${p.id})">🗑️ Excluir</button>
+                    </td>
                 </tr>
             `).join('');
         }
 
-        window.deletarPartida = async (id) => {
-            if (!confirm('Tem certeza? Isso removerá também a escala e avaliações desta partida.')) return;
-            await supabaseClient.from('avaliacoes_partida').delete().eq('partida_id', id);
-            await supabaseClient.from('escala_partida').delete().eq('partida_id', id);
-            const { error } = await supabaseClient.from('partidas').delete().eq('id', id);
+        window.salvarPlacar = async (id) => {
+            const golsA = parseInt(document.getElementById(`golsA_${id}`).value) || 0;
+            const golsB = parseInt(document.getElementById(`golsB_${id}`).value) || 0;
+            
+            const { error } = await supabaseClient
+                .from('partidas')
+                .update({ gols_time_a: golsA, gols_time_b: golsB, resultado_finalizado: true })
+                .eq('id', id);
+            
             if (error) { alert('Erro: ' + error.message); return; }
+            alert('Placar salvo!');
+            await atualizarForcaJogadores(id, golsA, golsB);
             carregarPartidas();
-            carregarDashboard();
+            carregarForca();
         };
 
+        async function atualizarForcaJogadores(partidaId, golsA, golsB) {
+            const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
+            const vencedor = golsA > golsB ? 'A' : (golsB > golsA ? 'B' : 'empate');
+            
+            for (const jogador of escala) {
+                await recalcularForcaJogador(jogador.jogador_nome, partidaId, vencedor === jogador.time);
+            }
+        }
+
+        async function recalcularForcaJogador(nome, partidaId, venceu) {
+            const { data: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('nota').eq('avaliado_nome', nome);
+            if (!avaliacoes || avaliacoes.length === 0) return;
+            
+            const mediaEstrelas = avaliacoes.reduce((s, a) => s + a.nota, 0) / avaliacoes.length;
+            
+            const { data: partidasJogadas } = await supabaseClient.from('escala_partida').select('partida_id, time').eq('jogador_nome', nome);
+            let vitorias = 0, totalJogos = 0;
+            
+            for (const p of partidasJogadas || []) {
+                const { data: partida } = await supabaseClient.from('partidas').select('gols_time_a, gols_time_b, resultado_finalizado').eq('id', p.partida_id).single();
+                if (partida && partida.resultado_finalizado) {
+                    totalJogos++;
+                    if ((p.time === 'A' && partida.gols_time_a > partida.gols_time_b) ||
+                        (p.time === 'B' && partida.gols_time_b > partida.gols_time_a)) vitorias++;
+                }
+            }
+            const taxaVitoria = totalJogos > 0 ? vitorias / totalJogos : 0.5;
+            
+            const notas = avaliacoes.map(a => a.nota);
+            const somaQuadrados = notas.reduce((s, n) => s + Math.pow(n - mediaEstrelas, 2), 0);
+            const desvioPadrao = Math.sqrt(somaQuadrados / notas.length);
+            const consistencia = 1 - (desvioPadrao / 5);
+            
+            const forca = (mediaEstrelas * 0.6) + (taxaVitoria * 0.3) + (consistencia * 0.1);
+            
+            await supabaseClient.from('forca_jogador').upsert({
+                jogador_nome: nome,
+                forca: forca,
+                media_estrelas: mediaEstrelas,
+                taxa_vitoria: taxaVitoria,
+                consistencia: consistencia,
+                total_partidas: totalJogos,
+                ultima_atualizacao: new Date()
+            });
+            
+            await supabaseClient.from('historico_forca').insert({
+                jogador_nome: nome,
+                forca_depois: forca,
+                partida_id: partidaId
+            });
+        }
+
+        window.deletarPartida = async (id) => {
+            if (!confirm('Tem certeza?')) return;
+            await supabaseClient.from('avaliacoes_partida').delete().eq('partida_id', id);
+            await supabaseClient.from('escala_partida').delete().eq('partida_id', id);
+            await supabaseClient.from('partidas').delete().eq('id', id);
+            carregarPartidas();
+            carregarDashboard();
+            carregarForca();
+        };
+
+        // ============================================
+        // MENSALISTAS
+        // ============================================
         async function carregarMensalistas() {
             const { data } = await supabaseClient.from('mensalistas').select('*').order('nome');
             const container = document.getElementById('tabContent');
             container.innerHTML = `
                 <div class="form-row">
-                    <input type="text" id="novoMensalista" placeholder="Nome do mensalista">
+                    <input type="text" id="novoMensalista" placeholder="Nome">
                     <input type="text" id="novaSenha" placeholder="Senha" value="futebol123">
-                    <input type="number" id="novaNota" placeholder="Nota inicial (1-5)" value="3" min="1" max="5" step="1">
+                    <input type="number" id="novaNota" placeholder="Nota" value="3" min="1" max="5" step="1">
                     <button class="btn btn-verde" id="btnAdicionarMensalista">➕ Adicionar</button>
                 </div>
                 <div class="tabela-container">
                     <table>
-                        <thead><tr><th>ID</th><th>Nome</th><th>Nota Inicial</th><th>Admin</th><th>Ações</th></tr></thead>
-                        <tbody id="mensalistasTable"></tbody>
-                    </table>
-                </div>
-            `;
-            const tbody = document.getElementById('mensalistasTable');
-            tbody.innerHTML = (data || []).map(m => `
-                <tr>
-                    <td>${m.id}</td>
-                    <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;"></td>
-                    <td><input type="number" id="nota_${m.id}" value="${m.nota_inicial || 3}" style="width:80px;" min="1" max="5" step="1"></td>
-                    <td style="text-align:center;"><input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''}></td>
-                    <td>
-                        <button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})">💾 Salvar</button>
-                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})">🗑️ Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-            document.getElementById('btnAdicionarMensalista').onclick = adicionarMensalista;
-        }
-
-        window.adicionarMensalista = async () => {
-            const nome = document.getElementById('novoMensalista').value.trim();
-            const senha = document.getElementById('novaSenha').value;
-            const nota = parseInt(document.getElementById('novaNota').value) || 3;
-            if (!nome) { alert('Digite o nome!'); return; }
-            const { error } = await supabaseClient.from('mensalistas').insert({ nome, senha_hash: senha, is_admin: false, nota_inicial: nota });
-            if (error) { alert('Erro: ' + error.message); return; }
-            carregarMensalistas();
-            carregarDashboard();
-            popularSelectAdmin();
-        };
-
-        window.editarMensalista = async (id) => {
-            const nome = document.getElementById(`nome_${id}`).value;
-            const nota = parseInt(document.getElementById(`nota_${id}`).value) || 3;
-            const is_admin = document.getElementById(`admin_${id}`).checked;
-            const { error } = await supabaseClient.from('mensalistas').update({ nome, nota_inicial: nota, is_admin }).eq('id', id);
-            if (error) { alert('Erro: ' + error.message); return; }
-            alert('Mensalista atualizado!');
-            carregarMensalistas();
-            carregarDashboard();
-            popularSelectAdmin();
-        };
-
-        window.deletarMensalista = async (id) => {
-            if (!confirm('Tem certeza? Isso removerá todas as avaliações deste mensalista.')) return;
-            const { error } = await supabaseClient.from('mensalistas').delete().eq('id', id);
-            if (error) { alert('Erro: ' + error.message); return; }
-            carregarMensalistas();
-            carregarDashboard();
-            popularSelectAdmin();
-        };
-
-        async function carregarLocaisAdmin() {
-            const { data } = await supabaseClient.from('locais').select('*').order('nome');
-            const container = document.getElementById('tabContent');
-            container.innerHTML = `
-                <div class="form-row">
-                    <input type="text" id="novoLocalNome" placeholder="Nome do local">
-                    <input type="text" id="novoLocalEndereco" placeholder="Endereço">
-                    <button class="btn btn-verde" id="btnAdicionarLocal">➕ Adicionar</button>
-                </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead><tr><th>ID</th><th>Nome</th><th>Endereço</th><th>Ações</th></tr></thead>
-                        <tbody id="locaisTable"></tbody>
-                    </table>
-                </div>
-            `;
-            const tbody = document.getElementById('locaisTable');
-            tbody.innerHTML = (data || []).map(l => `
-                <tr>
-                    <td>${l.id}</td>
-                    <td><input type="text" id="local_nome_${l.id}" value="${l.nome}" style="width:100%;"></td>
-                    <td><input type="text" id="local_endereco_${l.id}" value="${l.endereco || ''}" style="width:100%;"></td>
-                    <td>
-                        <button class="btn btn-azul btn-pequeno" onclick="editarLocal(${l.id})">💾 Salvar</button>
-                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarLocal(${l.id})">🗑️ Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-            document.getElementById('btnAdicionarLocal').onclick = adicionarLocal;
-        }
-
-        window.adicionarLocal = async () => {
-            const nome = document.getElementById('novoLocalNome').value.trim();
-            const endereco = document.getElementById('novoLocalEndereco').value.trim();
-            if (!nome) { alert('Digite o nome do local!'); return; }
-            const { error } = await supabaseClient.from('locais').insert({ nome, endereco });
-            if (error) { alert('Erro: ' + error.message); return; }
-            carregarLocaisAdmin();
-            carregarDashboard();
-            await carregarLocais();
-        };
-
-        window.editarLocal = async (id) => {
-            const nome = document.getElementById(`local_nome_${id}`).value;
-            const endereco = document.getElementById(`local_endereco_${id}`).value;
-            const { error } = await supabaseClient.from('locais').update({ nome, endereco }).eq('id', id);
-            if (error) { alert('Erro: ' + error.message); return; }
-            alert('Local atualizado!');
-            carregarLocaisAdmin();
-            await carregarLocais();
-        };
-
-        window.deletarLocal = async (id) => {
-            const { count } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true }).eq('local_id', id);
-            if (count > 0) {
-                alert(`Não é possível excluir! Este local está sendo usado em ${count} partida(s).`);
-                return;
-            }
-            if (!confirm('Tem certeza?')) return;
-            const { error } = await supabaseClient.from('locais').delete().eq('id', id);
-            if (error) { alert('Erro: ' + error.message); return; }
-            carregarLocaisAdmin();
-            carregarDashboard();
-            await carregarLocais();
-        };
-
-        function carregarFerramentas() {
-            const container = document.getElementById('tabContent');
-            container.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 20px;">
-                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
-                        <h3 style="color: #8b0000;">🗑️ Limpeza de Dados</h3>
-                        <p>Remove todas as avaliações, mas mantém partidas e escalas.</p>
-                        <button class="btn" id="btnLimparAvaliacoes" style="background:#ff9800; margin-top:10px;">Limpar Avaliações</button>
-                    </div>
-                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
-                        <h3 style="color: #8b0000;">⚠️ Reset Completo</h3>
-                        <p>Remove TODOS os dados: partidas, avaliações, escalas. Mantém apenas mensalistas e locais.</p>
-                        <button class="btn btn-vermelho" id="btnResetCompleto">Resetar Banco</button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('btnLimparAvaliacoes').onclick = async () => {
-                if (!confirm('Limpar TODAS as avaliações? Esta ação não pode ser desfeita!')) return;
-                const { error } = await supabaseClient.from('avaliacoes_partida').delete().neq('id', 0);
-                if (error) { alert('Erro: ' + error.message); return; }
-                alert('Avaliações removidas com sucesso!');
-                carregarDashboard();
-            };
-            document.getElementById('btnResetCompleto').onclick = async () => {
-                if (!confirm('⚠️ ATENÇÃO! Isso vai deletar TODAS as partidas, escalas e avaliações. Continuar?')) return;
-                await supabaseClient.from('avaliacoes_partida').delete().neq('id', 0);
-                await supabaseClient.from('escala_partida').delete().neq('id', 0);
-                await supabaseClient.from('partidas').delete().neq('id', 0);
-                alert('Banco resetado com sucesso!');
-                carregarDashboard();
-                carregarPartidas();
-            };
-        }
-
-        document.getElementById('logoVoltar').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-
-        // INICIALIZAÇÃO
-        async function init() {
-            console.log('Inicializando admin.html...');
-            await popularSelectAdmin();
-        }
-        
-        init();
-    </script>
-</body>
-</html>
+                        <thead><tr><th>ID</th><th>Nome</th><th>Nota
