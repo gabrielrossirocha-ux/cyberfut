@@ -65,25 +65,10 @@
             margin-bottom: 20px;
             font-size: 1.3em;
         }
-        .perfil-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .jogador-nome {
-            font-size: 2em;
-            font-weight: 700;
-            color: #8b0000;
-            margin-bottom: 10px;
-        }
-        .jogador-badge {
-            display: inline-block;
-            background: #ffcc00;
-            color: #8b0000;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-        }
+        .perfil-header { text-align: center; margin-bottom: 20px; }
+        .jogador-nome { font-size: 2em; font-weight: 700; color: #8b0000; margin-bottom: 10px; }
+        .jogador-badge { display: inline-block; background: #ffcc00; color: #8b0000; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: 600; }
+        
         .estatisticas-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -96,24 +81,12 @@
             padding: 15px;
             text-align: center;
         }
-        .estatistica-valor {
-            font-size: 2em;
-            font-weight: 700;
-            color: #8b0000;
-        }
-        .estatistica-label {
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 5px;
-        }
-        .grafico-container {
-            margin: 20px 0;
-            min-height: 300px;
-        }
-        canvas {
-            max-height: 300px;
-            width: 100%;
-        }
+        .estatistica-valor { font-size: 2em; font-weight: 700; color: #8b0000; }
+        .estatistica-label { font-size: 0.8em; color: #666; margin-top: 5px; }
+        
+        .grafico-container { margin: 20px 0; min-height: 300px; }
+        canvas { max-height: 300px; width: 100%; }
+        
         .historico-tabela {
             width: 100%;
             border-collapse: collapse;
@@ -123,14 +96,9 @@
             text-align: center;
             border-bottom: 1px solid #eee;
         }
-        .historico-tabela th {
-            background: #f5f5f5;
-            color: #8b0000;
-        }
-        .comentarios-lista {
-            max-height: 500px;
-            overflow-y: auto;
-        }
+        .historico-tabela th { background: #f5f5f5; color: #8b0000; }
+        
+        .comentarios-lista { max-height: 500px; overflow-y: auto; }
         .comentario-item {
             background: white;
             border-radius: 12px;
@@ -146,42 +114,13 @@
             margin-bottom: 8px;
             gap: 8px;
         }
-        .comentario-avaliador {
-            font-weight: 600;
-            color: #8b0000;
-        }
-        .comentario-nota {
-            background: #ffcc00;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-        }
-        .comentario-texto {
-            color: #333;
-            font-size: 0.9em;
-            line-height: 1.4;
-            word-break: break-word;
-            margin: 8px 0;
-        }
-        .comentario-data {
-            font-size: 0.7em;
-            color: #999;
-            margin-top: 8px;
-        }
-        .comentario-partida {
-            font-size: 0.7em;
-            color: #8b0000;
-            background: #ffe5e5;
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 20px;
-        }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
+        .comentario-avaliador { font-weight: 600; color: #8b0000; }
+        .comentario-nota { background: #ffcc00; padding: 2px 8px; border-radius: 20px; font-size: 0.8em; font-weight: 600; }
+        .comentario-texto { color: #333; font-size: 0.9em; line-height: 1.4; word-break: break-word; margin: 8px 0; }
+        .comentario-data { font-size: 0.7em; color: #999; margin-top: 8px; }
+        .comentario-partida { font-size: 0.7em; color: #8b0000; background: #ffe5e5; display: inline-block; padding: 2px 8px; border-radius: 20px; }
+        
+        .loading { text-align: center; padding: 40px; color: #666; }
         .btn-voltar {
             background: #1a1a1a;
             color: white;
@@ -193,14 +132,8 @@
             width: 100%;
             transition: all 0.3s;
         }
-        .btn-voltar:hover {
-            background: #333;
-            transform: translateY(-2px);
-        }
-        .estrela-pequena {
-            color: #ffcc00;
-            font-size: 0.9em;
-        }
+        .btn-voltar:hover { background: #333; transform: translateY(-2px); }
+        .estrela-pequena { color: #ffcc00; font-size: 0.9em; }
         
         @media (orientation: portrait) {
             body { padding: 12px; }
@@ -241,15 +174,24 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let chartInstance = null;
+        let locaisMap = {};
 
-        // Pegar nome do jogador da URL
+        async function carregarLocaisMap() {
+            const { data } = await supabaseClient.from('locais').select('id, nome');
+            if (data) {
+                locaisMap = {};
+                data.forEach(l => { locaisMap[l.id] = l.nome; });
+            }
+        }
+
         function getJogadorNome() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('nome');
         }
 
-        // Carregar dados do jogador
         async function carregarPerfil() {
+            await carregarLocaisMap();
+            
             const nome = getJogadorNome();
             if (!nome) {
                 document.getElementById('content').innerHTML = '<div class="card"><div class="loading">Jogador não especificado</div><button class="btn-voltar" onclick="window.location.href=\'ranking.html\'">Voltar ao Ranking</button></div>';
@@ -258,7 +200,6 @@
 
             document.getElementById('content').innerHTML = '<div class="loading">Carregando...</div>';
 
-            // Buscar todas as avaliações do jogador (com dados da partida e avaliador)
             const { data: avaliacoes, error } = await supabaseClient
                 .from('avaliacoes_partida')
                 .select(`
@@ -284,18 +225,21 @@
                 return;
             }
 
-            // Buscar dados das partidas
             const partidaIds = [...new Set(avaliacoes.map(a => a.partida_id))];
             const { data: partidas } = await supabaseClient
                 .from('partidas')
-                .select('id, data, local')
+                .select('id, data, local_id')
                 .in('id', partidaIds)
                 .order('data', { ascending: true });
 
             const partidasMap = {};
-            partidas?.forEach(p => { partidasMap[p.id] = p; });
+            partidas?.forEach(p => { 
+                partidasMap[p.id] = { 
+                    ...p, 
+                    local_nome: locaisMap[p.local_id] || 'Local não informado' 
+                }; 
+            });
 
-            // Calcular estatísticas
             const notas = avaliacoes.map(a => a.nota);
             const somaNotas = notas.reduce((acc, n) => acc + n, 0);
             const media = (somaNotas / notas.length).toFixed(2);
@@ -303,7 +247,6 @@
             const piorNota = Math.min(...notas);
             const totalEstrelas = somaNotas;
 
-            // Dados para o gráfico (nota média por partida)
             const notasPorPartida = {};
             avaliacoes.forEach(a => {
                 if (!notasPorPartida[a.partida_id]) {
@@ -325,7 +268,7 @@
                 (notasPorPartida[id].soma / notasPorPartida[id].count).toFixed(1)
             );
 
-            // Agrupar comentários
+            // FILTRO: apenas comentários com texto (não vazio)
             const comentariosComDados = avaliacoes
                 .filter(a => a.comentario && a.comentario.trim() !== '')
                 .map(a => ({
@@ -337,7 +280,6 @@
                 }))
                 .sort((a, b) => new Date(b.data) - new Date(a.data));
 
-            // Montar HTML
             const estrelasMelhor = '★'.repeat(melhorNota) + '☆'.repeat(5 - melhorNota);
             const estrelasPior = '★'.repeat(piorNota) + '☆'.repeat(5 - piorNota);
 
@@ -349,7 +291,6 @@
                     </div>
                 </div>
 
-                <!-- ESTATÍSTICAS -->
                 <div class="card">
                     <h2>📊 Estatísticas</h2>
                     <div class="estatisticas-grid">
@@ -382,7 +323,6 @@
                     </div>
                 </div>
 
-                <!-- GRÁFICO DE EVOLUÇÃO -->
                 <div class="card">
                     <h2>📈 Evolução por Partida</h2>
                     <div class="grafico-container">
@@ -390,7 +330,6 @@
                     </div>
                 </div>
 
-                <!-- HISTÓRICO DE NOTAS -->
                 <div class="card">
                     <h2>📋 Histórico de Notas</h2>
                     <div style="overflow-x: auto;">
@@ -403,7 +342,14 @@
                                     const partida = partidasMap[id];
                                     const mediaPartida = (notasPorPartida[id].soma / notasPorPartida[id].count).toFixed(1);
                                     const estrelas = '★'.repeat(Math.round(mediaPartida)) + '☆'.repeat(5 - Math.round(mediaPartida));
-                                    return `<tr><td>${new Date(partida.data).toLocaleDateString('pt-BR')}</td><td>${partida.local || 'Sem local'}</td><td>${mediaPartida}</td><td>${estrelas}</td></tr>`;
+                                    return `
+                                        <tr>
+                                            <td>${new Date(partida.data).toLocaleDateString('pt-BR')}</td>
+                                            <td>${partida.local_nome}</td>
+                                            <td>${mediaPartida}</td>
+                                            <td>${estrelas}</td>
+                                        </tr>
+                                    `;
                                 }).join('')}
                             </tbody>
                         </table>
@@ -411,7 +357,6 @@
                 </div>
             `;
 
-            // COMENTÁRIOS
             if (comentariosComDados.length > 0) {
                 html += `
                     <div class="card">
@@ -426,18 +371,11 @@
                                     <div class="comentario-texto">"${c.comentario}"</div>
                                     <div class="comentario-data">
                                         📅 ${new Date(c.data).toLocaleDateString('pt-BR')}
-                                        ${c.partida ? `<span class="comentario-partida"> 🏟️ ${c.partida.local || 'Partida'} (${new Date(c.partida.data).toLocaleDateString('pt-BR')})</span>` : ''}
+                                        ${c.partida ? `<span class="comentario-partida"> 🏟️ ${c.partida.local_nome} (${new Date(c.partida.data).toLocaleDateString('pt-BR')})</span>` : ''}
                                     </div>
                                 </div>
                             `).join('')}
                         </div>
-                    </div>
-                `;
-            } else {
-                html += `
-                    <div class="card">
-                        <h2>💬 Comentários</h2>
-                        <div class="loading">Nenhum comentário recebido ainda</div>
                     </div>
                 `;
             }
@@ -446,7 +384,6 @@
 
             document.getElementById('content').innerHTML = html;
 
-            // Criar gráfico
             if (chartInstance) chartInstance.destroy();
             const ctx = document.getElementById('graficoEvolucao').getContext('2d');
             chartInstance = new Chart(ctx, {
@@ -471,12 +408,7 @@
                     responsive: true,
                     maintainAspectRatio: true,
                     scales: {
-                        y: {
-                            min: 0,
-                            max: 5,
-                            title: { display: true, text: 'Estrelas' },
-                            ticks: { stepSize: 1 }
-                        },
+                        y: { min: 0, max: 5, title: { display: true, text: 'Estrelas' }, ticks: { stepSize: 1 } },
                         x: { title: { display: true, text: 'Partidas' } }
                     },
                     plugins: {
