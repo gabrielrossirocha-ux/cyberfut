@@ -98,6 +98,10 @@
             cursor: not-allowed;
             transform: none;
         }
+        .btn-sair {
+            background: #1a1a1a;
+            margin-top: 10px;
+        }
         .estrelas { display: flex; gap: 12px; margin: 15px 0; justify-content: center; flex-wrap: wrap; }
         .estrela { font-size: 40px; cursor: pointer; color: #ccc; transition: all 0.2s; }
         .estrela.selected { color: #ffcc00; }
@@ -149,6 +153,24 @@
         .status-avaliacao.completo {
             background: #e8f5e9;
             color: #2c5f2d;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .checkbox-container input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            cursor: pointer;
+        }
+        .checkbox-container label {
+            font-size: 0.9em;
+            color: #555;
+            cursor: pointer;
+            margin: 0;
         }
         .modal {
             position: fixed;
@@ -226,6 +248,10 @@
                 <h2>🔐 Login do Mensalista</h2>
                 <select id="selectMensalista" class="login-input"><option value="">Selecione seu nome</option></select>
                 <input type="password" id="senha" class="login-input" placeholder="Sua senha">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="lembrarMim">
+                    <label for="lembrarMim">🔐 Lembrar de mim</label>
+                </div>
                 <button id="btnLogin" class="btn">Entrar</button>
             </div>
         </div>
@@ -237,7 +263,8 @@
                 <div id="listaPartidasContainer">
                     <div class="status-avaliacao">Carregando partidas...</div>
                 </div>
-                <button id="btnVoltarSelecao" class="btn" style="background:#1a1a1a; margin-top:20px;">← Voltar</button>
+                <button id="btnSair" class="btn btn-sair">🚪 Sair / Trocar de usuário</button>
+                <button id="btnVoltarSelecao" class="btn" style="background:#1a1a1a; margin-top:10px;">← Voltar ao Início</button>
             </div>
         </div>
 
@@ -275,6 +302,43 @@
             return `${dia}/${mes}/${ano}`;
         }
 
+        // Função para salvar sessão
+        function salvarSessao(id, nome) {
+            localStorage.setItem('mensalista_id', id);
+            localStorage.setItem('mensalista_nome', nome);
+        }
+
+        // Função para limpar sessão
+        function limparSessao() {
+            localStorage.removeItem('mensalista_id');
+            localStorage.removeItem('mensalista_nome');
+        }
+
+        // Função para verificar sessão salva
+        async function verificarSessao() {
+            const savedId = localStorage.getItem('mensalista_id');
+            const savedNome = localStorage.getItem('mensalista_nome');
+            
+            if (!savedId || !savedNome) return false;
+            
+            // Verificar se o mensalista ainda existe no banco
+            const { data } = await supabaseClient
+                .from('mensalistas')
+                .select('id, nome')
+                .eq('id', savedId)
+                .single();
+            
+            if (data && data.nome === savedNome) {
+                mensalistaAtual = { id: data.id, nome: data.nome };
+                loginScreen.style.display = 'none';
+                selecaoScreen.style.display = 'block';
+                document.getElementById('userInfoSelecao').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Escolha uma partida para avaliar</span>`;
+                await carregarPartidasNaoAvaliadas();
+                return true;
+            }
+            return false;
+        }
+
         async function carregarMensalistas() {
             const { data } = await supabaseClient.from('mensalistas').select('id, nome').order('nome');
             const select = document.getElementById('selectMensalista');
@@ -285,16 +349,31 @@
         async function fazerLogin() {
             const id = document.getElementById('selectMensalista').value;
             const senha = document.getElementById('senha').value;
+            const lembrar = document.getElementById('lembrarMim').checked;
+            
             if (!id || !senha) { alert('Preencha todos os campos'); return; }
+            
             const { data } = await supabaseClient.from('mensalistas').select('*').eq('id', id).single();
             if (!data || senha !== data.senha_hash) { alert('Senha incorreta!'); return; }
+            
             mensalistaAtual = { id: data.id, nome: data.nome };
+            
+            // Salvar sessão se "lembrar de mim" estiver marcado
+            if (lembrar) {
+                salvarSessao(data.id, data.nome);
+            }
             
             loginScreen.style.display = 'none';
             selecaoScreen.style.display = 'block';
             document.getElementById('userInfoSelecao').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Escolha uma partida para avaliar</span>`;
             
             await carregarPartidasNaoAvaliadas();
+        }
+
+        // Função para logout (sair)
+        function fazerLogout() {
+            limparSessao();
+            window.location.reload();
         }
 
         async function carregarPartidasNaoAvaliadas() {
@@ -468,12 +547,21 @@
         }
 
         document.getElementById('btnLogin').addEventListener('click', fazerLogin);
+        document.getElementById('btnSair').addEventListener('click', fazerLogout);
         document.getElementById('btnVoltarSelecao').addEventListener('click', () => { window.location.href = 'index.html'; });
         document.getElementById('btnVoltarAvaliacoes').addEventListener('click', voltarParaSelecao);
         document.getElementById('btnSalvarTodas').addEventListener('click', exibirModalConfirmacao);
         document.getElementById('logoVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
         
-        carregarMensalistas();
+        // Inicialização: verificar sessão ou carregar mensalistas
+        async function init() {
+            const sessaoValida = await verificarSessao();
+            if (!sessaoValida) {
+                await carregarMensalistas();
+            }
+        }
+        
+        init();
     </script>
 </body>
 </html>
