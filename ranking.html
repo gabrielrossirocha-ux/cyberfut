@@ -304,6 +304,13 @@
         let locaisMap = {};
         let abaAtual = 'mensalistas';
 
+        // Função para formatar data (ignora fuso horário)
+        function formatarDataBr(dataString) {
+            if (!dataString) return '-';
+            const [ano, mes, dia] = dataString.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
         async function carregarLocaisMap() {
             const { data } = await supabaseClient.from('locais').select('id, nome');
             if (data) {
@@ -325,7 +332,7 @@
             [...partidasLista].reverse().forEach(partida => {
                 const option = document.createElement('option');
                 option.value = partida.id;
-                const dataFormatada = new Date(partida.data).toLocaleDateString('pt-BR');
+                const dataFormatada = formatarDataBr(partida.data);
                 option.textContent = `📅 ${dataFormatada} - ${partida.local_nome}`;
                 select.appendChild(option);
             });
@@ -486,9 +493,13 @@
                 const rankingAnterior = await getRankingPartida(partidaAnterior.id, abaAtual);
                 rankingAnterior.forEach(item => { rankingAnteriorMap[item.nome] = item.posicao; });
                 comparando = true;
-                comparacaoDiv.innerHTML = `📊 Comparado com a partida anterior (${new Date(partidaAnterior.data).toLocaleDateString('pt-BR')} - ${partidaAnterior.local_nome}) | ↑ subiu ↓ desceu = manteve`;
+                const dataAnterior = formatarDataBr(partidaAnterior.data);
+                comparacaoDiv.innerHTML = `📊 Comparado com a partida anterior (${dataAnterior} - ${partidaAnterior.local_nome}) | ↑ subiu ↓ desceu = manteve`;
             } else { comparacaoDiv.innerHTML = '📊 Primeira partida - sem comparação anterior'; }
-            infoDiv.innerHTML = `📅 Ranking da Partida - ${new Date(partidaAtual.data).toLocaleDateString('pt-BR')} - ${partidaAtual.local_nome} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
+            
+            const dataAtual = formatarDataBr(partidaAtual.data);
+            infoDiv.innerHTML = `📅 Ranking da Partida - ${dataAtual} - ${partidaAtual.local_nome} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
+            
             if (rankingAtual.length === 0) { container.innerHTML = '<div class="loading">Nenhuma avaliação para esta partida</div>'; return; }
             
             container.innerHTML = rankingAtual.map(j => {
