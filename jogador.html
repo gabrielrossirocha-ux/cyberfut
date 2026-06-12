@@ -171,7 +171,12 @@
         const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+// Função para formatar data (ignora fuso horário)
+function formatarDataBr(dataString) {
+    if (!dataString) return '-';
+    const [ano, mes, dia] = dataString.split('-');
+    return `${dia}/${mes}/${ano}`;
+}
         let chartInstance = null;
         let locaisMap = {};
 
@@ -267,9 +272,8 @@
             );
 
             const labels = partidasOrdenadas.map(id => {
-                const data = new Date(notasPorPartida[id].data);
-                return `${data.toLocaleDateString('pt-BR')}`;
-            });
+    return formatarDataBr(notasPorPartida[id].data);
+});
             const mediasPorPartida = partidasOrdenadas.map(id => 
                 (notasPorPartida[id].soma / notasPorPartida[id].count).toFixed(1)
             );
@@ -348,7 +352,7 @@
                                     const estrelas = '★'.repeat(Math.round(mediaPartida)) + '☆'.repeat(5 - Math.round(mediaPartida));
                                     return `
                                         <tr>
-                                            <td>${new Date(partida.data).toLocaleDateString('pt-BR')}</td>
+                                            <td>${formatarDataBr(partida.data)}</td>
                                             <td>${partida.local_nome}</td>
                                             <td>${mediaPartida}</td>
                                             <td>${estrelas}</td>
@@ -374,8 +378,8 @@
                                     </div>
                                     ${c.comentario ? `<div class="comentario-texto">"${c.comentario}"</div>` : ''}
                                     <div class="comentario-data">
-                                        📅 ${new Date(c.data).toLocaleDateString('pt-BR')}
-                                        ${c.partida ? `<span class="comentario-partida"> 🏟️ ${c.partida.local_nome} (${new Date(c.partida.data).toLocaleDateString('pt-BR')})</span>` : ''}
+                                        📅 ${formatarDataBr(c.data.split('T')[0])}
+                                            ...
                                     </div>
                                 </div>
                             `).join('')}
