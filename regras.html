@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>CYSS Futebol - Regras do Sistema</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a0000 0%, #8b0000 50%, #1a0000 100%);
+            min-height: 100vh;
+            padding: 16px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('image.png');
+            background-repeat: repeat;
+            background-size: 120px;
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .header { text-align: center; margin-bottom: 25px; }
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 20px;
+            border-radius: 60px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .logo-area:active { transform: scale(0.98); }
+        .logo { max-width: 45px; height: auto; border-radius: 12px; }
+        h1 { color: white; font-size: 1.4em; }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            color: #8b0000;
+            border-bottom: 3px solid #8b0000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+        .btn-voltar {
+            background: #1a1a1a;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .regras-container {
+            padding: 10px;
+        }
+        .regra-categoria {
+            background: #f9f9f9;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #8b0000;
+        }
+        .regra-categoria h3 {
+            color: #8b0000;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+        .regra-categoria p {
+            color: #555;
+            font-size: 0.85em;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        .regra-categoria ul {
+            margin-left: 20px;
+            color: #555;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+        .regra-categoria li {
+            margin-bottom: 5px;
+        }
+        .formula {
+            background: #1a1a1a;
+            color: #ffcc00;
+            padding: 10px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.85em;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .destaque {
+            font-weight: 700;
+            color: #8b0000;
+        }
+        .info-box {
+            background: #e8f5e9;
+            border-left: 4px solid #2c5f2d;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+        
+        @media (orientation: portrait) {
+            body { padding: 12px; }
+            .card { padding: 15px; }
+            .regra-categoria { padding: 12px; }
+            .regra-categoria h3 { font-size: 1em; }
+            .regra-categoria p, .regra-categoria li { font-size: 0.75em; }
+        }
+        
+        @media (min-width: 768px) and (orientation: landscape) {
+            body { padding: 20px; }
+            .logo-area { gap: 20px; padding: 15px 30px; }
+            .logo { max-width: 60px; }
+            h1 { font-size: 1.8em; }
+            .card { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area" id="logoVoltar">
+                <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
+                <h1>📋 Regras do Sistema</h1>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="regras-container">
+                
+                <!-- ============================================ -->
+                <!-- SORTEIO DOS TIMES -->
+                <!-- ============================================ -->
+                <div class="regra-categoria">
+                    <h3>🎲 Sorteio dos Times</h3>
+                    <p>O sistema utiliza um algoritmo avançado para garantir times <strong>equilibrados</strong>:</p>
+                    <ul>
+                        <li><strong>Goleiros:</strong> Prioridade máxima - sempre um goleiro em cada time</li>
+                        <li><strong>Força dos jogadores:</strong> Calculada automaticamente com base no histórico</li>
+                        <li><strong>Distribuição:</strong> Jogadores mais fortes são distribuídos alternadamente</li>
+                        <li><strong>Objetivo:</strong> Deixar a soma das forças dos dois times o mais próximo possível</li>
+                        <li><strong>Quantidade:</strong> Times com diferença máxima de 1 jogador</li>
+                    </ul>
+                    <div class="formula">Força Total Time A ≈ Força Total Time B</div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- CÁLCULO DA FORÇA DO JOGADOR -->
+                <!-- ============================================ -->
+                <div class="regra-categoria">
+                    <h3>📊 Cálculo da Força do Jogador</h3>
+                    <p>A força de cada jogador é atualizada automaticamente após cada partida, usando a fórmula:</p>
+                    <div class="formula">FORÇA = (Média de Estrelas × 0.6) + (Taxa de Vitória × 0.3) + (Consistência × 0.1)</div>
+                    <ul>
+                        <li><strong>Média de Estrelas (60%):</strong> Média aritmética de todas as estrelas que o jogador já recebeu</li>
+                        <li><strong>Taxa de Vitória (30%):</strong> Percentual de partidas que o time do jogador venceu</li>
+                        <li><strong>Consistência (10%):</strong> Quão constante é o desempenho (baixo desvio padrão = mais consistente)</li>
+                    </ul>
+                    <p>Quanto maior a força, melhor o jogador é considerado pelo sistema.</p>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- SISTEMA DE AVALIAÇÃO -->
+                <!-- ============================================ -->
+                <div class="regra-categoria">
+                    <h3>⭐ Sistema de Avaliação</h3>
+                    <p>As avaliações são fundamentais para o funcionamento do ranking e do sorteio equilibrado.</p>
+                    <ul>
+                        <li><strong>Quem pode avaliar?</strong> Apenas <strong class="destaque">mensalistas</strong> (jogadores fixos do grupo)</li>
+                        <li><strong>Convidados não avaliam</strong> - são apenas avaliados</li>
+                        <li><strong>Não é permitido autoavaliação</strong> - cada mensalista avalia os OUTROS jogadores</li>
+                        <li><strong>Notas:</strong> 1 a 5 estrelas (1 = péssimo, 5 = excelente)</li>
+                        <li><strong>Comentário opcional:</strong> até 100 caracteres</li>
+                        <li><strong>Confirmação em lote:</strong> todas as avaliações são salvas de uma vez</li>
+                        <li><strong>Irreversível:</strong> após confirmar, as avaliações NÃO podem ser alteradas</li>
+                    </ul>
+                    <div class="info-box">
+                        <strong>ℹ️ Importante:</strong> Cada mensalista avalia todos os outros jogadores da partida. Um mensalista nunca avalia a si mesmo.
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- PONTUAÇÃO MÁXIMA -->
+                <!-- ============================================ -->
+                <div class="regra-categoria">
+                    <h3>🏅 Pontuação Máxima por Partida</h3>
+                    <p>O máximo de estrelas que um jogador pode receber em uma única partida depende do seu tipo:</p>
+                    <ul>
+                        <li><strong>Mensalista:</strong> 8 avaliadores × 5 estrelas = <strong class="destaque">40 estrelas</strong></li>
+                        <li><strong>Convidado:</strong> 9 avaliadores × 5 estrelas = <strong class="destaque">45 estrelas</strong></li>
+                    </ul>
+                    <p><strong>Por que essa diferença?</strong> Mensalistas não avaliam a si mesmos (8 avaliadores), enquanto convidados são avaliados por todos os 9 mensalistas.</p>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- RANKING GERAL E POR PARTIDA -->
+                <!-- ============================================ -->
+                <div class="regra-categoria">
+                    <h3>🏆 Ranking Geral e por Partida</h3>
+                    <ul>
+                        <li><strong>Ranking Geral:</strong> Soma de TODAS as estrelas recebidas em todas as partidas</li>
+                        <li><strong>Ranking por Partida:</strong> Soma das estrelas recebidas em uma partida específica</li>
+                        <li><strong>Rankings separados:</strong> Mensalistas e Convidados são exibidos separadamente para garantir justiça</li>
+                        <li><strong>Setas de variação:</strong> Ao selecionar uma partida, as setas mostram a evolução em relação à partida anterior</li>
+                    </ul>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- PAPÉIS NO SISTEMA -->
+                <!-- ============================================ -->
+                <div class="regra-categoria">
+                    <h3>👥 Papéis no Sistema</h3>
+                    <ul>
+                        <li><strong>📌 Mensalista:</strong> Jogador fixo do grupo. Pode avaliar outros jogadores e é avaliado.</li>
+                        <li><strong>🎟️ Convidado:</strong> Jogador eventual. Apenas é avaliado (não pode avaliar).</li>
+                        <li><strong>🔧 Administrador:</strong> Mensalista com permissão especial. Gerencia partidas, locais, mensalistas e registra placares.</li>
+                    </ul>
+                </div>
+
+            </div>
+            
+            <button id="btnVoltar" class="btn-voltar">← Voltar ao Início</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('logoVoltar').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+        document.getElementById('btnVoltar').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
