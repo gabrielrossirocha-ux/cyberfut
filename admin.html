@@ -6,6 +6,7 @@
     <title>CYSS Futebol - Administração</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/sorteio.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -241,7 +242,6 @@
             if (!usuario) { alert('Digite o usuário!'); return; }
             if (!senha) { alert('Digite a senha!'); return; }
             
-            // Buscar mensalista pelo nome e verificar se é admin
             const { data, error } = await supabaseClient
                 .from('mensalistas')
                 .select('id, nome, senha_hash, is_admin')
@@ -263,7 +263,6 @@
                 return;
             }
             
-            // Login bem sucedido
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('adminContent').style.display = 'block';
             
@@ -318,7 +317,7 @@
         }
 
         // ============================================
-        // CRIAR PARTIDA RÁPIDA
+        // CRIAR PARTIDA RÁPIDA (COM SORTEIO CORRIGIDO)
         // ============================================
         function carregarCriarPartida() {
             const container = document.getElementById('tabContent');
@@ -419,7 +418,7 @@
                     const nome = e.target.value;
                     if (nome && !mensalistasSelecionados.includes(nome) && !jogadoresSelecionados.some(j => j.nome === nome)) {
                         mensalistasSelecionados.push(nome);
-                        jogadoresSelecionados.push({ nome, tipo: 'mensalista' });
+                        jogadoresSelecionados.push({ nome, tipo: 'mensalista', posicao: 'Fixo' });
                         atualizarListaMensalistas();
                         atualizarListaExibicao();
                     }
@@ -429,7 +428,7 @@
                 document.getElementById('btnAddConvidado')?.addEventListener('click', () => {
                     const nome = document.getElementById('convidadoNome').value.trim();
                     if (nome && !jogadoresSelecionados.some(j => j.nome === nome)) {
-                        jogadoresSelecionados.push({ nome, tipo: 'convidado' });
+                        jogadoresSelecionados.push({ nome, tipo: 'convidado', posicao: 'Fixo' });
                         document.getElementById('convidadoNome').value = '';
                         atualizarListaExibicao();
                     } else if (nome) {
@@ -444,7 +443,7 @@
                         selecaoIndividual.style.display = 'none';
                         const { data: todosMensalistas } = await supabaseClient.from('mensalistas').select('nome');
                         if (todosMensalistas) {
-                            jogadoresSelecionados = todosMensalistas.map(m => ({ nome: m.nome, tipo: 'mensalista' }));
+                            jogadoresSelecionados = todosMensalistas.map(m => ({ nome: m.nome, tipo: 'mensalista', posicao: 'Fixo' }));
                             atualizarListaExibicao();
                         }
                     } else {
@@ -467,6 +466,23 @@
                     
                     const local = locaisLista.find(l => l.id == localId);
                     
+                    // Buscar forças dos jogadores
+                    const forcasMap = {};
+                    const { data: forcas } = await supabaseClient.from('forca_jogador').select('jogador_nome, forca');
+                    forcas?.forEach(f => { forcasMap[f.jogador_nome] = f.forca || 3; });
+                    
+                    // Preparar array para sorteio
+                    const jogadoresParaSorteio = jogadoresSelecionados.map(j => ({
+                        nome: j.nome,
+                        forca: forcasMap[j.nome] || 3,
+                        posicao: j.posicao || 'Fixo',
+                        tipo: j.tipo
+                    }));
+                    
+                    // SORTEAR TIMES usando a biblioteca externa
+                    const { timeA, timeB, somaA, somaB } = sortearTimes(jogadoresParaSorteio);
+                    
+                    // Salvar partida
                     const partida = {
                         data: data,
                         horario: horario,
@@ -480,32 +496,15 @@
                     
                     const partidaId = novaPartida.id;
                     
-                    const { data: forcas } = await supabaseClient.from('forca_jogador').select('jogador_nome, forca');
-                    const forcaMap = {};
-                    forcas?.forEach(f => { forcaMap[f.jogador_nome] = f.forca || 3; });
-                    jogadoresSelecionados.forEach(j => { if (!forcaMap[j.nome]) forcaMap[j.nome] = 3; });
-                    
-                    const ordenados = [...jogadoresSelecionados].sort((a, b) => (forcaMap[b.nome] || 3) - (forcaMap[a.nome] || 3));
-                    
-                    let timeA = [], timeB = [];
-                    let somaA = 0, somaB = 0;
-                    
-                    ordenados.forEach(j => {
-                        const forca = forcaMap[j.nome] || 3;
-                        if (somaA <= somaB) {
-                            timeA.push(j);
-                            somaA += forca;
-                        } else {
-                            timeB.push(j);
-                            somaB += forca;
-                        }
-                    });
-                    
                     const escala = [...timeA.map(j => ({ ...j, time: 'A' })), ...timeB.map(j => ({ ...j, time: 'B' }))];
                     for (const j of escala) {
                         await supabaseClient.from('escala_partida').insert({
-                            partida_id: partidaId, jogador_nome: j.nome, posicao: 'Fixo',
-                            habilidades: [], tipo: j.tipo, time: j.time
+                            partida_id: partidaId, 
+                            jogador_nome: j.nome, 
+                            posicao: j.posicao,
+                            habilidades: [], 
+                            tipo: j.tipo, 
+                            time: j.time
                         });
                     }
                     
@@ -515,12 +514,12 @@
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px;">
                             <div style="background:#fff5f5; border-radius:16px; padding:15px;">
                                 <h3>🔴 TIME A</h3>
-                                ${timeA.map(j => `<div><strong>${j.nome}</strong> ${notaFormatada(forcaMap[j.nome] || 3)}</div>`).join('')}
+                                ${timeA.map(j => `<div><strong>${j.nome}</strong> ${notaFormatada(forcasMap[j.nome] || 3)}</div>`).join('')}
                                 <div style="margin-top:10px; font-weight:bold;">Força: ${somaA.toFixed(1)}</div>
                             </div>
                             <div style="background:#fafafa; border-radius:16px; padding:15px;">
                                 <h3>⚪ TIME B</h3>
-                                ${timeB.map(j => `<div><strong>${j.nome}</strong> ${notaFormatada(forcaMap[j.nome] || 3)}</div>`).join('')}
+                                ${timeB.map(j => `<div><strong>${j.nome}</strong> ${notaFormatada(forcasMap[j.nome] || 3)}</div>`).join('')}
                                 <div style="margin-top:10px; font-weight:bold;">Força: ${somaB.toFixed(1)}</div>
                             </div>
                         </div>
@@ -674,7 +673,7 @@
                     <button class="btn btn-verde" id="btnAdicionarLocal">➕ Adicionar</button>
                 </div>
                 <div class="tabela-container">
-                    <table>
+                    <td>
                         <thead><tr><th>ID</th><th>Nome</th><th>Endereço</th><th>Ações</th></tr></thead>
                         <tbody id="locaisTable"></tbody>
                     </table>
