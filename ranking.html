@@ -183,7 +183,6 @@
         }
         .loading { text-align: center; padding: 30px; color: #666; }
         
-        /* Estilos da aba Regras - Apenas Ranking */
         .regras-container {
             padding: 10px;
         }
@@ -302,19 +301,32 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let partidasLista = [];
+        let locaisMap = {};
         let abaAtual = 'mensalistas';
 
+        async function carregarLocaisMap() {
+            const { data } = await supabaseClient.from('locais').select('id, nome');
+            if (data) {
+                locaisMap = {};
+                data.forEach(l => { locaisMap[l.id] = l.nome; });
+            }
+        }
+
         async function carregarPartidasSelect() {
-            const { data, error } = await supabaseClient.from('partidas').select('id, data, local').order('data', { ascending: true });
+            await carregarLocaisMap();
+            const { data, error } = await supabaseClient.from('partidas').select('id, data, local_id').order('data', { ascending: true });
             if (error) return;
-            partidasLista = data || [];
+            partidasLista = (data || []).map(p => ({
+                ...p,
+                local_nome: locaisMap[p.local_id] || 'Local não informado'
+            }));
             const select = document.getElementById('selectPartida');
             select.innerHTML = '<option value="geral">🏆 RANKING GERAL (todas)</option>';
             [...partidasLista].reverse().forEach(partida => {
                 const option = document.createElement('option');
                 option.value = partida.id;
                 const dataFormatada = new Date(partida.data).toLocaleDateString('pt-BR');
-                option.textContent = `📅 ${dataFormatada} - ${partida.local || 'Sem local'}`;
+                option.textContent = `📅 ${dataFormatada} - ${partida.local_nome}`;
                 select.appendChild(option);
             });
         }
@@ -474,9 +486,9 @@
                 const rankingAnterior = await getRankingPartida(partidaAnterior.id, abaAtual);
                 rankingAnterior.forEach(item => { rankingAnteriorMap[item.nome] = item.posicao; });
                 comparando = true;
-                comparacaoDiv.innerHTML = `📊 Comparado com a partida anterior (${new Date(partidaAnterior.data).toLocaleDateString('pt-BR')}) | ↑ subiu ↓ desceu = manteve`;
+                comparacaoDiv.innerHTML = `📊 Comparado com a partida anterior (${new Date(partidaAnterior.data).toLocaleDateString('pt-BR')} - ${partidaAnterior.local_nome}) | ↑ subiu ↓ desceu = manteve`;
             } else { comparacaoDiv.innerHTML = '📊 Primeira partida - sem comparação anterior'; }
-            infoDiv.innerHTML = `📅 Ranking da Partida - ${new Date(partidaAtual.data).toLocaleDateString('pt-BR')} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
+            infoDiv.innerHTML = `📅 Ranking da Partida - ${new Date(partidaAtual.data).toLocaleDateString('pt-BR')} - ${partidaAtual.local_nome} - ${abaAtual === 'mensalistas' ? 'Mensalistas' : 'Convidados'}`;
             if (rankingAtual.length === 0) { container.innerHTML = '<div class="loading">Nenhuma avaliação para esta partida</div>'; return; }
             
             container.innerHTML = rankingAtual.map(j => {
