@@ -278,7 +278,9 @@
         <div id="loginScreen" class="card">
             <div class="login-area">
                 <h2>🔐 Login do Mensalista</h2>
-                <select id="selectMensalista" class="login-input"><option value="">Carregando mensalistas...</option></select>
+                <select id="selectMensalista" class="login-input">
+                    <option value="">Carregando mensalistas...</option>
+                </select>
                 <input type="password" id="senha" class="login-input" placeholder="Sua senha">
                 <div class="checkbox-container">
                     <input type="checkbox" id="lembrarMim">
@@ -356,25 +358,39 @@
         }
 
         async function carregarMensalistas() {
-            const { data, error } = await supabaseClient
-                .from('mensalistas')
-                .select('id, nome')
-                .order('nome');
-            
+            console.log('🔍 Carregando mensalistas...');
             const select = document.getElementById('selectMensalista');
-            if (error) {
-                select.innerHTML = '<option value="">Erro ao carregar</option>';
-                return;
-            }
             
-            select.innerHTML = '<option value="">Selecione seu nome</option>';
-            if (data) {
-                data.forEach(m => { 
-                    const opt = document.createElement('option'); 
-                    opt.value = m.id; 
-                    opt.textContent = m.nome; 
-                    select.appendChild(opt); 
-                });
+            try {
+                const { data, error } = await supabaseClient
+                    .from('mensalistas')
+                    .select('id, nome')
+                    .order('nome');
+                
+                console.log('📊 Dados recebidos:', data);
+                
+                if (error) {
+                    console.error('❌ Erro:', error);
+                    select.innerHTML = '<option value="">Erro ao carregar</option>';
+                    return;
+                }
+                
+                select.innerHTML = '<option value="">Selecione seu nome</option>';
+                if (data && data.length > 0) {
+                    data.forEach(m => { 
+                        const opt = document.createElement('option'); 
+                        opt.value = m.id; 
+                        opt.textContent = m.nome; 
+                        select.appendChild(opt); 
+                    });
+                    console.log(`✅ ${data.length} mensalistas carregados`);
+                } else {
+                    console.log('⚠️ Nenhum mensalista encontrado');
+                    select.innerHTML = '<option value="">Nenhum mensalista</option>';
+                }
+            } catch (err) {
+                console.error('❌ Erro inesperado:', err);
+                select.innerHTML = '<option value="">Erro na conexão</option>';
             }
         }
 
@@ -401,10 +417,8 @@
             return false;
         }
 
-        // ============================================
-        // MODO CONVIDADO - CARREGAR TODAS AS PARTIDAS
-        // ============================================
         async function carregarPartidasModoConvidado() {
+            console.log('👁️ Modo convidado - carregando partidas...');
             const container = document.getElementById('listaPartidasContainer');
             container.innerHTML = '<div class="status-avaliacao">Carregando partidas...</div>';
             
@@ -670,20 +684,27 @@
 
         document.getElementById('btnLogin').addEventListener('click', fazerLogin);
         document.getElementById('btnSair').addEventListener('click', fazerLogout);
-        document.getElementById('btnVoltarSelecao').addEventListener('click', () => { window.location.href = 'index.html'; });
+        document.getElementById('btnVoltarSelecao').addEventListener('click', () => { 
+            window.location.href = 'index.html'; 
+        });
         document.getElementById('btnVoltarAvaliacoes').addEventListener('click', voltarParaSelecao);
         document.getElementById('btnSalvarTodas').addEventListener('click', exibirModalConfirmacao);
-        document.getElementById('logoVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
+        document.getElementById('logoVoltar').addEventListener('click', () => { 
+            window.location.href = 'index.html'; 
+        });
         
         // ============================================
         // INICIALIZAÇÃO
         // ============================================
         async function init() {
+            console.log('🚀 Inicializando avaliar.html...');
+            
             // CARREGAR MENSALISTAS PRIMEIRO (sempre)
             await carregarMensalistas();
             
             // Verificar modo convidado
             if (isModoConvidado()) {
+                console.log('👁️ Modo convidado ativado');
                 document.getElementById('avisoConvidado').style.display = 'block';
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('selecaoScreen').style.display = 'block';
@@ -693,10 +714,14 @@
             }
             
             // Verificar sessão
+            console.log('🔍 Verificando sessão...');
             const sessaoValida = await verificarSessao();
             if (!sessaoValida) {
+                console.log('🔑 Nenhuma sessão ativa - mostrando login');
                 // Se não tiver sessão, mostrar tela de login (já está visível)
                 // Os mensalistas já foram carregados
+            } else {
+                console.log('✅ Sessão válida para:', mensalistaAtual?.nome);
             }
         }
         
