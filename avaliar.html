@@ -457,4 +457,154 @@
             // Exibir placar
             const placarContainer = document.getElementById('placarContainer');
             if (partida.resultado_finalizado) {
-                placarContainer.innerHTML = `<div style="background:#1a1a1a; color:white; padding:10px; border-radius:12px; text-align:center; font-size:1.3em; font-weight:bold; margin-bottom:15px;">🏆 PLACAR FINAL: ${partida.gols_time_a} x ${partida.gols_time
+                placarContainer.innerHTML = `<div style="background:#1a1a1a; color:white; padding:10px; border-radius:12px; text-align:center; font-size:1.3em; font-weight:bold; margin-bottom:15px;">🏆 PLACAR FINAL: ${partida.gols_time_a} x ${partida.gols_time_b}</div>`;
+            } else {
+                placarContainer.innerHTML = `<div style="background:#f0f0f0; color:#999; padding:10px; border-radius:12px; text-align:center; font-style:italic; margin-bottom:15px;">⏳ Placar ainda não registrado pelo administrador</div>`;
+            }
+            
+            // Exibir escalação
+            const timeA = escala?.filter(j => j.time === 'A') || [];
+            const timeB = escala?.filter(j => j.time === 'B') || [];
+            
+            document.getElementById('escalacaoContainer').innerHTML = `
+                <div class="escalacao-container">
+                    <div class="time-card" style="background:#fff5f5; border-left:4px solid #8b0000;">
+                        <h3 style="color:#8b0000; margin-bottom:15px;">🔴 TIME VERMELHO</h3>
+                        <ul>
+                            ${timeA.map(j => `<li><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="time-card" style="background:#fafafa; border-left:4px solid #ccc;">
+                        <h3 style="color:#8b0000; margin-bottom:15px;">⚪ TIME BRANCO</h3>
+                        <ul>
+                            ${timeB.map(j => `<li><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            renderizarJogadores();
+            atualizarStatus();
+        }
+
+        function atualizarStatus() {
+            const total = jogadoresPartida.length;
+            const avaliados = Object.keys(avaliacoesPendentes).filter(nome => avaliacoesPendentes[nome]?.nota > 0).length;
+            const container = document.getElementById('statusContainer');
+            if (avaliados === total && total > 0) {
+                container.innerHTML = `✅ Todos os ${total} jogadores avaliados! Clique em "SALVAR TODAS" para finalizar.`;
+                container.className = 'status-avaliacao completo';
+                document.getElementById('btnSalvarTodas').disabled = false;
+            } else {
+                container.innerHTML = `📊 Progresso: ${avaliados} de ${total} jogadores avaliados. Selecione as notas.`;
+                container.className = 'status-avaliacao';
+                document.getElementById('btnSalvarTodas').disabled = true;
+            }
+        }
+
+        function renderizarJogadores() {
+            if (jogadoresPartida.length === 0) { 
+                document.getElementById('jogadoresContainer').innerHTML = '<p>Nenhum jogador para avaliar</p>'; 
+                return; 
+            }
+            
+            const container = document.getElementById('jogadoresContainer');
+            container.innerHTML = '<div class="jogadores-grid"></div>';
+            const grid = container.querySelector('.jogadores-grid');
+            
+            jogadoresPartida.forEach(j => {
+                const pendente = avaliacoesPendentes[j.jogador_nome] || { nota: 0, comentario: '' };
+                const card = document.createElement('div');
+                card.className = `jogador-card ${pendente.nota > 0 ? 'avaliado' : ''}`;
+                card.setAttribute('data-jogador', j.jogador_nome);
+                
+                card.innerHTML = `
+                    <div class="jogador-nome">${j.jogador_nome} <small>📍 ${j.posicao}</small> ${pendente.nota > 0 ? ' ✓' : ''}</div>
+                    <div class="estrelas" data-jogador="${j.jogador_nome}">
+                        ${[1,2,3,4,5].map(n => `<span class="estrela ${pendente.nota >= n ? 'selected' : ''}" data-nota="${n}">★</span>`).join('')}
+                    </div>
+                    <textarea class="comentario-input" placeholder="Comentário (opcional, até 100 caracteres)" maxlength="100">${pendente.comentario || ''}</textarea>
+                `;
+                
+                const estrelasDiv = card.querySelector('.estrelas');
+                const textarea = card.querySelector('.comentario-input');
+                const jogadorNome = j.jogador_nome;
+                
+                estrelasDiv.querySelectorAll('.estrela').forEach(estrela => {
+                    estrela.addEventListener('click', () => {
+                        const nota = parseInt(estrela.dataset.nota);
+                        estrelasDiv.querySelectorAll('.estrela').forEach((s, i) => i < nota ? s.classList.add('selected') : s.classList.remove('selected'));
+                        if (!avaliacoesPendentes[jogadorNome]) avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: '' };
+                        avaliacoesPendentes[jogadorNome].nota = nota;
+                        avaliacoesPendentes[jogadorNome].comentario = textarea.value;
+                        card.classList.toggle('avaliado', nota > 0);
+                        atualizarStatus();
+                    });
+                });
+                
+                textarea.addEventListener('input', () => {
+                    if (avaliacoesPendentes[jogadorNome]) {
+                        avaliacoesPendentes[jogadorNome].comentario = textarea.value;
+                    } else if (textarea.value.trim()) {
+                        avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: textarea.value };
+                    }
+                });
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function exibirModalConfirmacao() {
+            const avaliacoes = Object.entries(avaliacoesPendentes).filter(([_, dados]) => dados.nota > 0).map(([nome, dados]) => ({ nome, nota: dados.nota, comentario: dados.comentario || 'Sem comentário' }));
+            if (avaliacoes.length === 0) { alert('Nenhuma avaliação foi feita!'); return; }
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>⚠️ Confirmar Avaliações</h3>
+                    <p>Você vai avaliar <strong>${avaliacoes.length}</strong> jogador(es):</p>
+                    <div class="modal-resumo">${avaliacoes.map(a => `<div class="resumo-item"><span><strong>${a.nome}</strong></span><span class="resumo-nota">${'★'.repeat(a.nota)}${'☆'.repeat(5-a.nota)}</span><span style="width:100%; font-size:0.8em;">💬 ${a.comentario.substring(0, 50)}</span></div>`).join('')}</div>
+                    <p style="color:#8b0000;"><strong>ATENÇÃO:</strong> Após confirmar, NÃO poderá alterar!</p>
+                    <div class="modal-botoes"><button class="btn-cancelar">❌ Cancelar</button><button class="btn-confirmar">✅ Confirmar</button></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector('.btn-cancelar').addEventListener('click', () => modal.remove());
+            modal.querySelector('.btn-confirmar').addEventListener('click', async () => { modal.remove(); await salvarTodasAvaliacoes(avaliacoes); });
+        }
+        
+        async function salvarTodasAvaliacoes(avaliacoes) {
+            let sucesso = 0;
+            for (const a of avaliacoes) {
+                const { error } = await supabaseClient.from('avaliacoes_partida').insert({ partida_id: partidaSelecionada, avaliador_id: mensalistaAtual.id, avaliado_nome: a.nome, nota: a.nota, comentario: a.comentario });
+                if (!error) sucesso++;
+            }
+            alert(`✅ ${sucesso} avaliações salvas!`);
+            await voltarParaSelecao();
+        }
+        
+        async function voltarParaSelecao() {
+            avaliacoesScreen.style.display = 'none';
+            selecaoScreen.style.display = 'block';
+            await carregarPartidasNaoAvaliadas();
+        }
+
+        document.getElementById('btnLogin').addEventListener('click', fazerLogin);
+        document.getElementById('btnVoltarSelecao').addEventListener('click', () => { window.location.href = 'index.html'; });
+        document.getElementById('btnVoltarAvaliacoes').addEventListener('click', voltarParaSelecao);
+        document.getElementById('btnSalvarTodas').addEventListener('click', exibirModalConfirmacao);
+        document.getElementById('logoVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
+        
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        async function init() {
+            const sessaoValida = await verificarSessao();
+            if (!sessaoValida) await carregarMensalistas();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
