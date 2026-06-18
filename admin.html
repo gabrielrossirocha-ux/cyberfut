@@ -834,199 +834,261 @@
         // ============================================
         // PAGAMENTOS
         // ============================================
-        async function carregarPagamentos() {
-            const container = document.getElementById('tabContent');
-            container.innerHTML = '<div class="loading">Carregando...</div>';
-            
-            const mesAtual = new Date().getMonth() + 1;
-            const anoAtual = new Date().getFullYear();
-            const mesNome = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual-1];
-            
-            const { data: mensalistas } = await supabaseClient
-                .from('mensalistas')
-                .select('id, nome')
-                .order('nome');
-            
-            const { data: pagamentos } = await supabaseClient
-                .from('pagamentos')
-                .select('*')
-                .eq('mes', mesAtual)
-                .eq('ano', anoAtual);
-            
-            const pagamentosMap = {};
-            pagamentos?.forEach(p => {
-                pagamentosMap[p.mensalista_id] = p;
-            });
-            
-            let pagos = 0;
-            let pendentes = 0;
-            
-            let html = `
-                <h2 style="color:#8b0000; margin-bottom:20px;">💳 Controle de Pagamentos</h2>
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
-                    <div style="font-size: 1.1em; font-weight: 600; color: #333;">
-                        📅 ${mesNome} / ${anoAtual}
-                    </div>
-                    <div class="resumo-pagamentos">
-                        <div class="resumo-item verde">
-                            ✅ Pagos: <span id="totalPagos">0</span>
-                        </div>
-                        <div class="resumo-item vermelho">
-                            ❌ Pendentes: <span id="totalPendentes">0</span>
-                        </div>
-                    </div>
+        // ============================================
+// PAGAMENTOS
+// ============================================
+async function carregarPagamentos() {
+    const container = document.getElementById('tabContent');
+    container.innerHTML = '<div class="loading">Carregando...</div>';
+    
+    const mesAtual = new Date().getMonth() + 1;
+    const anoAtual = new Date().getFullYear();
+    const mesNome = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual-1];
+    
+    const { data: mensalistas } = await supabaseClient
+        .from('mensalistas')
+        .select('id, nome')
+        .order('nome');
+    
+    const { data: pagamentos } = await supabaseClient
+        .from('pagamentos')
+        .select('*')
+        .eq('mes', mesAtual)
+        .eq('ano', anoAtual);
+    
+    const pagamentosMap = {};
+    pagamentos?.forEach(p => {
+        pagamentosMap[p.mensalista_id] = p;
+    });
+    
+    let pagos = 0;
+    let pendentes = 0;
+    
+    let html = `
+        <h2 style="color:#8b0000; margin-bottom:20px;">💳 Controle de Pagamentos</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+            <div style="font-size: 1.1em; font-weight: 600; color: #333;">
+                📅 ${mesNome} / ${anoAtual}
+            </div>
+            <div class="resumo-pagamentos">
+                <div class="resumo-item verde">
+                    ✅ Pagos: <span id="totalPagos">0</span>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Mensalista</th>
-                                <th>Status</th>
-                                <th>Data Pagamento</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pagamentosTable"></tbody>
-                    </table>
+                <div class="resumo-item vermelho">
+                    ❌ Pendentes: <span id="totalPendentes">0</span>
                 </div>
-                <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
-                    <button class="btn btn-verde" onclick="marcarTodosPagos()">✅ Marcar Todos Pagos</button>
-                    <button class="btn btn-vermelho" onclick="marcarTodosPendentes()">❌ Marcar Todos Pendentes</button>
-                    <button class="btn btn-azul" onclick="gerarRelatorioPagamentos()">📊 Relatório</button>
-                </div>
-            `;
-            
-            container.innerHTML = html;
-            
-            const tbody = document.getElementById('pagamentosTable');
-            
-            tbody.innerHTML = mensalistas.map(m => {
-                const pagamento = pagamentosMap[m.id];
-                const pago = pagamento?.pago || false;
-                const dataPagamento = pagamento?.data_pagamento ? formatarDataAdmin(pagamento.data_pagamento) : '-';
-                
-                if (pago) pagos++;
-                else pendentes++;
-                
-                return `
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
                     <tr>
-                        <td><strong>${m.nome}</strong></td>
-                        <td>
-                            ${pago 
-                                ? '<span style="color: #2c5f2d; font-weight: 600;">✅ Pago</span>' 
-                                : '<span style="color: #c62828; font-weight: 600;">❌ Pendente</span>'
-                            }
-                        </td>
-                        <td>${dataPagamento}</td>
-                        <td>
-                            <button class="btn btn-pequeno ${pago ? 'btn-vermelho' : 'btn-verde'}" 
-                                    onclick="togglePagamento(${m.id})">
-                                ${pago ? '❌ Pendente' : '✅ Pago'}
-                            </button>
-                        </td>
+                        <th>Mensalista</th>
+                        <th>Status</th>
+                        <th>Data Pagamento</th>
+                        <th>Ações</th>
                     </tr>
-                `;
-            }).join('');
-            
-            document.getElementById('totalPagos').textContent = pagos;
-            document.getElementById('totalPendentes').textContent = pendentes;
+                </thead>
+                <tbody id="pagamentosTable"></tbody>
+            </table>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+            <button class="btn btn-verde" onclick="marcarTodosPagos()">✅ Marcar Todos Pagos</button>
+            <button class="btn btn-vermelho" onclick="marcarTodosPendentes()">❌ Marcar Todos Pendentes</button>
+            <button class="btn btn-azul" onclick="gerarRelatorioPagamentos()">📊 Relatório</button>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    
+    const tbody = document.getElementById('pagamentosTable');
+    
+    tbody.innerHTML = mensalistas.map(m => {
+        const pagamento = pagamentosMap[m.id];
+        const pago = pagamento?.pago || false;
+        const dataPagamento = pagamento?.data_pagamento ? formatarDataAdmin(pagamento.data_pagamento) : '-';
+        
+        if (pago) pagos++;
+        else pendentes++;
+        
+        return `
+            <tr>
+                <td><strong>${m.nome}</strong></td>
+                <td>
+                    ${pago 
+                        ? '<span style="color: #2c5f2d; font-weight: 600;">✅ Pago</span>' 
+                        : '<span style="color: #c62828; font-weight: 600;">❌ Pendente</span>'
+                    }
+                </td>
+                <td>${dataPagamento}</td>
+                <td>
+                    <button class="btn btn-pequeno ${pago ? 'btn-vermelho' : 'btn-verde'}" 
+                            onclick="togglePagamento(${m.id})">
+                        ${pago ? '❌ Pendente' : '✅ Pago'}
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    document.getElementById('totalPagos').textContent = pagos;
+    document.getElementById('totalPendentes').textContent = pendentes;
+}
+
+window.togglePagamento = async function(mensalistaId) {
+    try {
+        const mesAtual = new Date().getMonth() + 1;
+        const anoAtual = new Date().getFullYear();
+        
+        // Buscar pagamento atual
+        const { data: pagamento, error: buscaError } = await supabaseClient
+            .from('pagamentos')
+            .select('*')
+            .eq('mensalista_id', mensalistaId)
+            .eq('mes', mesAtual)
+            .eq('ano', anoAtual)
+            .maybeSingle();
+        
+        if (buscaError) {
+            console.error('Erro ao buscar pagamento:', buscaError);
+            alert('Erro ao buscar pagamento!');
+            return;
         }
-
-        window.togglePagamento = async (mensalistaId) => {
-            const mesAtual = new Date().getMonth() + 1;
-            const anoAtual = new Date().getFullYear();
-            
-            const { data: pagamento } = await supabaseClient
+        
+        const novoStatus = !pagamento?.pago;
+        const dataPagamento = novoStatus ? new Date().toISOString().split('T')[0] : null;
+        
+        if (pagamento) {
+            // Atualizar existente
+            const { error: updateError } = await supabaseClient
                 .from('pagamentos')
-                .select('*')
-                .eq('mensalista_id', mensalistaId)
-                .eq('mes', mesAtual)
-                .eq('ano', anoAtual)
-                .single();
+                .update({ pago: novoStatus, data_pagamento: dataPagamento })
+                .eq('id', pagamento.id);
             
-            const novoStatus = !pagamento?.pago;
-            const dataPagamento = novoStatus ? new Date().toISOString().split('T')[0] : null;
-            
-            if (pagamento) {
-                await supabaseClient
-                    .from('pagamentos')
-                    .update({ pago: novoStatus, data_pagamento: dataPagamento })
-                    .eq('id', pagamento.id);
-            } else {
-                await supabaseClient
-                    .from('pagamentos')
-                    .insert({
-                        mensalista_id: mensalistaId,
-                        mes: mesAtual,
-                        ano: anoAtual,
-                        pago: novoStatus,
-                        data_pagamento: dataPagamento
-                    });
+            if (updateError) {
+                console.error('Erro ao atualizar:', updateError);
+                alert('Erro ao atualizar pagamento!');
+                return;
             }
-            
-            carregarPagamentos();
-        };
-
-        window.marcarTodosPagos = async () => {
-            if (!confirm('Marcar TODOS os mensalistas como pagos?')) return;
-            const mesAtual = new Date().getMonth() + 1;
-            const anoAtual = new Date().getFullYear();
-            const dataPagamento = new Date().toISOString().split('T')[0];
-            
-            await supabaseClient
+        } else {
+            // Inserir novo
+            const { error: insertError } = await supabaseClient
                 .from('pagamentos')
-                .update({ pago: true, data_pagamento: dataPagamento })
-                .eq('mes', mesAtual)
-                .eq('ano', anoAtual);
+                .insert({
+                    mensalista_id: mensalistaId,
+                    mes: mesAtual,
+                    ano: anoAtual,
+                    pago: novoStatus,
+                    data_pagamento: dataPagamento
+                });
             
-            carregarPagamentos();
-        };
+            if (insertError) {
+                console.error('Erro ao inserir:', insertError);
+                alert('Erro ao inserir pagamento!');
+                return;
+            }
+        }
+        
+        // Recarregar a lista de pagamentos
+        carregarPagamentos();
+    } catch (err) {
+        console.error('Erro inesperado:', err);
+        alert('Erro inesperado ao alterar pagamento!');
+    }
+};
 
-        window.marcarTodosPendentes = async () => {
-            if (!confirm('Marcar TODOS os mensalistas como pendentes?')) return;
-            const mesAtual = new Date().getMonth() + 1;
-            const anoAtual = new Date().getFullYear();
-            
-            await supabaseClient
-                .from('pagamentos')
-                .update({ pago: false, data_pagamento: null })
-                .eq('mes', mesAtual)
-                .eq('ano', anoAtual);
-            
-            carregarPagamentos();
-        };
+window.marcarTodosPagos = async function() {
+    if (!confirm('Marcar TODOS os mensalistas como pagos?')) return;
+    try {
+        const mesAtual = new Date().getMonth() + 1;
+        const anoAtual = new Date().getFullYear();
+        const dataPagamento = new Date().toISOString().split('T')[0];
+        
+        const { error } = await supabaseClient
+            .from('pagamentos')
+            .update({ pago: true, data_pagamento: dataPagamento })
+            .eq('mes', mesAtual)
+            .eq('ano', anoAtual);
+        
+        if (error) {
+            console.error('Erro:', error);
+            alert('Erro ao marcar todos pagos!');
+            return;
+        }
+        
+        carregarPagamentos();
+    } catch (err) {
+        console.error('Erro inesperado:', err);
+        alert('Erro inesperado!');
+    }
+};
 
-        window.gerarRelatorioPagamentos = async () => {
-            const mesAtual = new Date().getMonth() + 1;
-            const anoAtual = new Date().getFullYear();
-            const mesNome = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual-1];
-            
-            const { data: pagamentos } = await supabaseClient
-                .from('pagamentos')
-                .select('*, mensalistas(nome)')
-                .eq('mes', mesAtual)
-                .eq('ano', anoAtual);
-            
-            const pagos = pagamentos?.filter(p => p.pago) || [];
-            const pendentes = pagamentos?.filter(p => !p.pago) || [];
-            
-            let relatorio = `📊 RELATÓRIO DE PAGAMENTOS - ${mesNome}/${anoAtual}\n`;
-            relatorio += `================================\n`;
-            relatorio += `✅ Pagos: ${pagos.length}\n`;
-            relatorio += `❌ Pendentes: ${pendentes.length}\n`;
-            relatorio += `--------------------------------\n`;
-            relatorio += `✅ PAGOS:\n`;
-            pagos.forEach(p => {
-                relatorio += `   - ${p.mensalistas.nome}\n`;
-            });
-            relatorio += `\n❌ PENDENTES:\n`;
-            pendentes.forEach(p => {
-                relatorio += `   - ${p.mensalistas.nome}\n`;
-            });
-            
-            alert(relatorio);
-        };
+window.marcarTodosPendentes = async function() {
+    if (!confirm('Marcar TODOS os mensalistas como pendentes?')) return;
+    try {
+        const mesAtual = new Date().getMonth() + 1;
+        const anoAtual = new Date().getFullYear();
+        
+        const { error } = await supabaseClient
+            .from('pagamentos')
+            .update({ pago: false, data_pagamento: null })
+            .eq('mes', mesAtual)
+            .eq('ano', anoAtual);
+        
+        if (error) {
+            console.error('Erro:', error);
+            alert('Erro ao marcar todos pendentes!');
+            return;
+        }
+        
+        carregarPagamentos();
+    } catch (err) {
+        console.error('Erro inesperado:', err);
+        alert('Erro inesperado!');
+    }
+};
 
+window.gerarRelatorioPagamentos = async function() {
+    try {
+        const mesAtual = new Date().getMonth() + 1;
+        const anoAtual = new Date().getFullYear();
+        const mesNome = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual-1];
+        
+        const { data: pagamentos, error } = await supabaseClient
+            .from('pagamentos')
+            .select('*, mensalistas(nome)')
+            .eq('mes', mesAtual)
+            .eq('ano', anoAtual);
+        
+        if (error) {
+            console.error('Erro:', error);
+            alert('Erro ao gerar relatório!');
+            return;
+        }
+        
+        const pagos = pagamentos?.filter(p => p.pago) || [];
+        const pendentes = pagamentos?.filter(p => !p.pago) || [];
+        
+        let relatorio = `📊 RELATÓRIO DE PAGAMENTOS - ${mesNome}/${anoAtual}\n`;
+        relatorio += `================================\n`;
+        relatorio += `✅ Pagos: ${pagos.length}\n`;
+        relatorio += `❌ Pendentes: ${pendentes.length}\n`;
+        relatorio += `--------------------------------\n`;
+        relatorio += `✅ PAGOS:\n`;
+        pagos.forEach(p => {
+            relatorio += `   - ${p.mensalistas.nome}\n`;
+        });
+        relatorio += `\n❌ PENDENTES:\n`;
+        pendentes.forEach(p => {
+            relatorio += `   - ${p.mensalistas.nome}\n`;
+        });
+        
+        alert(relatorio);
+    } catch (err) {
+        console.error('Erro inesperado:', err);
+        alert('Erro ao gerar relatório!');
+    }
+};
         // ============================================
         // MENSALISTAS
         // ============================================
