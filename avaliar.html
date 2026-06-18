@@ -318,11 +318,23 @@
         </div>
     </div>
 
+    <!-- CARREGAR SUPABASE PRIMEIRO -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script>
+        // Verificar se o Supabase carregou
+        if (typeof supabase === 'undefined') {
+            console.error('❌ Supabase não carregou!');
+            document.getElementById('selectMensalista').innerHTML = '<option value="">Erro: Supabase não carregou</option>';
+        } else {
+            console.log('✅ Supabase carregado com sucesso!');
+        }
+        
         const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        console.log('🔑 Supabase client criado');
 
         let mensalistaAtual = null;
         let partidaSelecionada = null;
@@ -361,6 +373,11 @@
             console.log('🔍 Carregando mensalistas...');
             const select = document.getElementById('selectMensalista');
             
+            if (!select) {
+                console.error('❌ Select não encontrado!');
+                return;
+            }
+            
             try {
                 const { data, error } = await supabaseClient
                     .from('mensalistas')
@@ -368,14 +385,24 @@
                     .order('nome');
                 
                 console.log('📊 Dados recebidos:', data);
+                console.log('📊 Erro:', error);
                 
                 if (error) {
-                    console.error('❌ Erro:', error);
+                    console.error('❌ Erro do Supabase:', error);
                     select.innerHTML = '<option value="">Erro ao carregar</option>';
                     return;
                 }
                 
-                select.innerHTML = '<option value="">Selecione seu nome</option>';
+                // Limpar e recriar as opções
+                select.innerHTML = '';
+                
+                // Adicionar opção padrão
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Selecione seu nome';
+                select.appendChild(defaultOption);
+                
+                // Adicionar mensalistas
                 if (data && data.length > 0) {
                     data.forEach(m => { 
                         const opt = document.createElement('option'); 
@@ -386,7 +413,10 @@
                     console.log(`✅ ${data.length} mensalistas carregados`);
                 } else {
                     console.log('⚠️ Nenhum mensalista encontrado');
-                    select.innerHTML = '<option value="">Nenhum mensalista</option>';
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'Nenhum mensalista';
+                    select.appendChild(opt);
                 }
             } catch (err) {
                 console.error('❌ Erro inesperado:', err);
