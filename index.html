@@ -16,7 +16,6 @@
             overflow-x: hidden;
         }
         
-        /* ANIMAÇÃO DE ABERTURA */
         #intro {
             position: fixed;
             inset: 0;
@@ -133,7 +132,6 @@
             visibility: hidden !important;
         }
         
-        /* CONTEÚDO PRINCIPAL */
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -181,6 +179,12 @@
         .menu-icon { font-size: 3.5em; margin-bottom: 15px; }
         .menu-card h2 { color: #8b0000; margin-bottom: 10px; font-size: 1.3em; }
         .menu-card p { color: #666; font-size: 0.85em; line-height: 1.4; }
+        
+        .menu-card-convidado {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #8b0000;
+        }
+        
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -217,7 +221,6 @@
     </style>
 </head>
 <body>
-    <!-- TELA DE ABERTURA (INTRO) -->
     <div id="intro">
         <div class="stadium"></div>
         <div class="lights"></div>
@@ -231,7 +234,6 @@
         </div>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL (MENU) -->
     <div class="main-content" id="mainContent">
         <div class="container">
             <div class="header">
@@ -255,17 +257,18 @@
                     <p>Veja o acumulado de estrelas de todos os jogadores</p>
                 </div>
 
+                <div class="menu-card menu-card-convidado" id="btnModoConvidado">
+                    <div class="menu-icon">👁️</div>
+                    <h2>Visualizar como Convidado</h2>
+                    <p>Acesse o sistema em modo de leitura (sem criar ou editar)</p>
+                </div>
+
                 <div class="menu-card" id="btnAdmin">
                     <div class="menu-icon">🔧</div>
                     <h2>Administração</h2>
                     <p>Acesso restrito para organizadores e gestores do sistema</p>
                 </div>
-                <!-- Adicione um botão na página inicial -->
-<div class="menu-card" id="btnModoConvidado" style="background: rgba(255,255,255,0.8); border: 2px solid #8b0000;">
-    <div class="menu-icon">👁️</div>
-    <h2>Visualizar como Convidado</h2>
-    <p>Acesse o sistema com permissão apenas de leitura (sem criar ou editar)</p>
-</div>
+
                 <div class="menu-card" id="btnRegras">
                     <div class="menu-icon">📋</div>
                     <h2>Regras do Sistema</h2>
@@ -280,7 +283,6 @@
     </div>
 
     <script>
-        // Criar partículas da animação
         const container = document.getElementById('particles');
         for (let i = 0; i < 120; i++) {
             const p = document.createElement('div');
@@ -312,7 +314,6 @@
             setTimeout(() => { esconderIntro(); }, 5000);
         }
 
-        // Eventos dos botões
         document.getElementById('btnAvaliar').addEventListener('click', () => {
             window.location.href = 'avaliar.html';
         });
@@ -328,9 +329,10 @@
         document.getElementById('logoHome').addEventListener('click', () => {
             window.location.href = 'index.html';
         });
-        // Evento do botão
+        
+        // Botão Modo Convidado
         document.getElementById('btnModoConvidado').addEventListener('click', () => {
-        localStorage.setItem('modoConvidado', 'true');
+            localStorage.setItem('modoConvidado', 'true');
             window.location.href = 'avaliar.html';
         });
     </script>
