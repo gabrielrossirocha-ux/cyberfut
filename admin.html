@@ -1268,6 +1268,35 @@ window.gerarRelatorioPagamentos = async function() {
         document.getElementById('logoVoltar').addEventListener('click', () => {
             window.location.href = 'index.html';
         });
+        // Verificar se está em modo convidado ao carregar
+if (isModoConvidado()) {
+    // Mostrar aviso no topo
+    document.querySelector('.header').innerHTML += `
+        <div style="background:#ff9800; color:#1a0000; padding:10px; text-align:center; font-weight:600; border-radius:12px; margin-bottom:15px;">
+            👁️ Modo Convidado - Você está visualizando o sistema em modo de leitura.
+            <button onclick="sairModoConvidado()" style="background:#8b0000; color:white; border:none; padding:5px 15px; border-radius:8px; margin-left:10px; cursor:pointer;">Sair</button>
+        </div>
+    `;
+    
+    // Desabilitar botões de ação
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+    });
+    
+    // Desabilitar inputs
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        el.disabled = true;
+        el.style.opacity = '0.7';
+        el.style.cursor = 'not-allowed';
+    });
+    
+    // Esconder botões de deletar
+    document.querySelectorAll('.btn-vermelho, .btn-verde, .btn-azul').forEach(btn => {
+        btn.style.display = 'none';
+    });
+}
     </script>
 </body>
 </html>
