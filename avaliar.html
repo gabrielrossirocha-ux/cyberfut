@@ -209,56 +209,14 @@
         .btn-cancelar { background: #666; color: white; }
         .btn-confirmar { background: #2c5f2d; color: white; }
         
-        /* Estilos para escalação */
-        .escalacao-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-        .time-card {
-            background: #f9f9f9;
-            border-radius: 16px;
-            padding: 15px;
-        }
-        .time-card h3 {
-            color: #8b0000;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #8b0000;
-        }
-        .time-card ul {
-            list-style: none;
-            padding: 0;
-        }
-        .time-card li {
-            padding: 6px 0;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9em;
-        }
-        .time-card .time-label {
-            font-weight: 700;
-        }
-        .time-vermelho { border-left: 4px solid #8b0000; }
-        .time-branco { border-left: 4px solid #ccc; }
-        .placar-destaque {
-            background: #1a1a1a;
-            color: white;
+        .aviso-convidado {
+            background: #ff9800;
+            color: #1a0000;
             padding: 10px;
-            border-radius: 12px;
             text-align: center;
-            font-size: 1.3em;
-            font-weight: bold;
+            font-weight: 600;
+            border-radius: 12px;
             margin-bottom: 15px;
-        }
-        .sem-placar {
-            background: #f0f0f0;
-            color: #999;
-            padding: 10px;
-            border-radius: 12px;
-            text-align: center;
-            font-style: italic;
         }
         
         @media (orientation: portrait) {
@@ -273,7 +231,6 @@
             .status-avaliacao { font-size: 0.75em; padding: 10px; }
             .logo { max-width: 40px; }
             h1 { font-size: 1.2em; }
-            .escalacao-container { grid-template-columns: 1fr; gap: 15px; }
         }
         
         @media (min-width: 768px) and (orientation: landscape) {
@@ -311,13 +268,16 @@
 
         <div id="selecaoScreen" style="display: none;">
             <div class="user-info" id="userInfoSelecao"></div>
+            <div id="avisoConvidado" class="aviso-convidado" style="display: none;">
+                👁️ Modo Convidado - Visualização apenas. 
+                <button onclick="sairModoConvidado()" style="background:#8b0000; color:white; border:none; padding:5px 15px; border-radius:8px; margin-left:10px; cursor:pointer;">Sair</button>
+            </div>
             <div class="card">
-                <h2>📋 Selecione uma partida para avaliar</h2>
+                <h2>📋 Partidas</h2>
                 <div id="listaPartidasContainer">
                     <div class="status-avaliacao">Carregando partidas...</div>
                 </div>
-                <button id="btnSair" class="btn btn-sair">🚪 Sair / Trocar de usuário</button>
-                <button id="btnVoltarSelecao" class="btn" style="background:#1a1a1a; margin-top:10px;">← Voltar ao Início</button>
+                <button id="btnVoltarSelecao" class="btn" style="background:#1a1a1a; margin-top:20px;">← Voltar</button>
             </div>
         </div>
 
@@ -326,13 +286,6 @@
             <div class="card">
                 <h2>📝 Avaliar Jogadores da Partida</h2>
                 <div id="infoPartidaSelecionada" style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; font-size:0.9em; word-break:break-word;"></div>
-                
-                <!-- PLACAR DA PARTIDA -->
-                <div id="placarContainer"></div>
-                
-                <!-- ESCALAÇÃO DOS TIMES -->
-                <div id="escalacaoContainer"></div>
-                
                 <div id="statusContainer" class="status-avaliacao"></div>
                 <div id="jogadoresContainer">Carregando...</div>
                 <button id="btnSalvarTodas" class="btn btn-salvar" disabled>💾 SALVAR TODAS AS AVALIAÇÕES</button>
@@ -355,6 +308,15 @@
         const loginScreen = document.getElementById('loginScreen');
         const selecaoScreen = document.getElementById('selecaoScreen');
         const avaliacoesScreen = document.getElementById('avaliacoesScreen');
+
+        function isModoConvidado() {
+            return localStorage.getItem('modoConvidado') === 'true';
+        }
+
+        function sairModoConvidado() {
+            localStorage.removeItem('modoConvidado');
+            window.location.reload();
+        }
 
         function formatarData(dataString) {
             const [ano, mes, dia] = dataString.split('-');
@@ -399,6 +361,41 @@
             const select = document.getElementById('selectMensalista');
             select.innerHTML = '<option value="">Selecione seu nome</option>';
             if (data) data.forEach(m => { const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.nome; select.appendChild(opt); });
+        }
+
+        // ============================================
+        // MODO CONVIDADO - CARREGAR TODAS AS PARTIDAS
+        // ============================================
+        async function carregarPartidasModoConvidado() {
+            const container = document.getElementById('listaPartidasContainer');
+            container.innerHTML = '<div class="status-avaliacao">Carregando partidas...</div>';
+            
+            const { data: partidas } = await supabaseClient
+                .from('partidas')
+                .select('id, data, horario, local_id')
+                .order('data', { ascending: false });
+            
+            if (!partidas || partidas.length === 0) {
+                container.innerHTML = '<div class="status-avaliacao">Nenhuma partida encontrada</div>';
+                return;
+            }
+            
+            const { data: locais } = await supabaseClient.from('locais').select('id, nome');
+            const locaisMap = {};
+            locais?.forEach(l => { locaisMap[l.id] = l.nome; });
+            
+            container.innerHTML = partidas.map(partida => {
+                const localNome = locaisMap[partida.local_id] || 'Local não informado';
+                return `
+                    <div class="jogador-card" style="cursor:default;">
+                        <div class="jogador-nome">📅 ${formatarData(partida.data)} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
+                        <div style="word-break:break-word;">📍 ${localNome}</div>
+                        <div style="margin-top:12px; background:#f0f0f0; padding:8px; border-radius:8px; text-align:center; color:#666; font-size:0.8em;">
+                            👁️ Visualização apenas
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function fazerLogin() {
@@ -492,31 +489,42 @@
             const localNome = partida?.locais?.nome || 'Local não informado';
             document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${formatarData(partida.data)} | ⏰ ${partida.horario || 'Horário não informado'} | 📍 ${localNome}`;
             
-            // Exibir placar da partida
+            // Exibir placar
             const placarContainer = document.getElementById('placarContainer');
-            if (partida.resultado_finalizado) {
-                placarContainer.innerHTML = `<div class="placar-destaque">🏆 PLACAR FINAL: ${partida.gols_time_a} x ${partida.gols_time_b}</div>`;
-            } else {
-                placarContainer.innerHTML = `<div class="sem-placar">⏳ Placar ainda não registrado pelo administrador</div>`;
+            if (!placarContainer) {
+                // Se não existir, criar
+                const container = document.getElementById('infoPartidaSelecionada');
+                const placarDiv = document.createElement('div');
+                placarDiv.id = 'placarContainer';
+                placarDiv.className = partida.resultado_finalizado ? 'placar-destaque' : 'sem-placar';
+                placarDiv.innerHTML = partida.resultado_finalizado ? `🏆 PLACAR FINAL: ${partida.gols_time_a} x ${partida.gols_time_b}` : '⏳ Placar ainda não registrado pelo administrador';
+                container.parentNode.insertBefore(placarDiv, container.nextSibling);
             }
             
-            // Exibir escalação dos times
+            // Exibir escalação
             const escalacaoContainer = document.getElementById('escalacaoContainer');
+            if (!escalacaoContainer) {
+                const container = document.getElementById('placarContainer') || document.getElementById('infoPartidaSelecionada');
+                const escalacaoDiv = document.createElement('div');
+                escalacaoDiv.id = 'escalacaoContainer';
+                container.parentNode.insertBefore(escalacaoDiv, container.nextSibling);
+            }
+            
             const timeA = escala?.filter(j => j.time === 'A') || [];
             const timeB = escala?.filter(j => j.time === 'B') || [];
             
-            escalacaoContainer.innerHTML = `
-                <div class="escalacao-container">
-                    <div class="time-card time-vermelho">
-                        <h3>🔴 TIME VERMELHO</h3>
-                        <ul>
-                            ${timeA.map(j => `<li><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
+            document.getElementById('escalacaoContainer').innerHTML = `
+                <div class="escalacao-container" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px; margin-bottom:20px;">
+                    <div class="time-card" style="background:#fff5f5; border-radius:16px; padding:15px; border-left:4px solid #8b0000;">
+                        <h3 style="color:#8b0000; margin-bottom:15px;">🔴 TIME VERMELHO</h3>
+                        <ul style="list-style:none; padding:0;">
+                            ${timeA.map(j => `<li style="padding:6px 0; border-bottom:1px solid #eee; font-size:0.9em;"><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
                         </ul>
                     </div>
-                    <div class="time-card time-branco">
-                        <h3>⚪ TIME BRANCO</h3>
-                        <ul>
-                            ${timeB.map(j => `<li><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
+                    <div class="time-card" style="background:#fafafa; border-radius:16px; padding:15px; border-left:4px solid #ccc;">
+                        <h3 style="color:#8b0000; margin-bottom:15px;">⚪ TIME BRANCO</h3>
+                        <ul style="list-style:none; padding:0;">
+                            ${timeB.map(j => `<li style="padding:6px 0; border-bottom:1px solid #eee; font-size:0.9em;"><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
                         </ul>
                     </div>
                 </div>
@@ -636,7 +644,24 @@
         document.getElementById('btnSalvarTodas').addEventListener('click', exibirModalConfirmacao);
         document.getElementById('logoVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
         
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
         async function init() {
+            // Verificar modo convidado primeiro
+            if (isModoConvidado()) {
+                // Mostrar aviso
+                document.getElementById('avisoConvidado').style.display = 'block';
+                
+                // Pular login
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('selecaoScreen').style.display = 'block';
+                document.getElementById('userInfoSelecao').innerHTML = '<span>👁️ Modo Convidado</span> <span>📋 Visualizando todas as partidas</span>';
+                
+                await carregarPartidasModoConvidado();
+                return;
+            }
+            
             const sessaoValida = await verificarSessao();
             if (!sessaoValida) await carregarMensalistas();
         }
