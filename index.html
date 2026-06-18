@@ -180,11 +180,6 @@
         .menu-card h2 { color: #8b0000; margin-bottom: 10px; font-size: 1.3em; }
         .menu-card p { color: #666; font-size: 0.85em; line-height: 1.4; }
         
-        .menu-card-convidado {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #8b0000;
-        }
-        
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -257,12 +252,6 @@
                     <p>Veja o acumulado de estrelas de todos os jogadores</p>
                 </div>
 
-                <div class="menu-card menu-card-convidado" id="btnModoConvidado">
-                    <div class="menu-icon">👁️</div>
-                    <h2>Visualizar como Convidado</h2>
-                    <p>Acesse o sistema em modo de leitura (sem criar ou editar)</p>
-                </div>
-
                 <div class="menu-card" id="btnAdmin">
                     <div class="menu-icon">🔧</div>
                     <h2>Administração</h2>
@@ -328,12 +317,6 @@
         });
         document.getElementById('logoHome').addEventListener('click', () => {
             window.location.href = 'index.html';
-        });
-        
-        // Botão Modo Convidado
-        document.getElementById('btnModoConvidado').addEventListener('click', () => {
-            localStorage.setItem('modoConvidado', 'true');
-            window.location.href = 'avaliar.html';
         });
     </script>
 </body>
