@@ -136,6 +136,16 @@
             word-break: break-word;
         }
         
+        .aviso-convidado {
+            background: #ff9800;
+            color: #1a0000;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
@@ -169,6 +179,10 @@
             <div class="logo-area" id="logoVoltar">
                 <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
                 <h1>📝 Nova Partida</h1>
+            </div>
+            <div id="avisoConvidado" class="aviso-convidado" style="display: none;">
+                👁️ Modo Convidado - Visualização apenas (não é possível criar partidas).
+                <button onclick="sairModoConvidado()" style="background:#8b0000; color:white; border:none; padding:5px 15px; border-radius:8px; margin-left:10px; cursor:pointer;">Sair</button>
             </div>
             <p class="subtitulo">Preencha os dados, adicione os jogadores e sorteie os times</p>
         </div>
@@ -213,15 +227,6 @@
                 <div id="mensalistaContainer"><select id="selectMensalista"><option value="">-- Selecione --</option></select></div>
                 <div id="convidadoContainer" style="display: none;"><input type="text" id="nomeConvidado" placeholder="Nome do convidado"></div>
 
-                <select id="posicao">
-                    <option value="">Selecione a posição</option>
-                    <option value="Goleiro">🧤 Goleiro</option>
-                    <option value="Fixo">🛡️ Fixo</option>
-                    <option value="Ala Esquerda">⚡ Ala Esquerda</option>
-                    <option value="Ala Direita">⚡ Ala Direita</option>
-                    <option value="Pivô">🎯 Pivô</option>
-                </select>
-
                 <button id="btnAdicionar" class="btn">➕ Adicionar à Escala</button>
                 <div class="contador">Jogadores: <span id="totalJogadores">0</span> / 12</div>
             </div>
@@ -258,6 +263,15 @@
         let timeA = [], timeB = [];
         let partidaFinalizada = false;
         let locaisLista = [];
+
+        function isModoConvidado() {
+            return localStorage.getItem('modoConvidado') === 'true';
+        }
+
+        function sairModoConvidado() {
+            localStorage.removeItem('modoConvidado');
+            window.location.reload();
+        }
 
         async function carregarLocais() {
             const { data, error } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
@@ -316,8 +330,6 @@
         document.getElementById('btnAdicionar').addEventListener('click', () => {
             if (partidaFinalizada) { alert('Esta partida já foi finalizada!'); return; }
             if (jogadoresEscala.length >= 12) { alert('Limite de 12 jogadores!'); return; }
-            const posicao = document.getElementById('posicao').value;
-            if (!posicao) { alert('Selecione a posição!'); return; }
             const isMensalista = document.querySelector('input[name="tipo"]:checked').value === 'mensalista';
             let nome = '';
             if (isMensalista) {
@@ -328,7 +340,7 @@
                 if (!nome) { alert('Digite o nome do convidado!'); return; }
             }
             if (jogadoresEscala.some(j => j.nome === nome)) { alert('Jogador já está na escala!'); return; }
-            jogadoresEscala.push({ id: Date.now(), nome, posicao, tipo: isMensalista ? 'mensalista' : 'convidado' });
+            jogadoresEscala.push({ id: Date.now(), nome, posicao: 'Fixo', tipo: isMensalista ? 'mensalista' : 'convidado' });
             atualizarLista();
             limparFormulario();
             alternarTipo();
@@ -339,12 +351,20 @@
             const container = document.getElementById('listaJogadores');
             if (jogadoresEscala.length === 0) { container.innerHTML = '<p class="vazio">Nenhum jogador adicionado</p>'; return; }
             container.innerHTML = '<ul class="lista-jogadores">' + jogadoresEscala.map(j => `
-                <li><div><strong>${j.nome}</strong> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}<br><small>📍 ${j.posicao}</small></div><button class="btn-deletar" onclick="removerJogador(${j.id})">❌</button></li>
+                <li><div><strong>${j.nome}</strong> ${j.tipo === 'mensalista' ? '<span class="badge-mensalista">Mensalista</span>' : '<span class="badge-convidado">Convidado</span>'}</div><button class="btn-deletar" onclick="removerJogador(${j.id})">❌</button></li>
             `).join('') + '</ul>';
             atualizarSelectMensalistas();
         }
 
         window.removerJogador = (id) => { jogadoresEscala = jogadoresEscala.filter(j => j.id !== id); atualizarLista(); timeA = []; timeB = []; document.getElementById('timesContainer').style.display = 'none'; };
+
+        function embaralharArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
 
         document.getElementById('btnSortear').addEventListener('click', async () => {
             if (partidaFinalizada) { alert('⚠️ Esta partida já foi finalizada!'); return; }
@@ -359,25 +379,21 @@
             const localSelecionado = locaisLista.find(l => l.id == localId);
             const endereco = localSelecionado?.endereco || '';
 
-            // Buscar forças dos jogadores
             const forcasMap = {};
             const { data: forcas } = await supabaseClient.from('forca_jogador').select('jogador_nome, forca');
             forcas?.forEach(f => { forcasMap[f.jogador_nome] = f.forca || 3; });
             
-            // Preparar array para sorteio
             const jogadoresParaSorteio = jogadoresEscala.map(j => ({
                 nome: j.nome,
                 forca: forcasMap[j.nome] || 3,
-                posicao: j.posicao,
+                posicao: j.posicao || 'Fixo',
                 tipo: j.tipo
             }));
             
-            // SORTEAR TIMES usando a biblioteca externa
             const { timeA: timesA, timeB: timesB, somaA, somaB } = sortearTimes(jogadoresParaSorteio);
             timeA = timesA;
             timeB = timesB;
             
-            // Salvar partida
             const partida = {
                 data: data,
                 horario: document.getElementById('horarioPartida').value,
@@ -411,12 +427,11 @@
             document.getElementById('btnSortear').style.opacity = '0.5';
             document.getElementById('avisoPartida').style.display = 'block';
             
-            const notaFormatada = (nota) => '⭐'.repeat(Math.round(nota)) + '☆'.repeat(5 - Math.round(nota));
             alert(`✅ Partida finalizada!\n\nTime A: ${somaA.toFixed(1)} estrelas\nTime B: ${somaB.toFixed(1)} estrelas\nDiferença: ${Math.abs(somaA - somaB).toFixed(1)} estrelas`);
 
             document.getElementById('timesContainer').style.display = 'block';
-            document.getElementById('timeALista').innerHTML = timeA.map(j => `<li><strong>${j.nome}</strong> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div><div style="font-size:0.7em; color:#8b0000;">${notaFormatada(forcasMap[j.nome] || 3)}</div></li>`).join('');
-            document.getElementById('timeBLista').innerHTML = timeB.map(j => `<li><strong>${j.nome}</strong> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div><div style="font-size:0.7em; color:#8b0000;">${notaFormatada(forcasMap[j.nome] || 3)}</div></li>`).join('');
+            document.getElementById('timeALista').innerHTML = timeA.map(j => `<li><strong>${j.nome}</strong> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div><div style="font-size:0.7em; color:#8b0000;">${'⭐'.repeat(Math.round(forcasMap[j.nome] || 3)) + '☆'.repeat(5 - Math.round(forcasMap[j.nome] || 3))}</div></li>`).join('');
+            document.getElementById('timeBLista').innerHTML = timeB.map(j => `<li><strong>${j.nome}</strong> <div>${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</div><div style="font-size:0.7em; color:#8b0000;">${'⭐'.repeat(Math.round(forcasMap[j.nome] || 3)) + '☆'.repeat(5 - Math.round(forcasMap[j.nome] || 3))}</div></li>`).join('');
 
             localStorage.setItem('partidaRanking', partidaId);
         });
@@ -425,9 +440,36 @@
             window.location.href = 'index.html';
         });
 
-        alternarTipo();
-        atualizarSelectMensalistas();
-        carregarLocais();
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        async function init() {
+            // Verificar modo convidado
+            if (isModoConvidado()) {
+                document.getElementById('avisoConvidado').style.display = 'block';
+                
+                // Desabilitar tudo
+                document.querySelectorAll('input, select, textarea').forEach(el => {
+                    el.disabled = true;
+                    el.style.opacity = '0.7';
+                    el.style.cursor = 'not-allowed';
+                });
+                
+                document.querySelectorAll('.btn').forEach(el => {
+                    el.disabled = true;
+                    el.style.opacity = '0.5';
+                    el.textContent = '🔒 ' + el.textContent + ' (modo convidado)';
+                });
+                
+                return;
+            }
+            
+            await carregarLocais();
+            atualizarSelectMensalistas();
+            alternarTipo();
+        }
+        
+        init();
     </script>
 </body>
 </html>
