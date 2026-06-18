@@ -260,7 +260,12 @@
                     <h2>Administração</h2>
                     <p>Acesso restrito para organizadores e gestores do sistema</p>
                 </div>
-
+                <!-- Adicione um botão na página inicial -->
+<div class="menu-card" id="btnModoConvidado" style="background: rgba(255,255,255,0.8); border: 2px solid #8b0000;">
+    <div class="menu-icon">👁️</div>
+    <h2>Visualizar como Convidado</h2>
+    <p>Acesse o sistema com permissão apenas de leitura (sem criar ou editar)</p>
+</div>
                 <div class="menu-card" id="btnRegras">
                     <div class="menu-icon">📋</div>
                     <h2>Regras do Sistema</h2>
@@ -322,6 +327,11 @@
         });
         document.getElementById('logoHome').addEventListener('click', () => {
             window.location.href = 'index.html';
+        });
+        // Evento do botão
+        document.getElementById('btnModoConvidado').addEventListener('click', () => {
+        localStorage.setItem('modoConvidado', 'true');
+            window.location.href = 'avaliar.html';
         });
     </script>
 </body>
