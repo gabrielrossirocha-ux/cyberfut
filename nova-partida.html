@@ -136,16 +136,6 @@
             word-break: break-word;
         }
         
-        .aviso-convidado {
-            background: #ff9800;
-            color: #1a0000;
-            padding: 10px;
-            text-align: center;
-            font-weight: 600;
-            border-radius: 12px;
-            margin-bottom: 15px;
-        }
-        
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
@@ -179,10 +169,6 @@
             <div class="logo-area" id="logoVoltar">
                 <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
                 <h1>📝 Nova Partida</h1>
-            </div>
-            <div id="avisoConvidado" class="aviso-convidado" style="display: none;">
-                👁️ Modo Convidado - Visualização apenas (não é possível criar partidas).
-                <button onclick="sairModoConvidado()" style="background:#8b0000; color:white; border:none; padding:5px 15px; border-radius:8px; margin-left:10px; cursor:pointer;">Sair</button>
             </div>
             <p class="subtitulo">Preencha os dados, adicione os jogadores e sorteie os times</p>
         </div>
@@ -264,13 +250,12 @@
         let partidaFinalizada = false;
         let locaisLista = [];
 
-        function isModoConvidado() {
-            return localStorage.getItem('modoConvidado') === 'true';
-        }
-
-        function sairModoConvidado() {
-            localStorage.removeItem('modoConvidado');
-            window.location.reload();
+        function embaralharArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
         }
 
         async function carregarLocais() {
@@ -358,14 +343,6 @@
 
         window.removerJogador = (id) => { jogadoresEscala = jogadoresEscala.filter(j => j.id !== id); atualizarLista(); timeA = []; timeB = []; document.getElementById('timesContainer').style.display = 'none'; };
 
-        function embaralharArray(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-
         document.getElementById('btnSortear').addEventListener('click', async () => {
             if (partidaFinalizada) { alert('⚠️ Esta partida já foi finalizada!'); return; }
             if (jogadoresEscala.length < 4) { alert('Mínimo 4 jogadores!'); return; }
@@ -440,36 +417,9 @@
             window.location.href = 'index.html';
         });
 
-        // ============================================
-        // INICIALIZAÇÃO
-        // ============================================
-        async function init() {
-            // Verificar modo convidado
-            if (isModoConvidado()) {
-                document.getElementById('avisoConvidado').style.display = 'block';
-                
-                // Desabilitar tudo
-                document.querySelectorAll('input, select, textarea').forEach(el => {
-                    el.disabled = true;
-                    el.style.opacity = '0.7';
-                    el.style.cursor = 'not-allowed';
-                });
-                
-                document.querySelectorAll('.btn').forEach(el => {
-                    el.disabled = true;
-                    el.style.opacity = '0.5';
-                    el.textContent = '🔒 ' + el.textContent + ' (modo convidado)';
-                });
-                
-                return;
-            }
-            
-            await carregarLocais();
-            atualizarSelectMensalistas();
-            alternarTipo();
-        }
-        
-        init();
+        alternarTipo();
+        atualizarSelectMensalistas();
+        carregarLocais();
     </script>
 </body>
 </html>
