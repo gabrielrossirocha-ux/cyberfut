@@ -98,10 +98,6 @@
             cursor: not-allowed;
             transform: none;
         }
-        .btn-sair {
-            background: #1a1a1a;
-            margin-top: 10px;
-        }
         .estrelas { display: flex; gap: 12px; margin: 15px 0; justify-content: center; flex-wrap: wrap; }
         .estrela { font-size: 40px; cursor: pointer; color: #ccc; transition: all 0.2s; }
         .estrela.selected { color: #ffcc00; }
@@ -209,16 +205,6 @@
         .btn-cancelar { background: #666; color: white; }
         .btn-confirmar { background: #2c5f2d; color: white; }
         
-        .aviso-convidado {
-            background: #ff9800;
-            color: #1a0000;
-            padding: 10px;
-            text-align: center;
-            font-weight: 600;
-            border-radius: 12px;
-            margin-bottom: 15px;
-        }
-        
         .escalacao-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -278,9 +264,7 @@
         <div id="loginScreen" class="card">
             <div class="login-area">
                 <h2>🔐 Login do Mensalista</h2>
-                <select id="selectMensalista" class="login-input">
-                    <option value="">Carregando mensalistas...</option>
-                </select>
+                <select id="selectMensalista" class="login-input"><option value="">Selecione seu nome</option></select>
                 <input type="password" id="senha" class="login-input" placeholder="Sua senha">
                 <div class="checkbox-container">
                     <input type="checkbox" id="lembrarMim">
@@ -292,12 +276,8 @@
 
         <div id="selecaoScreen" style="display: none;">
             <div class="user-info" id="userInfoSelecao"></div>
-            <div id="avisoConvidado" class="aviso-convidado" style="display: none;">
-                👁️ Modo Convidado - Visualização apenas. 
-                <button onclick="sairModoConvidado()" style="background:#8b0000; color:white; border:none; padding:5px 15px; border-radius:8px; margin-left:10px; cursor:pointer;">Sair</button>
-            </div>
             <div class="card">
-                <h2>📋 Partidas</h2>
+                <h2>📋 Selecione uma partida para avaliar</h2>
                 <div id="listaPartidasContainer">
                     <div class="status-avaliacao">Carregando partidas...</div>
                 </div>
@@ -310,6 +290,11 @@
             <div class="card">
                 <h2>📝 Avaliar Jogadores da Partida</h2>
                 <div id="infoPartidaSelecionada" style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; font-size:0.9em; word-break:break-word;"></div>
+                
+                <div id="placarContainer"></div>
+                
+                <div id="escalacaoContainer"></div>
+                
                 <div id="statusContainer" class="status-avaliacao"></div>
                 <div id="jogadoresContainer">Carregando...</div>
                 <button id="btnSalvarTodas" class="btn btn-salvar" disabled>💾 SALVAR TODAS AS AVALIAÇÕES</button>
@@ -318,23 +303,11 @@
         </div>
     </div>
 
-    <!-- CARREGAR SUPABASE PRIMEIRO -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script>
-        // Verificar se o Supabase carregou
-        if (typeof supabase === 'undefined') {
-            console.error('❌ Supabase não carregou!');
-            document.getElementById('selectMensalista').innerHTML = '<option value="">Erro: Supabase não carregou</option>';
-        } else {
-            console.log('✅ Supabase carregado com sucesso!');
-        }
-        
         const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        console.log('🔑 Supabase client criado');
 
         let mensalistaAtual = null;
         let partidaSelecionada = null;
@@ -344,15 +317,6 @@
         const loginScreen = document.getElementById('loginScreen');
         const selecaoScreen = document.getElementById('selecaoScreen');
         const avaliacoesScreen = document.getElementById('avaliacoesScreen');
-
-        function isModoConvidado() {
-            return localStorage.getItem('modoConvidado') === 'true';
-        }
-
-        function sairModoConvidado() {
-            localStorage.removeItem('modoConvidado');
-            window.location.reload();
-        }
 
         function formatarData(dataString) {
             const [ano, mes, dia] = dataString.split('-');
@@ -367,61 +331,6 @@
         function limparSessao() {
             localStorage.removeItem('mensalista_id');
             localStorage.removeItem('mensalista_nome');
-        }
-
-        async function carregarMensalistas() {
-            console.log('🔍 Carregando mensalistas...');
-            const select = document.getElementById('selectMensalista');
-            
-            if (!select) {
-                console.error('❌ Select não encontrado!');
-                return;
-            }
-            
-            try {
-                const { data, error } = await supabaseClient
-                    .from('mensalistas')
-                    .select('id, nome')
-                    .order('nome');
-                
-                console.log('📊 Dados recebidos:', data);
-                console.log('📊 Erro:', error);
-                
-                if (error) {
-                    console.error('❌ Erro do Supabase:', error);
-                    select.innerHTML = '<option value="">Erro ao carregar</option>';
-                    return;
-                }
-                
-                // Limpar e recriar as opções
-                select.innerHTML = '';
-                
-                // Adicionar opção padrão
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'Selecione seu nome';
-                select.appendChild(defaultOption);
-                
-                // Adicionar mensalistas
-                if (data && data.length > 0) {
-                    data.forEach(m => { 
-                        const opt = document.createElement('option'); 
-                        opt.value = m.id; 
-                        opt.textContent = m.nome; 
-                        select.appendChild(opt); 
-                    });
-                    console.log(`✅ ${data.length} mensalistas carregados`);
-                } else {
-                    console.log('⚠️ Nenhum mensalista encontrado');
-                    const opt = document.createElement('option');
-                    opt.value = '';
-                    opt.textContent = 'Nenhum mensalista';
-                    select.appendChild(opt);
-                }
-            } catch (err) {
-                console.error('❌ Erro inesperado:', err);
-                select.innerHTML = '<option value="">Erro na conexão</option>';
-            }
         }
 
         async function verificarSessao() {
@@ -447,37 +356,11 @@
             return false;
         }
 
-        async function carregarPartidasModoConvidado() {
-            console.log('👁️ Modo convidado - carregando partidas...');
-            const container = document.getElementById('listaPartidasContainer');
-            container.innerHTML = '<div class="status-avaliacao">Carregando partidas...</div>';
-            
-            const { data: partidas } = await supabaseClient
-                .from('partidas')
-                .select('id, data, horario, local_id')
-                .order('data', { ascending: false });
-            
-            if (!partidas || partidas.length === 0) {
-                container.innerHTML = '<div class="status-avaliacao">Nenhuma partida encontrada</div>';
-                return;
-            }
-            
-            const { data: locais } = await supabaseClient.from('locais').select('id, nome');
-            const locaisMap = {};
-            locais?.forEach(l => { locaisMap[l.id] = l.nome; });
-            
-            container.innerHTML = partidas.map(partida => {
-                const localNome = locaisMap[partida.local_id] || 'Local não informado';
-                return `
-                    <div class="jogador-card" style="cursor:default;">
-                        <div class="jogador-nome">📅 ${formatarData(partida.data)} ${partida.horario ? `⏰ ${partida.horario}` : ''}</div>
-                        <div style="word-break:break-word;">📍 ${localNome}</div>
-                        <div style="margin-top:12px; background:#f0f0f0; padding:8px; border-radius:8px; text-align:center; color:#666; font-size:0.8em;">
-                            👁️ Visualização apenas
-                        </div>
-                    </div>
-                `;
-            }).join('');
+        async function carregarMensalistas() {
+            const { data } = await supabaseClient.from('mensalistas').select('id, nome').order('nome');
+            const select = document.getElementById('selectMensalista');
+            select.innerHTML = '<option value="">Selecione seu nome</option>';
+            if (data) data.forEach(m => { const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.nome; select.appendChild(opt); });
         }
 
         async function fazerLogin() {
@@ -572,190 +455,6 @@
             document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${formatarData(partida.data)} | ⏰ ${partida.horario || 'Horário não informado'} | 📍 ${localNome}`;
             
             // Exibir placar
-            const placarDiv = document.createElement('div');
-            placarDiv.id = 'placarContainer';
-            placarDiv.style.cssText = partida.resultado_finalizado 
-                ? 'background:#1a1a1a; color:white; padding:10px; border-radius:12px; text-align:center; font-size:1.3em; font-weight:bold; margin-bottom:15px;' 
-                : 'background:#f0f0f0; color:#999; padding:10px; border-radius:12px; text-align:center; font-style:italic; margin-bottom:15px;';
-            placarDiv.innerHTML = partida.resultado_finalizado ? `🏆 PLACAR FINAL: ${partida.gols_time_a} x ${partida.gols_time_b}` : '⏳ Placar ainda não registrado pelo administrador';
-            
-            const infoDiv = document.getElementById('infoPartidaSelecionada');
-            infoDiv.parentNode.insertBefore(placarDiv, infoDiv.nextSibling);
-            
-            // Exibir escalação
-            const timeA = escala?.filter(j => j.time === 'A') || [];
-            const timeB = escala?.filter(j => j.time === 'B') || [];
-            
-            const escalacaoDiv = document.createElement('div');
-            escalacaoDiv.id = 'escalacaoContainer';
-            escalacaoDiv.className = 'escalacao-container';
-            escalacaoDiv.innerHTML = `
-                <div class="time-card" style="background:#fff5f5; border-left:4px solid #8b0000;">
-                    <h3 style="color:#8b0000; margin-bottom:15px;">🔴 TIME VERMELHO</h3>
-                    <ul>
-                        ${timeA.map(j => `<li><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
-                    </ul>
-                </div>
-                <div class="time-card" style="background:#fafafa; border-left:4px solid #ccc;">
-                    <h3 style="color:#8b0000; margin-bottom:15px;">⚪ TIME BRANCO</h3>
-                    <ul>
-                        ${timeB.map(j => `<li><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
-                    </ul>
-                </div>
-            `;
-            placarDiv.parentNode.insertBefore(escalacaoDiv, placarDiv.nextSibling);
-            
-            renderizarJogadores();
-            atualizarStatus();
-        }
-
-        function atualizarStatus() {
-            const total = jogadoresPartida.length;
-            const avaliados = Object.keys(avaliacoesPendentes).filter(nome => avaliacoesPendentes[nome]?.nota > 0).length;
-            const container = document.getElementById('statusContainer');
-            if (avaliados === total && total > 0) {
-                container.innerHTML = `✅ Todos os ${total} jogadores avaliados! Clique em "SALVAR TODAS" para finalizar.`;
-                container.className = 'status-avaliacao completo';
-                document.getElementById('btnSalvarTodas').disabled = false;
-            } else {
-                container.innerHTML = `📊 Progresso: ${avaliados} de ${total} jogadores avaliados. Selecione as notas.`;
-                container.className = 'status-avaliacao';
-                document.getElementById('btnSalvarTodas').disabled = true;
-            }
-        }
-
-        function renderizarJogadores() {
-            if (jogadoresPartida.length === 0) { 
-                document.getElementById('jogadoresContainer').innerHTML = '<p>Nenhum jogador para avaliar</p>'; 
-                return; 
-            }
-            
-            const container = document.getElementById('jogadoresContainer');
-            container.innerHTML = '<div class="jogadores-grid"></div>';
-            const grid = container.querySelector('.jogadores-grid');
-            
-            jogadoresPartida.forEach(j => {
-                const pendente = avaliacoesPendentes[j.jogador_nome] || { nota: 0, comentario: '' };
-                const card = document.createElement('div');
-                card.className = `jogador-card ${pendente.nota > 0 ? 'avaliado' : ''}`;
-                card.setAttribute('data-jogador', j.jogador_nome);
-                
-                card.innerHTML = `
-                    <div class="jogador-nome">${j.jogador_nome} <small>📍 ${j.posicao}</small> ${pendente.nota > 0 ? ' ✓' : ''}</div>
-                    <div class="estrelas" data-jogador="${j.jogador_nome}">
-                        ${[1,2,3,4,5].map(n => `<span class="estrela ${pendente.nota >= n ? 'selected' : ''}" data-nota="${n}">★</span>`).join('')}
-                    </div>
-                    <textarea class="comentario-input" placeholder="Comentário (opcional, até 100 caracteres)" maxlength="100">${pendente.comentario || ''}</textarea>
-                `;
-                
-                const estrelasDiv = card.querySelector('.estrelas');
-                const textarea = card.querySelector('.comentario-input');
-                const jogadorNome = j.jogador_nome;
-                
-                estrelasDiv.querySelectorAll('.estrela').forEach(estrela => {
-                    estrela.addEventListener('click', () => {
-                        const nota = parseInt(estrela.dataset.nota);
-                        estrelasDiv.querySelectorAll('.estrela').forEach((s, i) => i < nota ? s.classList.add('selected') : s.classList.remove('selected'));
-                        if (!avaliacoesPendentes[jogadorNome]) avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: '' };
-                        avaliacoesPendentes[jogadorNome].nota = nota;
-                        avaliacoesPendentes[jogadorNome].comentario = textarea.value;
-                        card.classList.toggle('avaliado', nota > 0);
-                        atualizarStatus();
-                    });
-                });
-                
-                textarea.addEventListener('input', () => {
-                    if (avaliacoesPendentes[jogadorNome]) {
-                        avaliacoesPendentes[jogadorNome].comentario = textarea.value;
-                    } else if (textarea.value.trim()) {
-                        avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: textarea.value };
-                    }
-                });
-                
-                grid.appendChild(card);
-            });
-        }
-
-        function exibirModalConfirmacao() {
-            const avaliacoes = Object.entries(avaliacoesPendentes).filter(([_, dados]) => dados.nota > 0).map(([nome, dados]) => ({ nome, nota: dados.nota, comentario: dados.comentario || 'Sem comentário' }));
-            if (avaliacoes.length === 0) { alert('Nenhuma avaliação foi feita!'); return; }
-            
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h3>⚠️ Confirmar Avaliações</h3>
-                    <p>Você vai avaliar <strong>${avaliacoes.length}</strong> jogador(es):</p>
-                    <div class="modal-resumo">${avaliacoes.map(a => `<div class="resumo-item"><span><strong>${a.nome}</strong></span><span class="resumo-nota">${'★'.repeat(a.nota)}${'☆'.repeat(5-a.nota)}</span><span style="width:100%; font-size:0.8em;">💬 ${a.comentario.substring(0, 50)}</span></div>`).join('')}</div>
-                    <p style="color:#8b0000;"><strong>ATENÇÃO:</strong> Após confirmar, NÃO poderá alterar!</p>
-                    <div class="modal-botoes"><button class="btn-cancelar">❌ Cancelar</button><button class="btn-confirmar">✅ Confirmar</button></div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            modal.querySelector('.btn-cancelar').addEventListener('click', () => modal.remove());
-            modal.querySelector('.btn-confirmar').addEventListener('click', async () => { modal.remove(); await salvarTodasAvaliacoes(avaliacoes); });
-        }
-        
-        async function salvarTodasAvaliacoes(avaliacoes) {
-            let sucesso = 0;
-            for (const a of avaliacoes) {
-                const { error } = await supabaseClient.from('avaliacoes_partida').insert({ partida_id: partidaSelecionada, avaliador_id: mensalistaAtual.id, avaliado_nome: a.nome, nota: a.nota, comentario: a.comentario });
-                if (!error) sucesso++;
-            }
-            alert(`✅ ${sucesso} avaliações salvas!`);
-            await voltarParaSelecao();
-        }
-        
-        async function voltarParaSelecao() {
-            avaliacoesScreen.style.display = 'none';
-            selecaoScreen.style.display = 'block';
-            await carregarPartidasNaoAvaliadas();
-        }
-
-        document.getElementById('btnLogin').addEventListener('click', fazerLogin);
-        document.getElementById('btnSair').addEventListener('click', fazerLogout);
-        document.getElementById('btnVoltarSelecao').addEventListener('click', () => { 
-            window.location.href = 'index.html'; 
-        });
-        document.getElementById('btnVoltarAvaliacoes').addEventListener('click', voltarParaSelecao);
-        document.getElementById('btnSalvarTodas').addEventListener('click', exibirModalConfirmacao);
-        document.getElementById('logoVoltar').addEventListener('click', () => { 
-            window.location.href = 'index.html'; 
-        });
-        
-        // ============================================
-        // INICIALIZAÇÃO
-        // ============================================
-        async function init() {
-            console.log('🚀 Inicializando avaliar.html...');
-            
-            // CARREGAR MENSALISTAS PRIMEIRO (sempre)
-            await carregarMensalistas();
-            
-            // Verificar modo convidado
-            if (isModoConvidado()) {
-                console.log('👁️ Modo convidado ativado');
-                document.getElementById('avisoConvidado').style.display = 'block';
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('selecaoScreen').style.display = 'block';
-                document.getElementById('userInfoSelecao').innerHTML = '<span>👁️ Modo Convidado</span> <span>📋 Visualizando todas as partidas</span>';
-                await carregarPartidasModoConvidado();
-                return;
-            }
-            
-            // Verificar sessão
-            console.log('🔍 Verificando sessão...');
-            const sessaoValida = await verificarSessao();
-            if (!sessaoValida) {
-                console.log('🔑 Nenhuma sessão ativa - mostrando login');
-                // Se não tiver sessão, mostrar tela de login (já está visível)
-                // Os mensalistas já foram carregados
-            } else {
-                console.log('✅ Sessão válida para:', mensalistaAtual?.nome);
-            }
-        }
-        
-        init();
-    </script>
-</body>
-</html>
+            const placarContainer = document.getElementById('placarContainer');
+            if (partida.resultado_finalizado) {
+                placarContainer.innerHTML = `<div style="background:#1a1a1a; color:white; padding:10px; border-radius:12px; text-align:center; font-size:1.3em; font-weight:bold; margin-bottom:15px;">🏆 PLACAR FINAL: ${partida.gols_time_a} x ${partida.gols_time
