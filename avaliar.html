@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>CYSS Futebol - Administração</title>
+    <title>CYSS Futebol - Avaliar Jogadores</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/sorteio.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -26,12 +24,12 @@
             background-image: url('image.png');
             background-repeat: repeat;
             background-size: 120px;
-            opacity: 0.1;
+            opacity: 0.15;
             pointer-events: none;
             z-index: 0;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -65,82 +63,7 @@
             padding-bottom: 10px;
             margin-bottom: 20px;
             font-size: 1.3em;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
         }
-        .btn {
-            background: #8b0000;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 14px;
-            min-height: 40px;
-        }
-        .btn-pequeno { padding: 6px 12px; font-size: 12px; }
-        .btn-verde { background: #2c5f2d; }
-        .btn-azul { background: #1e4a76; }
-        .btn-vermelho { background: #8b0000; }
-        .btn-criar { background: #ff9800; color: #1a0000; }
-        .btn-info { background: #2196f3; }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
-        }
-        .tab {
-            background: none;
-            border: none;
-            padding: 10px 20px;
-            font-size: 0.9em;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 30px;
-            transition: all 0.3s;
-            color: #666;
-        }
-        .tab.active { background: #8b0000; color: white; }
-        .tab:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .tabela-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f5f5f5; color: #8b0000; font-weight: 600; }
-        tr:hover { background: #f9f9f9; }
-        
-        .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; align-items: flex-end; }
-        .form-group { flex: 1; min-width: 150px; }
-        .form-group label { display: block; font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 5px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 10px; font-size: 14px; }
-        .form-group input:disabled, .form-group select:disabled { opacity: 0.6; cursor: not-allowed; background: #f5f5f5; }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: #f5f5f5;
-            border-radius: 16px;
-            padding: 15px;
-            text-align: center;
-        }
-        .stat-number { font-size: 2.5em; font-weight: 700; color: #8b0000; }
-        .stat-label { font-size: 0.8em; color: #666; }
-        
         .login-area { max-width: 400px; margin: 0 auto; }
         .login-input {
             width: 100%;
@@ -149,53 +72,117 @@
             border: 2px solid #ddd;
             border-radius: 12px;
             font-size: 16px;
+            font-family: inherit;
         }
-        .login-input:disabled { opacity: 0.6; cursor: not-allowed; background: #f5f5f5; }
-        .loading { text-align: center; padding: 40px; color: #666; }
-        
-        .checkbox-group {
+        .btn {
+            background: #8b0000;
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+            font-size: 16px;
+            min-height: 48px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-salvar {
+            background: #2c5f2d;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+        .btn-salvar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .estrelas { display: flex; gap: 12px; margin: 15px 0; justify-content: center; flex-wrap: wrap; }
+        .estrela { font-size: 40px; cursor: pointer; color: #ccc; transition: all 0.2s; }
+        .estrela.selected { color: #ffcc00; }
+        .estrela:active { transform: scale(1.1); }
+        .estrela.visualizacao { cursor: default; opacity: 0.7; }
+        .estrela.visualizacao.selected { cursor: default; }
+        .jogadores-grid { display: flex; flex-direction: column; gap: 16px; margin-top: 20px; }
+        .jogador-card {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            border-left: 5px solid #8b0000;
+        }
+        .jogador-card.avaliado {
+            border-left-color: #2c5f2d;
+            background: #f0fff0;
+        }
+        .jogador-nome { font-size: 1.2em; font-weight: 700; color: #8b0000; margin-bottom: 8px; word-break: break-word; }
+        .jogador-nome small { font-size: 0.75em; font-weight: normal; color: #666; }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-family: inherit;
+            margin: 10px 0;
+            resize: vertical;
+            font-size: 14px;
+        }
+        textarea:disabled { background: #f5f5f5; cursor: not-allowed; opacity: 0.7; }
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .status-avaliacao {
+            background: #ffe5e5;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.85em;
+        }
+        .status-avaliacao.completo {
+            background: #e8f5e9;
+            color: #2c5f2d;
+        }
+        .status-avaliacao.visualizacao {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .checkbox-container {
             display: flex;
             align-items: center;
             gap: 10px;
-            background: #f0f0f0;
-            padding: 10px 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
+            margin: 10px 0;
         }
-        .checkbox-group input { width: 20px; height: 20px; margin: 0; }
-        .checkbox-group input:disabled { opacity: 0.5; cursor: not-allowed; }
-        .checkbox-group label { font-weight: 600; color: #8b0000; margin: 0; }
-        
-        .checkbox-goleiro {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
+        .checkbox-container input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            cursor: pointer;
         }
-        .checkbox-goleiro input { width: 18px; height: 18px; margin: 0; }
-        .checkbox-goleiro input:disabled { opacity: 0.5; cursor: not-allowed; }
-        .checkbox-goleiro label { font-size: 0.8em; color: #555; margin: 0; cursor: pointer; }
-        
-        .placar-input {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .placar-input input {
-            width: 55px;
-            padding: 6px;
-            text-align: center;
+        .checkbox-container label {
+            font-size: 0.9em;
+            color: #555;
+            cursor: pointer;
             margin: 0;
         }
-        .placar-input input:disabled { opacity: 0.6; cursor: not-allowed; background: #f5f5f5; }
-        
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.7);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -204,51 +191,48 @@
         .modal-content {
             background: white;
             border-radius: 20px;
-            padding: 25px;
+            padding: 20px;
             max-width: 90%;
-            width: 600px;
-            max-height: 85vh;
+            width: 400px;
+            max-height: 80vh;
             overflow-y: auto;
         }
-        .modal-content h3 { color: #8b0000; margin-bottom: 20px; text-align: center; }
-        .modal-content h4 { color: #8b0000; margin: 15px 0 10px 0; text-align: center; }
-        .times-preview {
+        .modal-content h3 { color: #8b0000; margin-bottom: 15px; }
+        .modal-resumo { margin: 15px 0; max-height: 300px; overflow-y: auto; }
+        .resumo-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .resumo-nota { color: #ffcc00; font-weight: bold; }
+        .modal-botoes { display: flex; gap: 15px; margin-top: 20px; }
+        .modal-botoes button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 600; }
+        .btn-cancelar { background: #666; color: white; }
+        .btn-confirmar { background: #2c5f2d; color: white; }
+        
+        .escalacao-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin: 20px 0;
+            margin-top: 20px;
+            margin-bottom: 20px;
         }
-        .time-preview {
-            background: #f5f5f5;
+        .time-card {
             border-radius: 16px;
             padding: 15px;
         }
-        .time-preview h4 { color: #8b0000; margin-bottom: 10px; text-align: center; }
-        .time-preview ul { list-style: none; padding: 0; }
-        .time-preview li { padding: 5px 0; border-bottom: 1px solid #ddd; font-size: 0.85em; }
-        .forca-info { margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc; text-align: center; font-weight: bold; }
-        .modal-botoes { display: flex; gap: 15px; margin-top: 20px; justify-content: center; }
-        .modal-botoes button { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
-        .btn-confirmar { background: #2c5f2d; color: white; }
-        .btn-refazer { background: #ff9800; color: #1a0000; }
-        .btn-cancelar { background: #666; color: white; }
-        .btn-fechar { background: #666; color: white; }
-        .tentativas { text-align: center; margin-bottom: 15px; font-size: 0.85em; color: #666; }
-        
-        .resumo-pagamentos {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
+        .time-card ul {
+            list-style: none;
+            padding: 0;
         }
-        .resumo-item {
-            background: #f5f5f5;
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-weight: 600;
+        .time-card li {
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
         }
-        .resumo-item.verde { background: #e8f5e9; color: #2c5f2d; }
-        .resumo-item.vermelho { background: #ffebee; color: #c62828; }
         
         .aviso-convidado {
             background: #ff9800;
@@ -261,13 +245,40 @@
             border: 2px solid #e65100;
         }
         
+        .tag-visualizacao {
+            display: inline-block;
+            background: #ff9800;
+            color: #1a0000;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
         @media (orientation: portrait) {
             body { padding: 12px; }
             .card { padding: 15px; }
-            th, td { padding: 8px; font-size: 0.8em; }
-            .form-row { flex-direction: column; }
-            .form-group { width: 100%; }
-            .times-preview { grid-template-columns: 1fr; gap: 15px; }
+            .card h2 { font-size: 1.1em; }
+            .btn { padding: 12px; font-size: 14px; min-height: 44px; }
+            .estrela { font-size: 32px; }
+            .jogador-card { padding: 12px; }
+            .jogador-nome { font-size: 1em; }
+            .user-info { font-size: 0.8em; }
+            .status-avaliacao { font-size: 0.75em; padding: 10px; }
+            .logo { max-width: 40px; }
+            h1 { font-size: 1.2em; }
+            .escalacao-container { grid-template-columns: 1fr; gap: 15px; }
+        }
+        
+        @media (min-width: 768px) and (orientation: landscape) {
+            body { padding: 20px; }
+            .logo-area { gap: 20px; padding: 15px 30px; }
+            .logo { max-width: 60px; }
+            h1 { font-size: 1.8em; }
+            .card { padding: 25px; }
+            .jogadores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+            .estrela { font-size: 35px; }
         }
     </style>
 </head>
@@ -276,675 +287,427 @@
         <div class="header">
             <div class="logo-area" id="logoVoltar">
                 <img src="image.png" alt="CYSS Futebol" class="logo" onerror="this.style.display='none'">
-                <h1>🔧 Administração</h1>
-            </div>
-            <div id="avisoConvidado" class="aviso-convidado" style="display: none;">
-                👁️ Modo Convidado - Visualização completa. Você pode explorar o sistema, mas não pode criar, editar ou excluir dados.
+                <h1>⭐ Avaliar Jogadores</h1>
             </div>
         </div>
 
-        <!-- TELA DE LOGIN -->
         <div id="loginScreen" class="card">
             <div class="login-area">
-                <h2>🔐 Login Administrativo</h2>
-                <input type="text" id="adminUser" class="login-input" placeholder="Usuário">
-                <input type="password" id="adminSenha" class="login-input" placeholder="Senha">
-                <button id="btnLoginAdmin" class="btn">Entrar</button>
+                <h2>🔐 Login do Mensalista</h2>
+                <select id="selectMensalista" class="login-input"><option value="">Selecione seu nome</option></select>
+                <input type="password" id="senha" class="login-input" placeholder="Sua senha">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="lembrarMim">
+                    <label for="lembrarMim">🔐 Lembrar de mim</label>
+                </div>
+                <button id="btnLogin" class="btn">Entrar</button>
             </div>
         </div>
 
-        <!-- CONTEÚDO ADMIN -->
-        <div id="adminContent" style="display: none;">
+        <div id="selecaoScreen" style="display: none;">
+            <div class="user-info" id="userInfoSelecao"></div>
+            <div id="avisoConvidado" class="aviso-convidado" style="display: none;">
+                👁️ Modo Convidado - Visualização completa. Você pode explorar todas as partidas, escalações e placares, mas não pode avaliar jogadores.
+            </div>
             <div class="card">
-                <div class="tabs">
-                    <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
-                    <button class="tab" data-tab="criar">⚡ Criar Partida</button>
-                    <button class="tab" data-tab="partidas">⚽ Partidas</button>
-                    <button class="tab" data-tab="pagamentos">💳 Pagamentos</button>
-                    <button class="tab" data-tab="mensalistas">👥 Mensalistas</button>
-                    <button class="tab" data-tab="locais">📍 Locais</button>
-                    <button class="tab" data-tab="ferramentas">🛠️ Ferramentas</button>
+                <h2>📋 Selecione uma partida para visualizar</h2>
+                <div id="listaPartidasContainer">
+                    <div class="status-avaliacao">Carregando partidas...</div>
                 </div>
-                <div id="tabContent"></div>
+                <button id="btnVoltarSelecao" class="btn" style="background:#1a1a1a; margin-top:20px;">← Voltar</button>
+            </div>
+        </div>
+
+        <div id="avaliacoesScreen" style="display: none;">
+            <div class="user-info" id="userInfo"></div>
+            <div class="card">
+                <h2>📝 Detalhes da Partida</h2>
+                <div id="infoPartidaSelecionada" style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; font-size:0.9em; word-break:break-word;"></div>
+                
+                <div id="placarContainer"></div>
+                <div id="escalacaoContainer"></div>
+                
+                <div id="statusContainer" class="status-avaliacao"></div>
+                <div id="jogadoresContainer">Carregando...</div>
+                <button id="btnSalvarTodas" class="btn btn-salvar" disabled>💾 SALVAR TODAS AS AVALIAÇÕES</button>
+                <button id="btnVoltarAvaliacoes" class="btn" style="background:#1a1a1a; margin-top:10px;">← Voltar às Partidas</button>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://yizixptrdbssgrgdzdqf.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpeml4cHRyZGJzc2dyZ2R6ZHFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjEwMzAsImV4cCI6MjA5NjU5NzAzMH0.ugNYyquAwI3qthSmLYedHWNftdd2__TF4p6W3Dtm-O0';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        window.supabaseClient = supabaseClient;
 
-        let abaAtual = 'dashboard';
-        let locaisLista = [];
-        let ultimoSorteio = null;
-        let tentativasSorteio = 0;
+        let mensalistaAtual = null;
+        let partidaSelecionada = null;
+        let jogadoresPartida = [];
+        let avaliacoesPendentes = {};
         let isModoConvidado = false;
 
-        function formatarDataAdmin(dataString) {
-            if (!dataString) return '-';
+        const loginScreen = document.getElementById('loginScreen');
+        const selecaoScreen = document.getElementById('selecaoScreen');
+        const avaliacoesScreen = document.getElementById('avaliacoesScreen');
+
+        function formatarData(dataString) {
             const [ano, mes, dia] = dataString.split('-');
             return `${dia}/${mes}/${ano}`;
         }
 
-        // ============================================
-        // HABILITAR MODO VISUALIZAÇÃO (CONVIDADO)
-        // ============================================
-        function habilitarModoVisualizacao() {
-            isModoConvidado = true;
-            
-            // Mostrar aviso
-            document.getElementById('avisoConvidado').style.display = 'block';
-            
-            // Desabilitar todos os botões de ação (exceto navegação)
-            document.querySelectorAll('.btn').forEach(btn => {
-                if (!btn.classList.contains('tab')) {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
-                    btn.style.cursor = 'not-allowed';
-                }
-            });
-            
-            // Desabilitar todos os inputs, selects, textareas
-            document.querySelectorAll('input, select, textarea').forEach(el => {
-                el.disabled = true;
-                el.style.opacity = '0.7';
-                el.style.cursor = 'not-allowed';
-            });
-            
-            // Desabilitar checkboxes
-            document.querySelectorAll('input[type="checkbox"]').forEach(el => {
-                el.disabled = true;
-                el.style.opacity = '0.7';
-                el.style.cursor = 'not-allowed';
-            });
-            
-            // Esconder botões que não devem ser vistos
-            document.querySelectorAll('.btn-deletar, .btn-vermelho, .btn-verde, .btn-azul, .btn-criar').forEach(btn => {
-                btn.style.display = 'none';
-            });
+        function salvarSessao(id, nome) {
+            localStorage.setItem('mensalista_id', id);
+            localStorage.setItem('mensalista_nome', nome);
         }
 
-        // ============================================
-        // LOGIN
-        // ============================================
-        document.getElementById('btnLoginAdmin').addEventListener('click', async () => {
-            const usuario = document.getElementById('adminUser').value.trim();
-            const senha = document.getElementById('adminSenha').value;
+        function limparSessao() {
+            localStorage.removeItem('mensalista_id');
+            localStorage.removeItem('mensalista_nome');
+        }
+
+        async function verificarSessao() {
+            const savedId = localStorage.getItem('mensalista_id');
+            const savedNome = localStorage.getItem('mensalista_nome');
             
-            if (!usuario) { alert('Digite o usuário!'); return; }
-            if (!senha) { alert('Digite a senha!'); return; }
+            if (!savedId || !savedNome) return false;
             
-            const { data, error } = await supabaseClient
+            const { data } = await supabaseClient
                 .from('mensalistas')
-                .select('id, nome, senha_hash, is_admin, is_convidado')
-                .eq('nome', usuario)
+                .select('id, nome, is_convidado')
+                .eq('id', savedId)
                 .single();
             
-            if (error || !data) {
-                alert('Usuário não encontrado!');
-                return;
-            }
-            
-            // Se for convidado, entra em modo visualização
-            if (data.is_convidado) {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
+            if (data && data.nome === savedNome) {
+                mensalistaAtual = { id: data.id, nome: data.nome, is_convidado: data.is_convidado || false };
+                isModoConvidado = data.is_convidado || false;
                 
-                await carregarLocais();
-                carregarDashboard();
-                carregarMensalistas();
-                carregarPartidas();
+                loginScreen.style.display = 'none';
+                selecaoScreen.style.display = 'block';
                 
-                habilitarModoVisualizacao();
-                return;
-            }
-            
-            if (!data.is_admin) {
-                alert('Você não tem permissão de administrador!');
-                return;
-            }
-            
-            if (senha !== data.senha_hash) {
-                alert('Senha incorreta!');
-                return;
-            }
-            
-            // Login admin normal
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('adminContent').style.display = 'block';
-            
-            await carregarLocais();
-            carregarDashboard();
-            carregarMensalistas();
-            carregarPartidas();
-        });
-
-        // ============================================
-        // TABS
-        // ============================================
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                abaAtual = tab.dataset.tab;
-                if (abaAtual === 'dashboard') carregarDashboard();
-                else if (abaAtual === 'criar') carregarCriarPartida();
-                else if (abaAtual === 'partidas') carregarPartidas();
-                else if (abaAtual === 'pagamentos') carregarPagamentos();
-                else if (abaAtual === 'mensalistas') carregarMensalistas();
-                else if (abaAtual === 'locais') carregarLocaisAdmin();
-                else if (abaAtual === 'ferramentas') carregarFerramentas();
-            });
-        });
-
-        async function carregarLocais() {
-            const { data, error } = await supabaseClient.from('locais').select('id, nome, endereco').order('nome');
-            if (!error) locaisLista = data || [];
-        }
-
-        async function carregarDashboard() {
-            const container = document.getElementById('tabContent');
-            container.innerHTML = '<div class="loading">Carregando...</div>';
-            const { count: partidas } = await supabaseClient.from('partidas').select('*', { count: 'exact', head: true });
-            const { count: avaliacoes } = await supabaseClient.from('avaliacoes_partida').select('*', { count: 'exact', head: true });
-            const { count: mensalistas } = await supabaseClient.from('mensalistas').select('*', { count: 'exact', head: true });
-            const { count: admins } = await supabaseClient.from('mensalistas').select('*', { count: 'exact', head: true }).eq('is_admin', true);
-            const { count: locais } = await supabaseClient.from('locais').select('*', { count: 'exact', head: true });
-            container.innerHTML = `
-                <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-number">${partidas || 0}</div><div class="stat-label">Partidas</div></div>
-                    <div class="stat-card"><div class="stat-number">${avaliacoes || 0}</div><div class="stat-label">Avaliações</div></div>
-                    <div class="stat-card"><div class="stat-number">${mensalistas || 0}</div><div class="stat-label">Mensalistas</div></div>
-                    <div class="stat-card"><div class="stat-number">${admins || 0}</div><div class="stat-label">Administradores</div></div>
-                    <div class="stat-card"><div class="stat-number">${locais || 0}</div><div class="stat-label">Locais</div></div>
-                </div>
-            `;
-        }
-
-        // ============================================
-        // CRIAR PARTIDA
-        // ============================================
-        function carregarCriarPartida() {
-            const container = document.getElementById('tabContent');
-            
-            supabaseClient.from('mensalistas').select('id, nome, nota_inicial').order('nome').then(({ data: mensalistas }) => {
-                const selectMensalistas = mensalistas?.map(m => `<option value="${m.nome}" data-nota="${m.nota_inicial || 3}">${m.nome}</option>`).join('');
-                
-                container.innerHTML = `
-                    <h2 style="color:#8b0000; margin-bottom:20px;">⚡ Criar Partida Rápida</h2>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>📅 Data</label>
-                            <input type="date" id="rapida_data" value="${new Date().toISOString().split('T')[0]}" ${isModoConvidado ? 'disabled' : ''}>
-                        </div>
-                        <div class="form-group">
-                            <label>⏰ Horário</label>
-                            <input type="time" id="rapida_horario" value="19:00" ${isModoConvidado ? 'disabled' : ''}>
-                        </div>
-                        <div class="form-group">
-                            <label>📍 Local</label>
-                            <select id="rapida_local" ${isModoConvidado ? 'disabled' : ''}>
-                                <option value="">Selecione</option>
-                                ${locaisLista.map(l => `<option value="${l.id}" data-endereco="${l.endereco || ''}">${l.nome}</option>`).join('')}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="todosMensalistas" ${isModoConvidado ? 'disabled' : ''}>
-                        <label for="todosMensalistas" ${isModoConvidado ? 'style="opacity:0.5;"' : ''}>📌 Incluir TODOS os mensalistas</label>
-                    </div>
-                    
-                    <div class="form-row" id="selecaoIndividual" style="display: none;">
-                        <div class="form-group" style="flex:2;">
-                            <label>👥 Selecionar mensalistas</label>
-                            <select id="selectMensaInd" style="margin-bottom:10px;" ${isModoConvidado ? 'disabled' : ''}>
-                                <option value="">-- Selecione --</option>
-                                ${selectMensalistas}
-                            </select>
-                            <div id="listaMensalistasSelecionados" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>🎟️ Convidado</label>
-                            <input type="text" id="convidadoNome" placeholder="Nome" ${isModoConvidado ? 'disabled' : ''}>
-                            <div class="checkbox-goleiro">
-                                <input type="checkbox" id="convidadoGoleiro" ${isModoConvidado ? 'disabled' : ''}>
-                                <label for="convidadoGoleiro" ${isModoConvidado ? 'style="opacity:0.5;"' : ''}>🧤 É goleiro?</label>
-                            </div>
-                            <button id="btnAddConvidado" class="btn btn-pequeno" style="margin-top:8px; ${isModoConvidado ? 'display:none;' : ''}">+ Adicionar</button>
-                        </div>
-                    </div>
-                    
-                    <div style="margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 12px;">
-                        <strong>📋 Jogadores:</strong>
-                        <div id="jogadoresSelecionados" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                    </div>
-                    
-                    <button id="btnCriarPartidaRapida" class="btn btn-criar" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>🎲 AVANÇAR PARA SORTEIO</button>
-                    
-                    <div id="resultadoTimes" style="margin-top: 20px;"></div>
-                `;
-                
-                // Se for convidado, mostrar mensagem visualização
                 if (isModoConvidado) {
-                    container.innerHTML += `<div style="text-align:center; padding:20px; background:#f0f0f0; border-radius:12px; margin-top:20px; color:#666;">👁️ Modo Convidado - Visualização apenas. Esta área é para criação de partidas.</div>`;
+                    document.getElementById('avisoConvidado').style.display = 'block';
+                    document.getElementById('userInfoSelecao').innerHTML = `<span>👁️ ${mensalistaAtual.nome} <span class="tag-visualizacao">Visualização</span></span> <span>📋 Explorando partidas</span>`;
+                } else {
+                    document.getElementById('avisoConvidado').style.display = 'none';
+                    document.getElementById('userInfoSelecao').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Escolha uma partida para avaliar</span>`;
                 }
-            });
+                
+                await carregarPartidas();
+                return true;
+            }
+            return false;
         }
 
-        // ============================================
-        // PARTIDAS (COM PLACAR E BOTÃO ESCALAÇÃO)
-        // ============================================
+        async function carregarMensalistas() {
+            const { data } = await supabaseClient.from('mensalistas').select('id, nome, is_convidado').order('nome');
+            const select = document.getElementById('selectMensalista');
+            select.innerHTML = '<option value="">Selecione seu nome</option>';
+            if (data) {
+                data.forEach(m => { 
+                    const opt = document.createElement('option'); 
+                    opt.value = m.id; 
+                    opt.textContent = m.nome + (m.is_convidado ? ' 👁️' : ''); 
+                    select.appendChild(opt); 
+                });
+            }
+        }
+
+        async function fazerLogin() {
+            const id = document.getElementById('selectMensalista').value;
+            const senha = document.getElementById('senha').value;
+            const lembrar = document.getElementById('lembrarMim').checked;
+            
+            if (!id || !senha) { alert('Preencha todos os campos'); return; }
+            
+            const { data } = await supabaseClient.from('mensalistas').select('*').eq('id', id).single();
+            if (!data || senha !== data.senha_hash) { alert('Senha incorreta!'); return; }
+            
+            mensalistaAtual = { id: data.id, nome: data.nome, is_convidado: data.is_convidado || false };
+            isModoConvidado = data.is_convidado || false;
+            
+            if (lembrar) salvarSessao(data.id, data.nome);
+            
+            loginScreen.style.display = 'none';
+            selecaoScreen.style.display = 'block';
+            
+            if (isModoConvidado) {
+                document.getElementById('avisoConvidado').style.display = 'block';
+                document.getElementById('userInfoSelecao').innerHTML = `<span>👁️ ${mensalistaAtual.nome} <span class="tag-visualizacao">Visualização</span></span> <span>📋 Explorando partidas</span>`;
+            } else {
+                document.getElementById('avisoConvidado').style.display = 'none';
+                document.getElementById('userInfoSelecao').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>⭐ Escolha uma partida para avaliar</span>`;
+            }
+            
+            await carregarPartidas();
+        }
+
+        function fazerLogout() {
+            limparSessao();
+            window.location.reload();
+        }
+
         async function carregarPartidas() {
-            const { data } = await supabaseClient.from('partidas').select('*').order('data', { ascending: false });
-            const container = document.getElementById('tabContent');
-            container.innerHTML = `
-                <div class="tabela-container">
-                    <table>
-                        <thead>
-                            <tr><th>ID</th><th>Data</th><th>Horário</th><th>Placar</th><th>Ações</th></tr>
-                        </thead>
-                        <tbody id="partidasTable"></tbody>
-                    </table>
-                </div>
-            `;
-            const tbody = document.getElementById('partidasTable');
-            tbody.innerHTML = (data || []).map(p => `
-                <tr>
-                    <td>${p.id}</td>
-                    <td>${formatarDataAdmin(p.data)}</td>
-                    <td>${p.horario || '-'}</td>
-                    <td>
-                        <div class="placar-input">
-                            <input type="number" id="golsA_${p.id}" value="${p.gols_time_a || 0}" min="0" style="width:55px;" ${isModoConvidado ? 'disabled' : ''}>
-                            <span>x</span>
-                            <input type="number" id="golsB_${p.id}" value="${p.gols_time_b || 0}" min="0" style="width:55px;" ${isModoConvidado ? 'disabled' : ''}>
-                        </div>
-                    </td>
-                    <td>
-                        <button class="btn btn-azul btn-pequeno" onclick="salvarPlacar(${p.id})" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>📝 Salvar</button>
-                        <button class="btn btn-info btn-pequeno" onclick="verEscalacao(${p.id})">📋 Escalação</button>
-                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarPartida(${p.id})" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>🗑️ Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        window.salvarPlacar = async (id) => {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode alterar dados.'); return; }
-            const golsA = parseInt(document.getElementById(`golsA_${id}`).value) || 0;
-            const golsB = parseInt(document.getElementById(`golsB_${id}`).value) || 0;
+            const container = document.getElementById('listaPartidasContainer');
+            container.innerHTML = '<div class="status-avaliacao">Carregando partidas...</div>';
             
-            const { error } = await supabaseClient
-                .from('partidas')
-                .update({ gols_time_a: golsA, gols_time_b: golsB, resultado_finalizado: true })
-                .eq('id', id);
-            
-            if (error) { alert('Erro: ' + error.message); return; }
-            alert('Placar salvo!');
-            carregarPartidas();
-        };
-
-        window.verEscalacao = async (id) => {
-            const { data: escala } = await supabaseClient
-                .from('escala_partida')
-                .select('*')
-                .eq('partida_id', id);
-            
-            if (!escala || escala.length === 0) {
-                alert('Nenhuma escalação encontrada para esta partida!');
+            const { data: partidas } = await supabaseClient.from('partidas').select('id, data, horario, local_id, gols_time_a, gols_time_b, resultado_finalizado').order('data', { ascending: false });
+            if (!partidas || partidas.length === 0) {
+                container.innerHTML = '<div class="status-avaliacao">Nenhuma partida encontrada</div>';
                 return;
             }
             
-            const { data: partida } = await supabaseClient
-                .from('partidas')
-                .select('*')
-                .eq('id', id)
-                .single();
+            const { data: locais } = await supabaseClient.from('locais').select('id, nome');
+            const locaisMap = {};
+            locais?.forEach(l => { locaisMap[l.id] = l.nome; });
             
-            const timeA = escala.filter(j => j.time === 'A');
-            const timeB = escala.filter(j => j.time === 'B');
+            // Para convidado: mostra todas as partidas
+            // Para mensalista: mostra apenas as não avaliadas
+            let partidasExibir = partidas;
+            if (!isModoConvidado) {
+                const { data: avaliadas } = await supabaseClient.from('avaliacoes_partida').select('partida_id').eq('avaliador_id', mensalistaAtual.id);
+                const idsAvaliados = new Set(avaliadas?.map(a => a.partida_id) || []);
+                partidasExibir = partidas.filter(p => !idsAvaliados.has(p.id));
+            }
             
-            const dataFormatada = partida ? formatarDataAdmin(partida.data) : 'Data desconhecida';
-            const horario = partida?.horario || 'Horário não informado';
+            if (partidasExibir.length === 0 && !isModoConvidado) {
+                container.innerHTML = '<div class="status-avaliacao">✅ Você já avaliou todas as partidas! Obrigado!</div>';
+                return;
+            }
+            
+            const botaoTexto = isModoConvidado ? '👁️ Visualizar' : '⭐ Avaliar esta partida';
+            const isConvidado = isModoConvidado;
+            
+            container.innerHTML = partidasExibir.map(partida => {
+                const localNome = locaisMap[partida.local_id] || 'Local não informado';
+                const temPlacar = partida.resultado_finalizado;
+                const placarTexto = temPlacar ? ` 🏆 ${partida.gols_time_a} x ${partida.gols_time_b}` : ' ⏳ Placar pendente';
+                
+                return `
+                    <div class="jogador-card" style="cursor:pointer;" data-id="${partida.id}">
+                        <div class="jogador-nome">📅 ${formatarData(partida.data)} ${partida.horario ? `⏰ ${partida.horario}` : ''}${placarTexto}</div>
+                        <div style="word-break:break-word;">📍 ${localNome}</div>
+                        <button class="btn" style="margin-top:12px;" data-id="${partida.id}">
+                            ${botaoTexto}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            document.querySelectorAll('[data-id]').forEach(el => {
+                el.addEventListener('click', async (e) => {
+                    const id = parseInt(el.dataset.id);
+                    if (!isNaN(id)) await selecionarPartida(id);
+                });
+            });
+        }
+
+        async function selecionarPartida(partidaId) {
+            partidaSelecionada = partidaId;
+            const { data: partida } = await supabaseClient.from('partidas').select('*, locais(nome)').eq('id', partidaId).single();
+            const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
+            jogadoresPartida = escala?.filter(j => j.jogador_nome !== mensalistaAtual.nome) || [];
+            
+            // Verificar se já avaliou (apenas para não-convidados)
+            if (!isModoConvidado) {
+                const { data: avaliacoesExistentes } = await supabaseClient.from('avaliacoes_partida').select('*').eq('partida_id', partidaId).eq('avaliador_id', mensalistaAtual.id);
+                if (avaliacoesExistentes && avaliacoesExistentes.length > 0) {
+                    alert('Você já avaliou esta partida! Voltando à lista...');
+                    await carregarPartidas();
+                    return;
+                }
+            }
+            
+            avaliacoesPendentes = {};
+            selecaoScreen.style.display = 'none';
+            avaliacoesScreen.style.display = 'block';
+            
+            const titulo = isModoConvidado ? '👁️ Visualizando Partida' : '📝 Avaliar Jogadores da Partida';
+            document.getElementById('userInfo').innerHTML = `<span>👤 ${mensalistaAtual.nome}</span> <span>${titulo}</span>`;
+            
+            const localNome = partida?.locais?.nome || 'Local não informado';
+            document.getElementById('infoPartidaSelecionada').innerHTML = `📅 ${formatarData(partida.data)} | ⏰ ${partida.horario || 'Horário não informado'} | 📍 ${localNome}`;
+            
+            // Exibir placar
+            const placarContainer = document.getElementById('placarContainer');
+            if (partida.resultado_finalizado) {
+                placarContainer.innerHTML = `<div style="background:#1a1a1a; color:white; padding:10px; border-radius:12px; text-align:center; font-size:1.3em; font-weight:bold; margin-bottom:15px;">🏆 PLACAR FINAL: ${partida.gols_time_a} x ${partida.gols_time_b}</div>`;
+            } else {
+                placarContainer.innerHTML = `<div style="background:#f0f0f0; color:#999; padding:10px; border-radius:12px; text-align:center; font-style:italic; margin-bottom:15px;">⏳ Placar ainda não registrado pelo administrador</div>`;
+            }
+            
+            // Exibir escalação
+            const timeA = escala?.filter(j => j.time === 'A') || [];
+            const timeB = escala?.filter(j => j.time === 'B') || [];
+            
+            document.getElementById('escalacaoContainer').innerHTML = `
+                <div class="escalacao-container">
+                    <div class="time-card" style="background:#fff5f5; border-left:4px solid #8b0000;">
+                        <h3 style="color:#8b0000; margin-bottom:15px;">🔴 TIME VERMELHO</h3>
+                        <ul>
+                            ${timeA.map(j => `<li><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="time-card" style="background:#fafafa; border-left:4px solid #ccc;">
+                        <h3 style="color:#8b0000; margin-bottom:15px;">⚪ TIME BRANCO</h3>
+                        <ul>
+                            ${timeB.map(j => `<li><strong>${j.jogador_nome}</strong> <span style="color:#666;">${j.tipo === 'mensalista' ? '📌 Mensalista' : '🎟️ Convidado'}</span></li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            renderizarJogadores();
+            atualizarStatus();
+        }
+
+        function atualizarStatus() {
+            const total = jogadoresPartida.length;
+            
+            if (isModoConvidado) {
+                // Modo convidado - apenas visualização
+                const container = document.getElementById('statusContainer');
+                container.innerHTML = `👁️ Visualizando ${total} jogadores da partida (modo convidado - sem avaliação)`;
+                container.className = 'status-avaliacao visualizacao';
+                document.getElementById('btnSalvarTodas').disabled = true;
+                document.getElementById('btnSalvarTodas').style.display = 'none';
+                return;
+            }
+            
+            const avaliados = Object.keys(avaliacoesPendentes).filter(nome => avaliacoesPendentes[nome]?.nota > 0).length;
+            const container = document.getElementById('statusContainer');
+            if (avaliados === total && total > 0) {
+                container.innerHTML = `✅ Todos os ${total} jogadores avaliados! Clique em "SALVAR TODAS" para finalizar.`;
+                container.className = 'status-avaliacao completo';
+                document.getElementById('btnSalvarTodas').disabled = false;
+                document.getElementById('btnSalvarTodas').style.display = 'block';
+            } else {
+                container.innerHTML = `📊 Progresso: ${avaliados} de ${total} jogadores avaliados. Selecione as notas.`;
+                container.className = 'status-avaliacao';
+                document.getElementById('btnSalvarTodas').disabled = true;
+                document.getElementById('btnSalvarTodas').style.display = 'block';
+            }
+        }
+
+        function renderizarJogadores() {
+            if (jogadoresPartida.length === 0) { 
+                document.getElementById('jogadoresContainer').innerHTML = '<p>Nenhum jogador para avaliar</p>'; 
+                return; 
+            }
+            
+            const container = document.getElementById('jogadoresContainer');
+            container.innerHTML = '<div class="jogadores-grid"></div>';
+            const grid = container.querySelector('.jogadores-grid');
+            
+            jogadoresPartida.forEach(j => {
+                const pendente = avaliacoesPendentes[j.jogador_nome] || { nota: 0, comentario: '' };
+                const card = document.createElement('div');
+                card.className = `jogador-card ${pendente.nota > 0 ? 'avaliado' : ''}`;
+                card.setAttribute('data-jogador', j.jogador_nome);
+                
+                if (isModoConvidado) {
+                    // Modo convidado - mostrar apenas visualização das estrelas
+                    const estrelasVisualizacao = Math.floor(Math.random() * 5) + 1; // Só para demonstrar
+                    card.innerHTML = `
+                        <div class="jogador-nome">${j.jogador_nome} <small>📍 ${j.posicao}</small> <span class="tag-visualizacao">Visualização</span></div>
+                        <div class="estrelas" style="cursor:default;">
+                            ${[1,2,3,4,5].map(n => `<span class="estrela visualizacao ${estrelasVisualizacao >= n ? 'selected' : ''}">★</span>`).join('')}
+                        </div>
+                        <div style="margin:10px 0; padding:10px; background:#f5f5f5; border-radius:8px; text-align:center; color:#888; font-size:0.8em;">
+                            👁️ Visualização - As estrelas mostram um exemplo de como a avaliação funciona
+                        </div>
+                        <textarea class="comentario-input" placeholder="Comentário (desabilitado no modo convidado)" disabled>${pendente.comentario || ''}</textarea>
+                    `;
+                } else {
+                    // Modo normal - avaliação
+                    card.innerHTML = `
+                        <div class="jogador-nome">${j.jogador_nome} <small>📍 ${j.posicao}</small> ${pendente.nota > 0 ? ' ✓' : ''}</div>
+                        <div class="estrelas" data-jogador="${j.jogador_nome}">
+                            ${[1,2,3,4,5].map(n => `<span class="estrela ${pendente.nota >= n ? 'selected' : ''}" data-nota="${n}">★</span>`).join('')}
+                        </div>
+                        <textarea class="comentario-input" placeholder="Comentário (opcional, até 100 caracteres)" maxlength="100">${pendente.comentario || ''}</textarea>
+                    `;
+                    
+                    const estrelasDiv = card.querySelector('.estrelas');
+                    const textarea = card.querySelector('.comentario-input');
+                    const jogadorNome = j.jogador_nome;
+                    
+                    estrelasDiv.querySelectorAll('.estrela').forEach(estrela => {
+                        estrela.addEventListener('click', () => {
+                            const nota = parseInt(estrela.dataset.nota);
+                            estrelasDiv.querySelectorAll('.estrela').forEach((s, i) => i < nota ? s.classList.add('selected') : s.classList.remove('selected'));
+                            if (!avaliacoesPendentes[jogadorNome]) avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: '' };
+                            avaliacoesPendentes[jogadorNome].nota = nota;
+                            avaliacoesPendentes[jogadorNome].comentario = textarea.value;
+                            card.classList.toggle('avaliado', nota > 0);
+                            atualizarStatus();
+                        });
+                    });
+                    
+                    textarea.addEventListener('input', () => {
+                        if (avaliacoesPendentes[jogadorNome]) {
+                            avaliacoesPendentes[jogadorNome].comentario = textarea.value;
+                        } else if (textarea.value.trim()) {
+                            avaliacoesPendentes[jogadorNome] = { nota: 0, comentario: textarea.value };
+                        }
+                    });
+                }
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function exibirModalConfirmacao() {
+            const avaliacoes = Object.entries(avaliacoesPendentes).filter(([_, dados]) => dados.nota > 0).map(([nome, dados]) => ({ nome, nota: dados.nota, comentario: dados.comentario || 'Sem comentário' }));
+            if (avaliacoes.length === 0) { alert('Nenhuma avaliação foi feita!'); return; }
             
             const modal = document.createElement('div');
             modal.className = 'modal';
             modal.innerHTML = `
                 <div class="modal-content">
-                    <h3>📋 Escalação da Partida</h3>
-                    <div style="text-align:center; margin-bottom:15px;">
-                        <strong>📅 ${dataFormatada} | ⏰ ${horario}</strong>
-                    </div>
-                    <div class="times-preview">
-                        <div class="time-preview">
-                            <h4>🔴 TIME VERMELHO</h4>
-                            <ul>
-                                ${timeA.map(j => `<li><strong>${j.jogador_nome}</strong> ${j.tipo === 'mensalista' ? '📌' : '🎟️'} ${j.posicao === 'Goleiro' ? '🧤' : ''}</li>`).join('')}
-                            </ul>
-                        </div>
-                        <div class="time-preview">
-                            <h4>⚪ TIME BRANCO</h4>
-                            <ul>
-                                ${timeB.map(j => `<li><strong>${j.jogador_nome}</strong> ${j.tipo === 'mensalista' ? '📌' : '🎟️'} ${j.posicao === 'Goleiro' ? '🧤' : ''}</li>`).join('')}
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="modal-botoes">
-                        <button id="btnFecharEscalacao" class="btn-fechar">Fechar</button>
-                    </div>
+                    <h3>⚠️ Confirmar Avaliações</h3>
+                    <p>Você vai avaliar <strong>${avaliacoes.length}</strong> jogador(es):</p>
+                    <div class="modal-resumo">${avaliacoes.map(a => `<div class="resumo-item"><span><strong>${a.nome}</strong></span><span class="resumo-nota">${'★'.repeat(a.nota)}${'☆'.repeat(5-a.nota)}</span><span style="width:100%; font-size:0.8em;">💬 ${a.comentario.substring(0, 50)}</span></div>`).join('')}</div>
+                    <p style="color:#8b0000;"><strong>ATENÇÃO:</strong> Após confirmar, NÃO poderá alterar!</p>
+                    <div class="modal-botoes"><button class="btn-cancelar">❌ Cancelar</button><button class="btn-confirmar">✅ Confirmar</button></div>
                 </div>
             `;
-            
             document.body.appendChild(modal);
-            document.getElementById('btnFecharEscalacao').addEventListener('click', () => modal.remove());
-        };
-
-        window.deletarPartida = async (id) => {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode excluir dados.'); return; }
-            if (!confirm('Tem certeza?')) return;
-            await supabaseClient.from('avaliacoes_partida').delete().eq('partida_id', id);
-            await supabaseClient.from('escala_partida').delete().eq('partida_id', id);
-            await supabaseClient.from('partidas').delete().eq('id', id);
-            carregarPartidas();
-            carregarDashboard();
-        };
-
-        // ============================================
-        // PAGAMENTOS
-        // ============================================
-        async function carregarPagamentos() {
-            const container = document.getElementById('tabContent');
-            container.innerHTML = '<div class="loading">Carregando...</div>';
-            
-            const mesAtual = new Date().getMonth() + 1;
-            const anoAtual = new Date().getFullYear();
-            const mesNome = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual-1];
-            
-            const { data: mensalistas } = await supabaseClient
-                .from('mensalistas')
-                .select('id, nome')
-                .order('nome');
-            
-            const { data: pagamentos } = await supabaseClient
-                .from('pagamentos')
-                .select('*')
-                .eq('mes', mesAtual)
-                .eq('ano', anoAtual);
-            
-            const pagamentosMap = {};
-            pagamentos?.forEach(p => {
-                pagamentosMap[p.mensalista_id] = p;
-            });
-            
-            let pagos = 0;
-            let pendentes = 0;
-            
-            let html = `
-                <h2 style="color:#8b0000; margin-bottom:20px;">💳 Controle de Pagamentos</h2>
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
-                    <div style="font-size: 1.1em; font-weight: 600; color: #333;">
-                        📅 ${mesNome} / ${anoAtual}
-                    </div>
-                    <div class="resumo-pagamentos">
-                        <div class="resumo-item verde">
-                            ✅ Pagos: <span id="totalPagos">0</span>
-                        </div>
-                        <div class="resumo-item vermelho">
-                            ❌ Pendentes: <span id="totalPendentes">0</span>
-                        </div>
-                    </div>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Mensalista</th>
-                                <th>Status</th>
-                                <th>Data Pagamento</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pagamentosTable"></tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
-                    <button class="btn btn-verde" onclick="marcarTodosPagos()" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>✅ Marcar Todos Pagos</button>
-                    <button class="btn btn-vermelho" onclick="marcarTodosPendentes()" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>❌ Marcar Todos Pendentes</button>
-                    <button class="btn btn-azul" onclick="gerarRelatorioPagamentos()">📊 Relatório</button>
-                </div>
-            `;
-            
-            container.innerHTML = html;
-            
-            const tbody = document.getElementById('pagamentosTable');
-            
-            tbody.innerHTML = mensalistas.map(m => {
-                const pagamento = pagamentosMap[m.id];
-                const pago = pagamento?.pago || false;
-                const dataPagamento = pagamento?.data_pagamento ? formatarDataAdmin(pagamento.data_pagamento) : '-';
-                
-                if (pago) pagos++;
-                else pendentes++;
-                
-                return `
-                    <tr>
-                        <td><strong>${m.nome}</strong></td>
-                        <td>
-                            ${pago 
-                                ? '<span style="color: #2c5f2d; font-weight: 600;">✅ Pago</span>' 
-                                : '<span style="color: #c62828; font-weight: 600;">❌ Pendente</span>'
-                            }
-                        </td>
-                        <td>${dataPagamento}</td>
-                        <td>
-                            <button class="btn btn-pequeno ${pago ? 'btn-vermelho' : 'btn-verde'}" 
-                                    onclick="togglePagamento(${m.id})"
-                                    ${isModoConvidado ? 'disabled style="display:none;"' : ''}>
-                                ${pago ? '❌ Pendente' : '✅ Pago'}
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-            
-            document.getElementById('totalPagos').textContent = pagos;
-            document.getElementById('totalPendentes').textContent = pendentes;
+            modal.querySelector('.btn-cancelar').addEventListener('click', () => modal.remove());
+            modal.querySelector('.btn-confirmar').addEventListener('click', async () => { modal.remove(); await salvarTodasAvaliacoes(avaliacoes); });
         }
-
-        window.togglePagamento = async function(mensalistaId) {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode alterar dados.'); return; }
-            // ... resto do código igual ...
-        };
-
-        window.marcarTodosPagos = async function() {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode alterar dados.'); return; }
-            // ... resto do código igual ...
-        };
-
-        window.marcarTodosPendentes = async function() {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode alterar dados.'); return; }
-            // ... resto do código igual ...
-        };
-
-        window.gerarRelatorioPagamentos = async function() {
-            // Esta função é apenas leitura, então permite
-            const mesAtual = new Date().getMonth() + 1;
-            const anoAtual = new Date().getFullYear();
-            const mesNome = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesAtual-1];
-            
-            const { data: pagamentos, error } = await supabaseClient
-                .from('pagamentos')
-                .select('*, mensalistas(nome)')
-                .eq('mes', mesAtual)
-                .eq('ano', anoAtual);
-            
-            if (error) {
-                alert('Erro ao gerar relatório!');
-                return;
+        
+        async function salvarTodasAvaliacoes(avaliacoes) {
+            let sucesso = 0;
+            for (const a of avaliacoes) {
+                const { error } = await supabaseClient.from('avaliacoes_partida').insert({ partida_id: partidaSelecionada, avaliador_id: mensalistaAtual.id, avaliado_nome: a.nome, nota: a.nota, comentario: a.comentario });
+                if (!error) sucesso++;
             }
-            
-            const pagos = pagamentos?.filter(p => p.pago) || [];
-            const pendentes = pagamentos?.filter(p => !p.pago) || [];
-            
-            let relatorio = `📊 RELATÓRIO DE PAGAMENTOS - ${mesNome}/${anoAtual}\n`;
-            relatorio += `================================\n`;
-            relatorio += `✅ Pagos: ${pagos.length}\n`;
-            relatorio += `❌ Pendentes: ${pendentes.length}\n`;
-            relatorio += `--------------------------------\n`;
-            relatorio += `✅ PAGOS:\n`;
-            pagos.forEach(p => {
-                relatorio += `   - ${p.mensalistas.nome}\n`;
-            });
-            relatorio += `\n❌ PENDENTES:\n`;
-            pendentes.forEach(p => {
-                relatorio += `   - ${p.mensalistas.nome}\n`;
-            });
-            
-            alert(relatorio);
-        };
-
-        // ============================================
-        // MENSALISTAS
-        // ============================================
-        async function carregarMensalistas() {
-            const { data } = await supabaseClient.from('mensalistas').select('*').order('nome');
-            const container = document.getElementById('tabContent');
-            container.innerHTML = `
-                <div class="form-row">
-                    <input type="text" id="novoMensalista" placeholder="Nome" ${isModoConvidado ? 'disabled' : ''}>
-                    <input type="text" id="novaSenha" placeholder="Senha" value="futebol123" ${isModoConvidado ? 'disabled' : ''}>
-                    <input type="number" id="novaNota" placeholder="Nota" value="3" min="1" max="5" step="1" ${isModoConvidado ? 'disabled' : ''}>
-                    <button class="btn btn-verde" id="btnAdicionarMensalista" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>➕ Adicionar</button>
-                </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead>
-                            <tr><th>ID</th><th>Nome</th><th>Nota</th><th>Admin</th><th>Ações</th></tr>
-                        </thead>
-                        <tbody id="mensalistasTable"></tbody>
-                    </table>
-                </div>
-            `;
-            const tbody = document.getElementById('mensalistasTable');
-            tbody.innerHTML = (data || []).map(m => `
-                <tr>
-                    <td>${m.id}</td>
-                    <td><input type="text" id="nome_${m.id}" value="${m.nome}" style="width:100%;" ${isModoConvidado ? 'disabled' : ''}></td>
-                    <td><input type="number" id="nota_${m.id}" value="${m.nota_inicial || 3}" style="width:70px;" min="1" max="5" step="1" ${isModoConvidado ? 'disabled' : ''}></td>
-                    <td style="text-align:center;"><input type="checkbox" id="admin_${m.id}" ${m.is_admin ? 'checked' : ''} ${isModoConvidado ? 'disabled' : ''}></td>
-                    <td>
-                        <button class="btn btn-azul btn-pequeno" onclick="editarMensalista(${m.id})" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>💾 Salvar</button>
-                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarMensalista(${m.id})" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>🗑️ Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-            document.getElementById('btnAdicionarMensalista').onclick = adicionarMensalista;
+            alert(`✅ ${sucesso} avaliações salvas!`);
+            await voltarParaSelecao();
+        }
+        
+        async function voltarParaSelecao() {
+            avaliacoesScreen.style.display = 'none';
+            selecaoScreen.style.display = 'block';
+            await carregarPartidas();
         }
 
-        window.adicionarMensalista = async () => {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode adicionar dados.'); return; }
-            // ... resto do código igual ...
-        };
-
-        window.editarMensalista = async (id) => {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode editar dados.'); return; }
-            // ... resto do código igual ...
-        };
-
-        window.deletarMensalista = async (id) => {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode excluir dados.'); return; }
-            // ... resto do código igual ...
-        };
-
+        document.getElementById('btnLogin').addEventListener('click', fazerLogin);
+        document.getElementById('btnVoltarSelecao').addEventListener('click', () => { window.location.href = 'index.html'; });
+        document.getElementById('btnVoltarAvaliacoes').addEventListener('click', voltarParaSelecao);
+        document.getElementById('btnSalvarTodas').addEventListener('click', exibirModalConfirmacao);
+        document.getElementById('logoVoltar').addEventListener('click', () => { window.location.href = 'index.html'; });
+        
         // ============================================
-        // LOCAIS
+        // INICIALIZAÇÃO
         // ============================================
-        async function carregarLocaisAdmin() {
-            const { data } = await supabaseClient.from('locais').select('*').order('nome');
-            const container = document.getElementById('tabContent');
-            container.innerHTML = `
-                <div class="form-row">
-                    <input type="text" id="novoLocalNome" placeholder="Nome do local" ${isModoConvidado ? 'disabled' : ''}>
-                    <input type="text" id="novoLocalEndereco" placeholder="Endereço" ${isModoConvidado ? 'disabled' : ''}>
-                    <button class="btn btn-verde" id="btnAdicionarLocal" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>➕ Adicionar</button>
-                </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead>
-                            <tr><th>ID</th><th>Nome</th><th>Endereço</th><th>Ações</th></tr>
-                        </thead>
-                        <tbody id="locaisTable"></tbody>
-                    </table>
-                </div>
-            `;
-            const tbody = document.getElementById('locaisTable');
-            tbody.innerHTML = (data || []).map(l => `
-                <tr>
-                    <td>${l.id}</td>
-                    <td><input type="text" id="local_nome_${l.id}" value="${l.nome}" style="width:100%;" ${isModoConvidado ? 'disabled' : ''}></td>
-                    <td><input type="text" id="local_endereco_${l.id}" value="${l.endereco || ''}" style="width:100%;" ${isModoConvidado ? 'disabled' : ''}></td>
-                    <td>
-                        <button class="btn btn-azul btn-pequeno" onclick="editarLocal(${l.id})" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>💾 Salvar</button>
-                        <button class="btn btn-vermelho btn-pequeno" onclick="deletarLocal(${l.id})" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>🗑️ Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
-            document.getElementById('btnAdicionarLocal').onclick = adicionarLocal;
+        async function init() {
+            const sessaoValida = await verificarSessao();
+            if (!sessaoValida) await carregarMensalistas();
         }
-
-        window.adicionarLocal = async () => {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode adicionar dados.'); return; }
-            // ... resto do código igual ...
-        };
-
-        window.editarLocal = async (id) => {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode editar dados.'); return; }
-            // ... resto do código igual ...
-        };
-
-        window.deletarLocal = async (id) => {
-            if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode excluir dados.'); return; }
-            // ... resto do código igual ...
-        };
-
-        // ============================================
-        // FERRAMENTAS
-        // ============================================
-        function carregarFerramentas() {
-            const container = document.getElementById('tabContent');
-            container.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 20px;">
-                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
-                        <h3 style="color: #8b0000;">🗑️ Limpeza de Dados</h3>
-                        <p>Remove todas as avaliações, mas mantém partidas e escalas.</p>
-                        <button class="btn" id="btnLimparAvaliacoes" style="background:#ff9800; margin-top:10px;" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>Limpar Avaliações</button>
-                    </div>
-                    <div style="padding: 15px; background: #f5f5f5; border-radius: 16px;">
-                        <h3 style="color: #8b0000;">⚠️ Reset Completo</h3>
-                        <p>Remove TODOS os dados: partidas, avaliações, escalas. Mantém apenas mensalistas e locais.</p>
-                        <button class="btn btn-vermelho" id="btnResetCompleto" ${isModoConvidado ? 'disabled style="display:none;"' : ''}>Resetar Banco</button>
-                    </div>
-                    ${isModoConvidado ? '<div style="text-align:center; padding:20px; background:#f0f0f0; border-radius:12px; color:#666;">👁️ Modo Convidado - Ferramentas de administração estão desabilitadas.</div>' : ''}
-                </div>
-            `;
-            document.getElementById('btnLimparAvaliacoes').onclick = async () => {
-                if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode executar esta ação.'); return; }
-                // ... resto do código igual ...
-            };
-            document.getElementById('btnResetCompleto').onclick = async () => {
-                if (isModoConvidado) { alert('👁️ Modo Convidado - Você não pode executar esta ação.'); return; }
-                // ... resto do código igual ...
-            };
-        }
-
-        document.getElementById('logoVoltar').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
+        
+        init();
     </script>
 </body>
 </html>
