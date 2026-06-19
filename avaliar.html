@@ -118,6 +118,22 @@
         }
         .jogador-nome { font-size: 1.2em; font-weight: 700; color: #8b0000; margin-bottom: 8px; word-break: break-word; }
         .jogador-nome small { font-size: 0.75em; font-weight: normal; color: #666; }
+        .jogador-nome .badge-participou {
+            background: #e8f5e9;
+            color: #2c5f2d;
+            font-size: 0.6em;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+        }
+        .jogador-nome .badge-nao-participou {
+            background: #ffebee;
+            color: #c62828;
+            font-size: 0.6em;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+        }
         textarea {
             width: 100%;
             padding: 12px;
@@ -157,6 +173,10 @@
         .status-avaliacao.visualizacao {
             background: #f0f0f0;
             color: #666;
+        }
+        .status-avaliacao.nao-participou {
+            background: #ffebee;
+            color: #c62828;
         }
         .checkbox-container {
             display: flex;
@@ -346,6 +366,7 @@
         let jogadoresPartida = [];
         let avaliacoesPendentes = {};
         let isModoConvidado = false;
+        let usuarioParticipou = false;
 
         const loginScreen = document.getElementById('loginScreen');
         const selecaoScreen = document.getElementById('selecaoScreen');
@@ -462,16 +483,38 @@
             locais?.forEach(l => { locaisMap[l.id] = l.nome; });
             
             // Para convidado: mostra todas as partidas
-            // Para mensalista: mostra apenas as não avaliadas
+            // Para mensalista: mostra apenas as que ele participou E não avaliou
             let partidasExibir = partidas;
             if (!isModoConvidado) {
-                const { data: avaliadas } = await supabaseClient.from('avaliacoes_partida').select('partida_id').eq('avaliador_id', mensalistaAtual.id);
+                // Buscar partidas em que o mensalista participou
+                const { data: participacoes } = await supabaseClient
+                    .from('escala_partida')
+                    .select('partida_id')
+                    .eq('jogador_nome', mensalistaAtual.nome);
+                
+                const idsParticipou = new Set(participacoes?.map(p => p.partida_id) || []);
+                
+                // Buscar partidas que já avaliou
+                const { data: avaliadas } = await supabaseClient
+                    .from('avaliacoes_partida')
+                    .select('partida_id')
+                    .eq('avaliador_id', mensalistaAtual.id);
+                
                 const idsAvaliados = new Set(avaliadas?.map(a => a.partida_id) || []);
-                partidasExibir = partidas.filter(p => !idsAvaliados.has(p.id));
+                
+                // Mostrar apenas partidas que participou E NÃO avaliou
+                partidasExibir = partidas.filter(p => 
+                    idsParticipou.has(p.id) && !idsAvaliados.has(p.id)
+                );
             }
             
             if (partidasExibir.length === 0 && !isModoConvidado) {
-                container.innerHTML = '<div class="status-avaliacao">✅ Você já avaliou todas as partidas! Obrigado!</div>';
+                container.innerHTML = `
+                    <div class="status-avaliacao" style="background:#f0f0f0; color:#666;">
+                        📋 Você já avaliou todas as partidas que participou!<br>
+                        <small style="font-weight:normal;">Partidas que você não participou não estão disponíveis para avaliação.</small>
+                    </div>
+                `;
                 return;
             }
             
@@ -508,8 +551,24 @@
             const { data: escala } = await supabaseClient.from('escala_partida').select('*').eq('partida_id', partidaId);
             jogadoresPartida = escala?.filter(j => j.jogador_nome !== mensalistaAtual.nome) || [];
             
-            // Verificar se já avaliou (apenas para não-convidados)
+            // Verificar se o usuário participou desta partida (apenas para não-convidados)
             if (!isModoConvidado) {
+                const { data: participacao } = await supabaseClient
+                    .from('escala_partida')
+                    .select('id')
+                    .eq('partida_id', partidaId)
+                    .eq('jogador_nome', mensalistaAtual.nome)
+                    .maybeSingle();
+                
+                usuarioParticipou = !!participacao;
+                
+                if (!usuarioParticipou) {
+                    alert('⚠️ Você não participou desta partida. Apenas participantes podem avaliar.');
+                    await carregarPartidas();
+                    return;
+                }
+                
+                // Verificar se já avaliou
                 const { data: avaliacoesExistentes } = await supabaseClient.from('avaliacoes_partida').select('*').eq('partida_id', partidaId).eq('avaliador_id', mensalistaAtual.id);
                 if (avaliacoesExistentes && avaliacoesExistentes.length > 0) {
                     alert('Você já avaliou esta partida! Voltando à lista...');
@@ -565,10 +624,18 @@
             const total = jogadoresPartida.length;
             
             if (isModoConvidado) {
-                // Modo convidado - apenas visualização
                 const container = document.getElementById('statusContainer');
                 container.innerHTML = `👁️ Visualizando ${total} jogadores da partida (modo convidado - sem avaliação)`;
                 container.className = 'status-avaliacao visualizacao';
+                document.getElementById('btnSalvarTodas').disabled = true;
+                document.getElementById('btnSalvarTodas').style.display = 'none';
+                return;
+            }
+            
+            if (!usuarioParticipou) {
+                const container = document.getElementById('statusContainer');
+                container.innerHTML = `⚠️ Você não participou desta partida. Apenas participantes podem avaliar.`;
+                container.className = 'status-avaliacao nao-participou';
                 document.getElementById('btnSalvarTodas').disabled = true;
                 document.getElementById('btnSalvarTodas').style.display = 'none';
                 return;
@@ -606,8 +673,7 @@
                 card.setAttribute('data-jogador', j.jogador_nome);
                 
                 if (isModoConvidado) {
-                    // Modo convidado - mostrar apenas visualização das estrelas
-                    const estrelasVisualizacao = Math.floor(Math.random() * 5) + 1; // Só para demonstrar
+                    const estrelasVisualizacao = Math.floor(Math.random() * 5) + 1;
                     card.innerHTML = `
                         <div class="jogador-nome">${j.jogador_nome} <small>📍 ${j.posicao}</small> <span class="tag-visualizacao">Visualização</span></div>
                         <div class="estrelas" style="cursor:default;">
@@ -618,8 +684,18 @@
                         </div>
                         <textarea class="comentario-input" placeholder="Comentário (desabilitado no modo convidado)" disabled>${pendente.comentario || ''}</textarea>
                     `;
+                } else if (!usuarioParticipou) {
+                    card.innerHTML = `
+                        <div class="jogador-nome">${j.jogador_nome} <small>📍 ${j.posicao}</small> <span class="badge-nao-participou">⚠️ Você não participou</span></div>
+                        <div class="estrelas" style="cursor:default;">
+                            ${[1,2,3,4,5].map(n => `<span class="estrela visualizacao">★</span>`).join('')}
+                        </div>
+                        <div style="margin:10px 0; padding:10px; background:#ffebee; border-radius:8px; text-align:center; color:#c62828; font-size:0.8em;">
+                            ⚠️ Apenas participantes podem avaliar esta partida.
+                        </div>
+                        <textarea class="comentario-input" placeholder="Comentário (desabilitado)" disabled>${pendente.comentario || ''}</textarea>
+                    `;
                 } else {
-                    // Modo normal - avaliação
                     card.innerHTML = `
                         <div class="jogador-nome">${j.jogador_nome} <small>📍 ${j.posicao}</small> ${pendente.nota > 0 ? ' ✓' : ''}</div>
                         <div class="estrelas" data-jogador="${j.jogador_nome}">
